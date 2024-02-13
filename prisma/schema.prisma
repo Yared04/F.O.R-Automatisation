@@ -61,7 +61,8 @@ model Declaration {
   number  String
   date  DateTime
   quantity  Int
-  incomeTax  Float
+  totalIncomeTax  Float
+  unitIncomeTax Float
   balance  Float
   purchasedQuantity  Int
   product ProductDeclaration[]
