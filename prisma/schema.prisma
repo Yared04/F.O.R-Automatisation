@@ -24,6 +24,16 @@ model Role {
   users User[]
 }
 
+model Customer {
+  id         Int      @id @default(autoincrement())
+  firstName  String   
+  middleName String   
+  lastName   String   
+  tinNumber  String
+  phone      String
+  address    String
+}
+
 model Driver {
   id    Int   @id @default(autoincrement())
   name  String
