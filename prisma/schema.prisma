@@ -23,3 +23,15 @@ model Role {
   name  String
   users User[]
 }
+
+model Driver {
+  id    Int   @id @default(autoincrement())
+  name  String
+  truckNumber   String
+  djboutiPhone  String
+  ethiopiaPhone  String
+  associationName  String
+  associationPhone  String
+  ownerName   String
+  ownerPhone  String
+}
