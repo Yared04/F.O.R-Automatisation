@@ -15,6 +15,11 @@ function generateToken(user) {
   return jwt.sign(payload, jwtSecret, options);
 }
 
+function getSecretKey(){
+  return jwtSecret;
+}
+
 module.exports = {
   generateToken,
+  getSecretKey,
 };
