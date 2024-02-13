@@ -9,14 +9,19 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "bcrypt": "^5.1.1",
     "cors": "^2.8.5",
     "dotenv": "^16.4.2",
     "express": "^4.18.2",
     "fs": "^0.0.1-security",
+    "jsonwebtoken": "^9.0.2",
     "path": "^0.12.7",
-    "pg": "^8.11.3",
-    "pg-hstore": "^2.3.4",
-    "sequelize": "^6.37.0",
-    "sequelize-cli": "^6.6.2"
+    "postgresql": "^0.0.1",
+    "prisma": "^5.9.1",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.0"
+  },
+  "devDependencies": {
+    "@prisma/client": "^5.9.1"
   }
 }

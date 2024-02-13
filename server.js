@@ -1,38 +1,14 @@
-const express = require("express");
-const bodyParser = require("body-parser");
-const cors = require("cors");
-const e = require("cors");
+const app = require('./src/app');
+const prisma = require('./src/database');
 
-const app = express();
+const PORT = process.env.PORT || 4000;
 
-var corsOptions = {
-  origin: "http://localhost:8081",
-};
-
-app.use(cors(corsOptions));
-
-// parse requests of content-type - application/json
-app.use(bodyParser.json());
-
-// parse requests of content-type - application/x-www-form-urlencoded
-app.use(bodyParser.urlencoded({ extended: true }));
-
-const db = require("./src/models");
-
-db.sequelize
-  .sync()
-  .then(() => {
-    console.log("Synced db successfully.");
-  })
-  .catch((err) => {
-    console.log("Failed to sync db: ", err.message);
-  });
-
-require("./src/routes/auth/user.routes")(app);
-require("./src/routes/auth/role.routes")(app);
-
-// set port, listen for requests
-const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}.`);
+app.listen(PORT, async () => {
+  console.log(`Server is running on http://localhost:${PORT}`);
+  try {
+    await prisma.$connect();
+    console.log('Prisma connected to the database');
+  } catch (error) {
+    console.error('Error connecting to the database:', error);
+  }
 });
