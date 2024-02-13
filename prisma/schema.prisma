@@ -34,4 +34,59 @@ model Driver {
   associationPhone  String
   ownerName   String
   ownerPhone  String
+  purchase Purchase[]
+}
+
+model Product {
+  id  Int  @id @default(autoincrement())
+  name String @unique
+  category   String
+  unitOfMeasurement  String
+  purchase ProductPurchase[]
+  declaration ProductDeclaration[]
+}
+
+model Declaration {
+  id  Int @id @default(autoincrement())
+  number  String
+  date  DateTime
+  quantity  Int
+  incomeTax  Float
+  balance  Float
+  purchasedQuantity  Int
+  product ProductDeclaration[]
+}
+
+model ProductDeclaration {
+  productId  Int
+  product   Product   @relation(fields: [productId], references: [id])
+  declarationId   Int
+  declaration  Declaration   @relation(fields: [declarationId], references: [id])
+
+  @@id([productId, declarationId])
+}
+
+model Purchase {
+  id Int @id @default(autoincrement())
+  date   DateTime
+  vendor   String
+  quantity   Int
+  unitPrice   Float
+  totalCost    Float
+  transportCost   Float
+  transitCost    Float
+  customsCost   Float
+  productId    Int
+  driverId    Int
+  driver    Driver    @relation(fields: [driverId], references: [id])
+  products ProductPurchase[]
+}
+
+model ProductPurchase {
+  productId  Int
+  product   Product   @relation(fields: [productId], references: [id])
+  purchaseId   Int
+  purchase  Purchase   @relation(fields: [purchaseId], references: [id])
+
+  @@id([productId, purchaseId])
 }
