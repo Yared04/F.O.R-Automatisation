@@ -1,6 +1,7 @@
 const express = require('express');
 const userRoutes = require('./routes/auth/useRoutes');
 const roleRoutes = require('./routes/auth/roleRoutes');
+const customerRoutes = require('./routes/sales/customerRoutes');
 const driverRoutes = require('./routes/driver/driverRoutes');
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./swagger'); 
@@ -13,6 +14,7 @@ app.use(cors());
 app.use(express.json());
 app.use('/api', userRoutes);
 app.use('/api', roleRoutes);
+app.use('/api', customerRoutes);
 
 app.use('/api', driverRoutes);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
