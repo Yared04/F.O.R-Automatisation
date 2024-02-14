@@ -1,5 +1,4 @@
 const prisma = require("../../database");
-const primsa = require("../../database");
 
 async function getProducts(req, res) {
   try {
