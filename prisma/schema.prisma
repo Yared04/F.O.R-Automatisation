@@ -101,3 +101,9 @@ model ProductPurchase {
 
   @@id([productId, purchaseId])
 }
+
+model Store {
+  id          Int @id @default(autoincrement())
+  name        String
+  address     String
+}
