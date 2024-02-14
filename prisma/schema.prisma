@@ -60,15 +60,16 @@ model Declaration {
   id  Int @id @default(autoincrement())
   number  String
   date  DateTime
-  quantity  Int
-  totalIncomeTax  Float
-  unitIncomeTax Float
-  balance  Float
-  purchasedQuantity  Int
   product ProductDeclaration[]
+  purchases Purchase[]
 }
 
 model ProductDeclaration {
+  declarationQuantity  Int
+  totalIncomeTax  Float
+  unitIncomeTax Float
+  declarationBalance  Float
+  purchasedQuantity  Int
   productId  Int
   product   Product   @relation(fields: [productId], references: [id])
   declarationId   Int
@@ -80,16 +81,17 @@ model ProductDeclaration {
 model Purchase {
   id Int @id @default(autoincrement())
   date   DateTime
-  vendor   String
+  number  Int
   quantity   Int
   unitPrice   Float
-  totalCost    Float
+  total    Float
   transportCost   Float
-  transitCost    Float
-  customsCost   Float
-  productId    Int
-  driverId    Int
-  driver    Driver    @relation(fields: [driverId], references: [id])
+  transitFees    Float
+  eslCustomCost   Float
+  unitCostOfGoods Float
+  truckNumber  String
+  declarationId  Int
+  declaration   Declaration   @relation(fields: [declarationId], references: [id])
   products ProductPurchase[]
 }
 
