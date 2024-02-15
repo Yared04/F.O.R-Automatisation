@@ -2,19 +2,31 @@ const prisma = require("../../database");
 
 async function getProducts(req, res) {
   try {
-    const { page = 1, pageSize = 10 } = req.query;
+    const { page, pageSize } = req.query;
     const totalCount = await prisma.product.count();
 
-    const products = await prisma.product.findMany({
-      select: {
-        id: true,
-        name: true,
-        category: true,
-        unitOfMeasurement: true,
-      },
-      skip: (page - 1) * parseInt(pageSize, 10),
-      take: parseInt(pageSize, 10),
-    });
+    let products;
+    if (page && pageSize) {
+      products = await prisma.product.findMany({
+        select: {
+          id: true,
+          name: true,
+          category: true,
+          unitOfMeasurement: true,
+        },
+        skip: (page - 1) * parseInt(pageSize, 10),
+        take: parseInt(pageSize, 10),
+      });
+    } else {
+      products = await prisma.product.findMany({
+        select: {
+          id: true,
+          name: true,
+          category: true,
+          unitOfMeasurement: true,
+        },
+      });
+    }
 
     const totalPages = Math.ceil(totalCount / parseInt(pageSize, 10));
 

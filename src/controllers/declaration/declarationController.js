@@ -68,12 +68,12 @@ async function createDeclaration(req, res) {
       declarationProducts.map(async (dp) => {
         let createdDeclarationProduct = await prisma.productDeclaration.create({
           data: {
-            declarationQuantity: dp.declarationQuantity,
-            totalIncomeTax: dp.totalIncomeTax,
+            declarationQuantity: parseInt(dp.declarationQuantity),
+            totalIncomeTax: parseInt(dp.totalIncomeTax),
             unitIncomeTax: dp.totalIncomeTax / dp.declarationQuantity,
             purchasedQuantity: 0,
             declarationBalance: 0,
-            product: { connect: { id: dp.productId } },
+            product: { connect: { id: parseInt(dp.productId) } },
             declaration: { connect: { id: createdDeclaration.id } },
           },
         });
