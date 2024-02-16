@@ -88,19 +88,87 @@ async function createDeclaration(req, res) {
   }
 }
 
-
-async function deleteDeclaration(req, res) {
+async function updateDeclaration(req, res) {
   try {
-    const { id } = req.params;
-    const deletedDeclaration = await prisma.declaration.delete({
-      where: { id: parseInt(id) },
+    const { id } = req.params; // Extract the declaration ID from request parameters
+    const { number, date, declarationProducts } = req.body; // Extract updated data from request body
+
+    // Update the Declaration
+    const updatedDeclaration = await prisma.declaration.update({
+      where: { id: parseInt(id) }, // Convert id to integer if needed
+      data: {
+        number,
+        date,
+      },
     });
-    res.json(deleteDeclaration);
+
+    // Update the associated products
+    const updatedDeclarationProducts = await Promise.all(
+      declarationProducts.map(async (dp) => {
+        let updatedDeclarationProduct = await prisma.productDeclaration.upsert({
+          where: {
+            productId_declarationId: {
+              productId: parseInt(dp.product.id),
+              declarationId: parseInt(id),
+            },
+          },
+          update: {
+            declarationQuantity: parseInt(dp.declarationQuantity),
+            totalIncomeTax: parseInt(dp.totalIncomeTax),
+            unitIncomeTax: dp.totalIncomeTax / dp.declarationQuantity,
+          },
+          create: {
+            declarationQuantity: parseInt(dp.declarationQuantity),
+            totalIncomeTax: parseInt(dp.totalIncomeTax),
+            unitIncomeTax: dp.totalIncomeTax / dp.declarationQuantity,
+            productId: parseInt(dp.product.id),
+            declarationId: parseInt(id),
+            declarationBalance: 0,
+            purchasedQuantity: 0,
+
+          },
+        });
+        return updatedDeclarationProduct;
+      })
+    );
+
+    // If the declaration is not found, return a 404 response
+    if (!updatedDeclaration) {
+      return res.status(404).json({ error: "Declaration not found" });
+    }
+
+    res.json({ updatedDeclaration, updatedDeclarationProducts });
   } catch (error) {
-    console.error("Error deleting declaration: ", error);
+    console.error("Error updating declaration:", error);
     res.status(500).send("Internal Server Error");
   }
 }
+
+async function deleteDeclaration(req, res) {
+  try {
+    const { id } = req.params; // Extract the declaration ID from request parameters
+
+    // Delete the associated product declarations
+    await prisma.productDeclaration.deleteMany({
+      where: {
+        declarationId: parseInt(id),
+      },
+    });
+
+    // Delete the declaration
+    const deletedDeclaration = await prisma.declaration.delete({
+      where: {
+        id: parseInt(id),
+      },
+    });
+
+    res.json(deletedDeclaration);
+  } catch (error) {
+    console.error("Error deleting declaration:", error);
+    res.status(500).send("Internal Server Error");
+  }
+}
+
 
 async function getDeclarationById(req, res) {
   try {
@@ -154,6 +222,7 @@ async function getDeclarationById(req, res) {
 
 module.exports = {
   getDeclarationById,
+  updateDeclaration,
   getDeclarations,
   createDeclaration,
   deleteDeclaration,
