@@ -37,6 +37,10 @@ async function createUser(req, res) {
   try {
     const { userName, password, passwordConfirmation, roleId } = req.body;
 
+    if (!userName || !password || !passwordConfirmation || !roleId) {
+      return res.status(400).json({ error: 'All fields are required' });
+    }
+
     if (password !== passwordConfirmation) {
       return res.status(400).json({ error: 'Password and password confirmation do not match' });
     }
@@ -55,6 +59,9 @@ async function createUser(req, res) {
     res.json(createdUser);
   } catch (error) {
     console.error('Error creating user:', error);
+    if (error.code === 'P2002') {
+      return res.status(400).json({ error: 'Username already exists' });
+    }
     res.status(500).send('Internal Server Error');
   }
 }
@@ -63,6 +70,10 @@ async function updateUser(req, res) {
   try {
     const userId = parseInt(req.params.id);
     const { userName, roleId } = req.body;
+
+    if (!userName || !roleId) {
+      return res.status(400).json({ error: 'Username and role are required fields' });
+    }
 
     const updatedUser = await prisma.user.update({
       where: { id: userId },
@@ -76,6 +87,9 @@ async function updateUser(req, res) {
     res.json(updatedUser);
   } catch (error) {
     console.error('Error updating user:', error);
+    if (error.code === 'P2025') {
+      return res.status(404).json({ error: 'User not found' });
+    }
     res.status(500).send('Internal Server Error');
   }
 }
@@ -92,6 +106,9 @@ async function deleteUser(req, res) {
     res.json(deletedUser);
   } catch (error) {
     console.error('Error deleting user:', error);
+    if (error.code === 'P2025') {
+      return res.status(404).json({ error: 'User not found' });
+    }
     res.status(500).send('Internal Server Error');
   }
 }
@@ -119,6 +136,10 @@ async function getUserById(req, res) {
 async function login(req, res) {
   try {
     const { userName, password } = req.body;
+
+    if (!userName || !password) {
+      return res.status(400).json({ error: 'Username and password are required fields' });
+    }
 
     const user = await prisma.user.findUnique({
       where: { userName },
