@@ -111,22 +111,68 @@ async function createPurchase(req, res) {
   }
 }
 
-async function getPurchaseById(req, res){
-    try{
-        const { id } = req.params;
-        const purchase = await prisma.purchase.findUnique({
-        where: { id: parseInt(id) },
-        });
-    
-        res.json(purchase);
-    }catch(error){
-        console.error('Error retrieving purchase:', error);
-        res.status(500).send('Internal Server Error');
-    }
-    
-}
+async function getPurchaseById(req, res) {
+  try {
+    const { id } = req.params; // Extract the declaration ID from request parameters
+    const purchase = await prisma.purchase.findUnique({
+      where: {
+        id: parseInt(id), // Convert id to integer if needed
+      },
+      select: {
+        id: true,
+        number: true,
+        date: true,
+        truckNumber: true,
+      },
+    });
 
+    if (!purchase) {
+      return res.status(404).json({ error: "Purchase not found" });
+    }
+
+    const purchaseProducts = await prisma.productPurchase.findMany({
+      where: {
+        purchaseId: parseInt(id),
+      },
+      select: {
+        id: true,
+        purchaseQuantity:true,
+        purchaseUnitPrice:true,
+        purchaseTotal:true,
+        transportCost:true,
+        transitFees:true,
+        eslCustomCost:true,
+        purchaseUnitCostOfGoods:true,
+        product: {
+          select: {
+            id: true,
+            name: true,
+            category: true,
+            unitOfMeasurement: true,
+          },
+        },
+        declaration: {
+          select: {
+            id: true,
+            number: true,
+            date: true,
+          },
+        },
+      },
+    });
+
+    // Combine declaration data with associated products
+    const purchaseWithProducts = { ...purchase, purchaseProducts };
+
+    res.json(purchaseWithProducts);
+  } catch (error) {
+    console.error("Error retrieving declaration by ID:", error);
+    res.status(500).send("Internal Server Error");
+  }
+
+}
 module.exports = {
   getPurchases,
   createPurchase,
+  getPurchaseById
 };
