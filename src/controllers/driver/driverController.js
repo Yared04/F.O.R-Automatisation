@@ -1,42 +1,64 @@
 const prisma = require('../../database');
 
 async function getDrivers(req, res) {
-    try{
-        const { page = 1, pageSize = 10 } = req.query;
+    try {
+      const { page, pageSize } = req.query;
+      
+      if (page && pageSize) {
         const totalCount = await prisma.driver.count();
-
+  
         const drivers = await prisma.driver.findMany({
-            select: {
-                id: true,
-                name: true,
-                truckNumber: true,
-                associationPhone: true,
-                associationName: true,
-                ownerName: true,
-                ownerPhone: true,
-                djboutiPhone: true,
-                ethiopiaPhone: true,
-                               
-            },
-            skip: (page - 1) * parseInt(pageSize, 10),
-            take: parseInt(pageSize, 10)
+          select: {
+            id: true,
+            name: true,
+            truckNumber: true,
+            associationPhone: true,
+            associationName: true,
+            ownerName: true,
+            ownerPhone: true,
+            djboutiPhone: true,
+            ethiopiaPhone: true,
+          },
+          skip: (page - 1) * parseInt(pageSize, 10),
+          take: parseInt(pageSize, 10),
         });
-
+  
         const totalPages = Math.ceil(totalCount / parseInt(pageSize, 10));
-
-        res.json({
-            items: drivers,
-            totalCount: totalCount,
-            pageSize: parseInt(pageSize, 10),
-            currentPage: parseInt(page, 10),
-            totalPages: totalPages
+  
+        return res.json({
+          items: drivers,
+          totalCount: totalCount,
+          pageSize: parseInt(pageSize, 10),
+          currentPage: parseInt(page, 10),
+          totalPages: totalPages,
         });
-
-    }catch(error){
-        console.error('Error retrieving drivers:', error);
-        res.status(500).send('Internal Server Error');
+      } else {
+        // Fetch all drivers without pagination
+        const allDrivers = await prisma.driver.findMany({
+          select: {
+            id: true,
+            name: true,
+            truckNumber: true,
+            associationPhone: true,
+            associationName: true,
+            ownerName: true,
+            ownerPhone: true,
+            djboutiPhone: true,
+            ethiopiaPhone: true,
+          },
+        });
+  
+        return res.json({
+          items: allDrivers,
+          totalCount: allDrivers.length,
+        });
+      }
+    } catch (error) {
+      console.error('Error retrieving drivers:', error);
+      res.status(500).send('Internal Server Error');
     }
-};
+  };
+  
 
 
 async function createDriver(req, res) {

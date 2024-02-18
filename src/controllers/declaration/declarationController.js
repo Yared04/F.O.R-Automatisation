@@ -3,65 +3,108 @@ const prisma = require("../../database");
 async function getDeclarations(req, res) {
   try {
     const { page = 1, pageSize = 10 } = req.query;
-    const totalCount = await prisma.declaration.count();
 
-    const declarations = await prisma.declaration.findMany({
-      select: {
-        id: true,
-        number: true,
-        date: true,
-      },
+    if (page && pageSize) {
+      const totalCount = await prisma.declaration.count();
 
-      skip: (page - 1) * parseInt(pageSize, 10),
-      take: parseInt(pageSize, 10),
-    });
+      const declarations = await prisma.declaration.findMany({
+        select: {
+          id: true,
+          number: true,
+          date: true,
+        },
+        skip: (page - 1) * parseInt(pageSize, 10),
+        take: parseInt(pageSize, 10),
+      });
 
-    const declarationsWithProducts = await Promise.all(
-      declarations.map(async (declaration) => {
-        const declarationProducts = await prisma.productDeclaration.findMany({
-          where: {
-            declarationId: declaration.id,
-          },
-          select: {
-            declarationQuantity: true,
-            totalIncomeTax: true,
-            unitIncomeTax: true,
-            purchasedQuantity: true,
-            declarationBalance: true,
-            product: {
-              select: {
-                id: true,
-                name: true,
-                category: true,
-                unitOfMeasurement: true,
+      const declarationsWithProducts = await Promise.all(
+        declarations.map(async (declaration) => {
+          const declarationProducts = await prisma.productDeclaration.findMany({
+            where: {
+              declarationId: declaration.id,
+            },
+            select: {
+              declarationQuantity: true,
+              totalIncomeTax: true,
+              unitIncomeTax: true,
+              purchasedQuantity: true,
+              declarationBalance: true,
+              product: {
+                select: {
+                  id: true,
+                  name: true,
+                  category: true,
+                  unitOfMeasurement: true,
+                },
               },
             },
-          },
-        });
-        return { ...declaration, declarationProducts };
-      })
-    );
+          });
+          return { ...declaration, declarationProducts };
+        })
+      );
 
-    const totalPages = Math.ceil(totalCount / parseInt(pageSize, 10));
-    res.json({
-      items: declarationsWithProducts,
-      totalCount: totalCount,
-      pageSize: parseInt(pageSize, 10),
-      currentPage: parseInt(page, 10),
-      totalPages: totalPages,
-    });
+      const totalPages = Math.ceil(totalCount / parseInt(pageSize, 10));
+      return res.json({
+        items: declarationsWithProducts,
+        totalCount: totalCount,
+        pageSize: parseInt(pageSize, 10),
+        currentPage: parseInt(page, 10),
+        totalPages: totalPages,
+      });
+    } else {
+      // Fetch all declarations without pagination
+      const allDeclarations = await prisma.declaration.findMany({
+        select: {
+          id: true,
+          number: true,
+          date: true,
+        },
+      });
+
+      const allDeclarationsWithProducts = await Promise.all(
+        allDeclarations.map(async (declaration) => {
+          const declarationProducts = await prisma.productDeclaration.findMany({
+            where: {
+              declarationId: declaration.id,
+            },
+            select: {
+              declarationQuantity: true,
+              totalIncomeTax: true,
+              unitIncomeTax: true,
+              purchasedQuantity: true,
+              declarationBalance: true,
+              product: {
+                select: {
+                  id: true,
+                  name: true,
+                  category: true,
+                  unitOfMeasurement: true,
+                },
+              },
+            },
+          });
+          return { ...declaration, declarationProducts };
+        })
+      );
+
+      return res.json({
+        items: allDeclarationsWithProducts,
+        totalCount: allDeclarations.length,
+      });
+    }
   } catch (error) {
     console.error("Error retrieving declarations:", error);
     res.status(500).send("Internal Server Error");
   }
 }
+
 async function createDeclaration(req, res) {
   try {
     const { number, date, declarationProducts } = req.body;
     const createdDeclaration = await prisma.declaration.create({
       data: {
         number,
-        date,
+        date: new Date(date),
       },
     });
     const createdDeclarationProducts = await Promise.all(

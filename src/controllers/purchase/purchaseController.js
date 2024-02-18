@@ -45,7 +45,7 @@ async function createPurchase(req, res) {
 
     const createdPurchase = await prisma.purchase.create({
       data: {
-        number,
+       number:parseInt(number),
         date: new Date(date),
         truckNumber,
       },
@@ -61,8 +61,8 @@ async function createPurchase(req, res) {
             purchaseId: createdPurchase.id,
             declarationId: purchaseProduct.declarationId,
             productId: purchaseProduct.productId,
-            purchaseQuantity: purchaseProduct.purchaseQuantity,
-            purchaseUnitPrice: purchaseProduct.purchaseUnitPrice,
+            purchaseQuantity: parseInt(purchaseProduct.purchaseQuantity),
+            purchaseUnitPrice: parseInt(purchaseProduct.purchaseUnitPrice),
             purchaseTotal: purchaseProduct.purchaseQuantity * purchaseProduct.purchaseUnitPrice,
             transportCost: 0,
             eslCustomCost: 0,
@@ -104,7 +104,7 @@ async function createPurchase(req, res) {
       })
     );
 
-    res.json({ createdPurchase, updatedProductPurchases });
+    res.json(createdPurchase);
   } catch (error) {
     console.error("Error creating purchase:", error);
     res.status(500).send("Internal Server Error");
