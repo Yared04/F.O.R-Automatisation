@@ -77,11 +77,25 @@ async function createDeclaration(req, res) {
             declaration: { connect: { id: createdDeclaration.id } },
           },
         });
-        return createdDeclarationProduct; // Return the createdDeclarationProduct
+        return {
+          productId: dp.productId,
+          declarationQuantity: createdDeclarationProduct.declarationQuantity,
+          totalIncomeTax: createdDeclarationProduct.totalIncomeTax,
+          purchasedQuantity: createdDeclarationProduct.purchasedQuantity,
+          declarationBalance: createdDeclarationProduct.declarationBalance,
+          unitIncomeTax: createdDeclarationProduct.unitIncomeTax,
+        };
       })
     );
 
-    res.json({ createdDeclaration, createdDeclarationProducts });
+    const declarationData = {
+      id: createdDeclaration.id.toString(),
+      number,
+      date,
+      declarationProducts: createdDeclarationProducts,
+    };
+
+    res.json(declarationData);
   } catch (error) {
     console.error("Error creating declaration:", error);
     res.status(500).send("Internal Server Error");

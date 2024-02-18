@@ -64,6 +64,7 @@ model Declaration {
 }
 
 model ProductDeclaration {
+  id  Int @id @default(autoincrement())
   declarationQuantity  Int
   totalIncomeTax  Float
   unitIncomeTax Float
@@ -74,7 +75,6 @@ model ProductDeclaration {
   declarationId   Int
   declaration  Declaration   @relation(fields: [declarationId], references: [id])
 
-  @@id([productId, declarationId]) 
 }
 
 model Purchase {
