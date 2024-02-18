@@ -251,6 +251,7 @@ async function getDeclarationById(req, res) {
         declarationId: parseInt(id), // Convert id to integer if needed
       },
       select: {
+        id: true,
         declarationQuantity: true,
         totalIncomeTax: true,
         unitIncomeTax: true,
