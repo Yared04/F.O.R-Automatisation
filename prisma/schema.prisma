@@ -60,7 +60,7 @@ model Declaration {
   number  String
   date  DateTime
   products ProductDeclaration[]
-  purchases Purchase[]
+  purchases ProductPurchase[]
 }
 
 model ProductDeclaration {
@@ -81,26 +81,25 @@ model Purchase {
   id Int @id @default(autoincrement())
   date   DateTime
   number  Int
-  quantity   Int
-  unitPrice   Float
-  total    Float
-  transportCost   Float
-  transitFees    Float
-  eslCustomCost   Float
-  unitCostOfGoods Float
   truckNumber  String
-  declarationId  Int
-  declaration   Declaration   @relation(fields: [declarationId], references: [id])
   products ProductPurchase[]
 }
 
 model ProductPurchase {
+  id Int @id @default(autoincrement())
   productId  Int
   product   Product   @relation(fields: [productId], references: [id])
   purchaseId   Int
   purchase  Purchase   @relation(fields: [purchaseId], references: [id])
-
-  @@id([productId, purchaseId])
+  declarationId  Int
+  declaration   Declaration   @relation(fields: [declarationId], references: [id])
+  purchaseQuantity   Int
+  purchaseUnitPrice   Float
+  purchaseTotal    Float
+  transportCost   Float
+  transitFees    Float
+  eslCustomCost   Float
+  purchaseUnitCostOfGoods Float
 }
 
 model Store {
