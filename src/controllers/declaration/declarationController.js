@@ -62,6 +62,7 @@ async function createDeclaration(req, res) {
       data: {
         number,
         date,
+        
       },
     });
     const createdDeclarationProducts = await Promise.all(
