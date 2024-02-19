@@ -116,7 +116,7 @@ async function getPurchaseById(req, res) {
     const { id } = req.params; // Extract the declaration ID from request parameters
     const purchase = await prisma.purchase.findUnique({
       where: {
-        id: parseInt(id), // Convert id to integer if needed
+        id: id // Convert id to integer if needed
       },
       select: {
         id: true,
@@ -132,7 +132,7 @@ async function getPurchaseById(req, res) {
 
     const purchaseProducts = await prisma.productPurchase.findMany({
       where: {
-        purchaseId: parseInt(id),
+        purchaseId: id,
       },
       select: {
         id: true,

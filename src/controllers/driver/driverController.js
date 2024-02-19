@@ -91,7 +91,7 @@ async function updateDriver(req, res) {
         const { name, truckNumber, associationPhone, associationName, ownerName, ownerPhone, djboutiPhone, ethiopiaPhone } = req.body;
 
         const updatedDriver = await prisma.driver.update({
-            where: { id: parseInt(id) },
+            where: { id: id },
             data: {
                 name,
                 truckNumber,
@@ -116,7 +116,7 @@ async function deleteDriver(req, res) {
         const { id } = req.params;
 
         const deletedDriver = await prisma.driver.delete({
-            where: { id: parseInt(id) }
+            where: { id: id }
         });
 
         res.json(deletedDriver);
@@ -131,7 +131,7 @@ async function getDriverById(req, res) {
         const { id } = req.params;
 
         const driver = await prisma.driver.findUnique({
-            where: { id: parseInt(id) }
+            where: { id: id }
         });
 
         res.json(driver);

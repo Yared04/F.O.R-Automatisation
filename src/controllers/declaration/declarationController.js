@@ -116,7 +116,7 @@ async function createDeclaration(req, res) {
             unitIncomeTax: dp.totalIncomeTax / dp.declarationQuantity,
             purchasedQuantity: 0,
             declarationBalance: 0,
-            product: { connect: { id: parseInt(dp.productId) } },
+            product: { connect: { id: dp.productId } },
             declaration: { connect: { id: createdDeclaration.id } },
           },
         });
@@ -152,7 +152,7 @@ async function updateDeclaration(req, res) {
 
     // Update the Declaration
     const updatedDeclaration = await prisma.declaration.update({
-      where: { id: parseInt(id) }, // Convert id to integer if needed
+      where: { id: id }, // Convert id to integer if needed
       data: {
         number,
         date,
@@ -165,8 +165,8 @@ async function updateDeclaration(req, res) {
         let updatedDeclarationProduct = await prisma.productDeclaration.upsert({
           where: {
             productId_declarationId: {
-              productId: parseInt(dp.product.id),
-              declarationId: parseInt(id),
+              productId: dp.product.id,
+              declarationId: id,
             },
           },
           update: {
@@ -178,8 +178,8 @@ async function updateDeclaration(req, res) {
             declarationQuantity: parseInt(dp.declarationQuantity),
             totalIncomeTax: parseInt(dp.totalIncomeTax),
             unitIncomeTax: dp.totalIncomeTax / dp.declarationQuantity,
-            productId: parseInt(dp.product.id),
-            declarationId: parseInt(id),
+            productId: dp.product.id,
+            declarationId: id,
             declarationBalance: 0,
             purchasedQuantity: 0,
 
@@ -208,14 +208,14 @@ async function deleteDeclaration(req, res) {
     // Delete the associated product declarations
     await prisma.productDeclaration.deleteMany({
       where: {
-        declarationId: parseInt(id),
+        declarationId: id,
       },
     });
 
     // Delete the declaration
     const deletedDeclaration = await prisma.declaration.delete({
       where: {
-        id: parseInt(id),
+        id: id,
       },
     });
 
@@ -232,7 +232,7 @@ async function getDeclarationById(req, res) {
     const { id } = req.params; // Extract the declaration ID from request parameters
     const declaration = await prisma.declaration.findUnique({
       where: {
-        id: parseInt(id), // Convert id to integer if needed
+        id: id, // Convert id to integer if needed
       },
       select: {
         id: true,
@@ -248,7 +248,7 @@ async function getDeclarationById(req, res) {
     // Retrieve associated products for the declaration
     const declarationProducts = await prisma.productDeclaration.findMany({
       where: {
-        declarationId: parseInt(id), // Convert id to integer if needed
+        declarationId: id, // Convert id to integer if needed
       },
       select: {
         id: true,
