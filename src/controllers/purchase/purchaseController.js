@@ -136,7 +136,7 @@ async function createPurchase(req, res) {
       })
     );
 
-    res.json(createdPurchase, updatedProductPurchases);
+    res.json(createdPurchase);
   } catch (error) {
     console.error("Error creating purchase:", error);
     res.status(500).send("Internal Server Error");
@@ -157,6 +157,10 @@ async function getPurchaseById(req, res) {
         truckNumber: true,
       },
     });
+
+    if (!purchase) {
+      return res.status(404).json({ error: "Purchase not found" });
+    }
 
     const purchaseProducts = await prisma.productPurchase.findMany({
       where: {
