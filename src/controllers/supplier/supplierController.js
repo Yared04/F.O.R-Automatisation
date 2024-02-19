@@ -47,7 +47,7 @@ async function createSupplier(req, res) {
 
 async function updateSupplier(req, res) {
     try {
-        const SupplierId = parseInt(req.params.id);
+        const SupplierId = req.params.id;
         const { name, address} = req.body;
     
         const updatedSupplier = await prisma.supplier.update({
@@ -67,7 +67,7 @@ async function updateSupplier(req, res) {
 
 async function deleteSupplier(req, res) {
     try {
-        const SupplierId = parseInt(req.params.id);
+        const SupplierId = req.params.id;
     
         await prisma.supplier.delete({
         where: { id: SupplierId },
@@ -82,7 +82,7 @@ async function deleteSupplier(req, res) {
 
     async function getSupplierById(req, res) {
         try {
-            const SupplierId = parseInt(req.params.id);
+            const SupplierId = req.params.id;
         
             const Supplier = await prisma.supplier.findUnique({
             where: { id: SupplierId },

@@ -52,7 +52,7 @@ async function createCustomer(req, res) {
 
 async function updateCustomer(req, res) {
   try {
-    const customerId = parseInt(req.params.id);
+    const customerId = req.params.id;
     const { firstName, middleName, lastName, tinNumber, phone, address } = req.body;
 
     const updatedCustomer = await prisma.customer.update({
@@ -76,7 +76,7 @@ async function updateCustomer(req, res) {
 
 async function deleteCustomer(req, res) {
   try {
-    const customerId = parseInt(req.params.id);
+    const customerId = req.params.id;
 
     const deletedCustomer = await prisma.customer.delete({
       where: { id: customerId },
@@ -91,7 +91,7 @@ async function deleteCustomer(req, res) {
 
 async function getCustomerById(req, res) {
   try {
-    const customerId = parseInt(req.params.id);
+    const customerId = req.params.id;
 
     const customer = await prisma.customer.findUnique({
       where: { id: customerId },

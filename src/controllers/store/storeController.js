@@ -48,7 +48,7 @@ async function createStore(req, res) {
 
 async function updateStore(req, res) {
     try {
-        const storeId = parseInt(req.params.id);
+        const storeId = req.params.id;
         const { name, address, phone } = req.body;
     
         const updatedStore = await prisma.store.update({
@@ -69,7 +69,7 @@ async function updateStore(req, res) {
 
 async function deleteStore(req, res) {
     try {
-        const storeId = parseInt(req.params.id);
+        const storeId = req.params.id;
     
         await prisma.store.delete({
         where: { id: storeId },
@@ -84,7 +84,7 @@ async function deleteStore(req, res) {
 
     async function getStoreById(req, res) {
         try {
-            const storeId = parseInt(req.params.id);
+            const storeId = req.params.id;
         
             const store = await prisma.store.findUnique({
             where: { id: storeId },
