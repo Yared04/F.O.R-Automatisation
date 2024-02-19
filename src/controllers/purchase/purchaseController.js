@@ -1,3 +1,4 @@
+const { parse } = require("path");
 const prisma = require("../../database");
 
 async function getPurchases(req, res) {
@@ -45,7 +46,7 @@ async function createPurchase(req, res) {
 
     const createdPurchase = await prisma.purchase.create({
       data: {
-        number,
+        number: parseInt(number),
         date: new Date(date),
         truckNumber,
       },
@@ -61,8 +62,8 @@ async function createPurchase(req, res) {
             purchaseId: createdPurchase.id,
             declarationId: purchaseProduct.declarationId,
             productId: purchaseProduct.productId,
-            purchaseQuantity: purchaseProduct.purchaseQuantity,
-            purchaseUnitPrice: purchaseProduct.purchaseUnitPrice,
+            purchaseQuantity: parseInt(purchaseProduct.purchaseQuantity),
+            purchaseUnitPrice: parseFloat(purchaseProduct.purchaseUnitPrice),
             purchaseTotal:
               purchaseProduct.purchaseQuantity *
               purchaseProduct.purchaseUnitPrice,
@@ -70,6 +71,35 @@ async function createPurchase(req, res) {
             eslCustomCost: 0,
             transitFees: 0,
             purchaseUnitCostOfGoods: 0,
+          },
+        });
+
+        const currentDeclaration = await prisma.productDeclaration.findFirst({
+          where: {
+            // Filter by productId and declarationId using nested filtering
+            AND: [
+              { productId: purchaseProduct.productId },
+              { declarationId: purchaseProduct.declarationId },
+            ],
+          },
+        });
+
+        if (!currentDeclaration) {
+          throw new Error("Declaration not found");
+        }
+
+        const updatedDeclaration = await prisma.productDeclaration.update({
+          where: {
+            id: currentDeclaration.id,
+          },
+          data: {
+            purchasedQuantity:
+              currentDeclaration.purchasedQuantity +
+              parseInt(purchaseProduct.purchaseQuantity),
+            declarationBalance:
+              currentDeclaration.declarationQuantity -
+              (currentDeclaration.purchasedQuantity +
+                parseInt(purchaseProduct.purchaseQuantity)),
           },
         });
 
@@ -118,7 +148,7 @@ async function getPurchaseById(req, res) {
     const { id } = req.params;
     const purchase = await prisma.purchase.findUnique({
       where: {
-        id: id // Convert id to integer if needed
+        id: id,
       },
       select: {
         id: true,
