@@ -49,7 +49,7 @@ async function getProductById(req, res) {
 
     const product = await prisma.product.findUnique({
       where: {
-        id: parseInt(id, 10),
+        id: id,
       },
     });
 
@@ -86,7 +86,7 @@ async function updateProduct(req, res) {
 
     const updatedProduct = await prisma.product.update({
       where: {
-        id: parseInt(id, 10),
+        id: id,
       },
       data: {
         name,
@@ -108,7 +108,7 @@ async function deleteProduct(req, res) {
 
     await prisma.product.delete({
       where: {
-        id: parseInt(id, 10),
+        id: id,
       },
     });
 

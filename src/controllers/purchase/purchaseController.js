@@ -117,11 +117,21 @@ async function getPurchaseById(req, res) {
   try {
     const { id } = req.params;
     const purchase = await prisma.purchase.findUnique({
-      where: { id: parseInt(id) },
+      where: {
+        id: id // Convert id to integer if needed
+      },
+      select: {
+        id: true,
+        number: true,
+        date: true,
+        truckNumber: true,
+      },
     });
 
     const purchaseProducts = await prisma.productPurchase.findMany({
-      where: { purchaseId: parseInt(id) },
+      where: {
+        purchaseId: id,
+      },
       select: {
         id: true,
         purchaseQuantity: true,
