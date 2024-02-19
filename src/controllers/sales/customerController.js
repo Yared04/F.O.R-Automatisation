@@ -1,16 +1,25 @@
-const bcrypt = require('bcrypt');
-const jwtUtils = require('../../services/jwtUtils');
 const prisma = require('../../database');
 
 async function getCustomers(req, res) {
   try {
     const { page = 1, pageSize = 10 } = req.query;
-    const totalCount = await prisma.customer.count();
 
-    const customers = await prisma.customer.findMany({
-      skip: (page - 1) * parseInt(pageSize, 10),
-      take: parseInt(pageSize, 10),
-    });
+    let customers;
+    let totalCount;
+
+    if (page && pageSize) {
+      totalCount = await prisma.customer.count();
+      customers = await prisma.customer.findMany({
+        skip: (page - 1) * parseInt(pageSize, 10),
+        take: parseInt(pageSize, 10),
+        orderBy: { createdAt: 'desc' },
+      });
+    } else {
+      customers = await prisma.customer.findMany({
+        orderBy: { createdAt: 'desc' }, 
+      });
+      totalCount = customers.length;
+    }
 
     const totalPages = Math.ceil(totalCount / parseInt(pageSize, 10));
 
