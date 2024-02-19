@@ -131,3 +131,40 @@ model Supplier {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 }
+
+
+model Sale {
+  id             String   @id @default(uuid()) @db.Uuid
+  invoiceNumber  Int    
+  invoiceDate    DateTime    
+  customerId     String    @map("customer_id") @db.Uuid
+  customer       Customer   @relation(fields: [customerId], references: [id])
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+}
+
+model SaleDetail {
+  id                    String   @id @default(uuid()) @db.Uuid
+  saleQuantity          Int    
+  saleUnitPrice         Float    
+  totalSales            Float    
+  unitCostOfGoods       Float      
+  productId             String    @map("product_id") @db.Uuid
+  product               Product   @relation(fields: [productId], references: [id])
+  purchaseId            String        @map("purchase_id") @db.Uuid
+  purchase              Purchase      @relation(fields: [purchaseId], references: [id])
+  declarationId         String        @map("declaration_id") @db.Uuid
+  declaration           Declaration   @relation(fields: [declarationId], references: [id])
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+}
+
+model Inventory {
+  id                    String   @id @default(uuid()) @db.Uuid
+  purchaseId            String        @map("purchase_id") @db.Uuid
+  purchase              Purchase      @relation(fields: [purchaseId], references: [id])
+  saleId                String        @map("sale_id") @db.Uuid
+  sale                  Sale   @relation(fields: [saleId], references: [id])
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+}
