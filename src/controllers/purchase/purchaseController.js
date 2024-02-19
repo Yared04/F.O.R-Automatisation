@@ -136,7 +136,7 @@ async function createPurchase(req, res) {
       })
     );
 
-    res.json({ createdPurchase, updatedProductPurchases });
+    res.json(createdPurchase, updatedProductPurchases);
   } catch (error) {
     console.error("Error creating purchase:", error);
     res.status(500).send("Internal Server Error");
@@ -252,7 +252,7 @@ async function updatePurchase(req, res) {
       })
     );
 
-    res.json({ updatedPurchase, updatedProductPurchases });
+    res.json({ updatedPurchase, updatedProductPurchases});
   } catch (error) {
     console.error("Error updating purchase:", error);
     res.status(500).send("Internal Server Error");
