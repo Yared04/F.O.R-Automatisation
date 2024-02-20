@@ -33,6 +33,7 @@ model Customer {
   tinNumber  String
   phone      String
   address    String
+  sales      Sale[]
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 }
@@ -58,6 +59,7 @@ model Product {
   unitOfMeasurement String
   purchases         ProductPurchase[]
   declarations      ProductDeclaration[]
+  sales             SaleDetail[]
   createdAt         DateTime @default(now()) @map("created_at")
   updatedAt         DateTime @updatedAt @map("updated_at")
 }
@@ -68,6 +70,7 @@ model Declaration {
   date              DateTime
   products          ProductDeclaration[]
   purchases         ProductPurchase[]
+  sales             SaleDetail[]
   createdAt         DateTime         @default(now()) @map("created_at")
   updatedAt         DateTime         @updatedAt @map("updated_at")
 }
@@ -93,6 +96,8 @@ model Purchase {
   number            Int
   truckNumber       String
   products          ProductPurchase[]
+  sales             SaleDetail[]
+  inventories       Inventory[]      
   createdAt         DateTime      @default(now()) @map("created_at")
   updatedAt         DateTime      @updatedAt @map("updated_at")
 }
@@ -139,6 +144,8 @@ model Sale {
   invoiceDate    DateTime    
   customerId     String    @map("customer_id") @db.Uuid
   customer       Customer   @relation(fields: [customerId], references: [id])
+  inventories    Inventory[] 
+  sales          SaleDetail[]     
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
 }
@@ -148,7 +155,9 @@ model SaleDetail {
   saleQuantity          Int    
   saleUnitPrice         Float    
   totalSales            Float    
-  unitCostOfGoods       Float      
+  unitCostOfGoods       Float  
+  saleId                String        @map("sale_id") @db.Uuid
+  sale                  Sale      @relation(fields: [saleId], references: [id])
   productId             String    @map("product_id") @db.Uuid
   product               Product   @relation(fields: [productId], references: [id])
   purchaseId            String        @map("purchase_id") @db.Uuid
@@ -161,9 +170,9 @@ model SaleDetail {
 
 model Inventory {
   id                    String   @id @default(uuid()) @db.Uuid
-  purchaseId            String        @map("purchase_id") @db.Uuid
+  purchaseId            String        @unique @map("purchase_id") @db.Uuid
   purchase              Purchase      @relation(fields: [purchaseId], references: [id])
-  saleId                String        @map("sale_id") @db.Uuid
+  saleId                String        @unique @map("sale_id") @db.Uuid
   sale                  Sale   @relation(fields: [saleId], references: [id])
   createdAt             DateTime @default(now()) @map("created_at")
   updatedAt             DateTime @updatedAt @map("updated_at")
