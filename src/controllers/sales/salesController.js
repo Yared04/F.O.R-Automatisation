@@ -39,7 +39,12 @@ async function createSale(req, res) {
       data: {
         invoiceNumber: parseInt(invoiceNumber),
         invoiceDate: new Date(invoiceDate),
-        customerId: customerId,
+        customer: {
+          connect: { id: customerId },
+        },
+      },
+      include: {
+        customer: true,
       },
     });
 
@@ -65,7 +70,8 @@ async function createSale(req, res) {
       let remainingSaleQuantity = product.saleQuantity;
       let productPurchaseIndex = 0;
       if(remainingSaleQuantity > totalPurchaseQuantity){
-        return res.status(400).json({message: "Not Engough Products for Sale!"});
+        res.status(400).json({message: "Not Engough Products for Sale!"});
+        return;
       }
       while (remainingSaleQuantity > 0) {
         const productPurchase = availableProducts[productPurchaseIndex];
@@ -103,6 +109,7 @@ async function createSale(req, res) {
               purchaseId: productPurchase.purchaseId,
               declarationId: productPurchase.declarationId,
               productId: productPurchase.productId,
+              sale: { connect: { id: saleId } },
             },
           });
   
@@ -135,13 +142,16 @@ async function getSaleById(req, res) {
     const { id } = req.params;
     const sale = await prisma.sale.findUnique({
       where: {
-        id: parseInt(id),
+        id: id,
+      },
+      include: {
+        customer: true,
       },
     });
 
     const saleDetails = await prisma.saleDetail.findMany({
       where: {
-        saleId: parseInt(id),
+        saleId: id,
       },
       select: {
         id: true,
@@ -149,13 +159,32 @@ async function getSaleById(req, res) {
         saleUnitPrice: true,
         totalSales: true,
         unitCostOfGoods: true,
-        purchaseId: true,
-        declarationId: true,
-        productId: true,
+        product: {
+          select: {
+            id: true,
+            name: true,
+            category: true,
+            unitOfMeasurement: true,
+          },
+        },
+        declaration: {
+          select: {
+            id: true,
+            number: true,
+            date: true,
+          },
+        },
+        purchase: {
+          select: {
+            id: true,
+            number: true,
+            date: true,
+          },
+        },
       },
     });
 
-    res.json({sale, saleDetails});
+    res.json({...sale, saleDetails});
   } catch (error) {
     console.error("Error retrieving Sale:", error);
     res.status(500).send("Internal Server Error");
