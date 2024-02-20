@@ -1,3 +1,4 @@
+const { parse } = require("path");
 const prisma = require("../../database");
 
 async function getPurchases(req, res) {
@@ -45,7 +46,7 @@ async function createPurchase(req, res) {
 
     const createdPurchase = await prisma.purchase.create({
       data: {
-       number:parseInt(number),
+        number: parseInt(number),
         date: new Date(date),
         truckNumber,
       },
@@ -62,12 +63,43 @@ async function createPurchase(req, res) {
             declarationId: purchaseProduct.declarationId,
             productId: purchaseProduct.productId,
             purchaseQuantity: parseInt(purchaseProduct.purchaseQuantity),
-            purchaseUnitPrice: parseInt(purchaseProduct.purchaseUnitPrice),
-            purchaseTotal: purchaseProduct.purchaseQuantity * purchaseProduct.purchaseUnitPrice,
+            purchaseUnitPrice: parseFloat(purchaseProduct.purchaseUnitPrice),
+            purchaseTotal:
+              purchaseProduct.purchaseQuantity *
+              purchaseProduct.purchaseUnitPrice,
             transportCost: 0,
             eslCustomCost: 0,
             transitFees: 0,
             purchaseUnitCostOfGoods: 0,
+          },
+        });
+
+        const currentDeclaration = await prisma.productDeclaration.findFirst({
+          where: {
+            // Filter by productId and declarationId using nested filtering
+            AND: [
+              { productId: purchaseProduct.productId },
+              { declarationId: purchaseProduct.declarationId },
+            ],
+          },
+        });
+
+        if (!currentDeclaration) {
+          throw new Error("Declaration not found");
+        }
+
+        const updatedDeclaration = await prisma.productDeclaration.update({
+          where: {
+            id: currentDeclaration.id,
+          },
+          data: {
+            purchasedQuantity:
+              currentDeclaration.purchasedQuantity +
+              parseInt(purchaseProduct.purchaseQuantity),
+            declarationBalance:
+              currentDeclaration.declarationQuantity -
+              (currentDeclaration.purchasedQuantity +
+                parseInt(purchaseProduct.purchaseQuantity)),
           },
         });
 
@@ -113,10 +145,10 @@ async function createPurchase(req, res) {
 
 async function getPurchaseById(req, res) {
   try {
-    const { id } = req.params; // Extract the declaration ID from request parameters
+    const { id } = req.params;
     const purchase = await prisma.purchase.findUnique({
       where: {
-        id: id // Convert id to integer if needed
+        id: id,
       },
       select: {
         id: true,
@@ -136,13 +168,13 @@ async function getPurchaseById(req, res) {
       },
       select: {
         id: true,
-        purchaseQuantity:true,
-        purchaseUnitPrice:true,
-        purchaseTotal:true,
-        transportCost:true,
-        transitFees:true,
-        eslCustomCost:true,
-        purchaseUnitCostOfGoods:true,
+        purchaseQuantity: true,
+        purchaseUnitPrice: true,
+        purchaseTotal: true,
+        transportCost: true,
+        eslCustomCost: true,
+        transitFees: true,
+        purchaseUnitCostOfGoods: true,
         product: {
           select: {
             id: true,
@@ -161,18 +193,99 @@ async function getPurchaseById(req, res) {
       },
     });
 
-    // Combine declaration data with associated products
-    const purchaseWithProducts = { ...purchase, purchaseProducts };
-
-    res.json(purchaseWithProducts);
+    res.json({ purchase, purchaseProducts });
   } catch (error) {
-    console.error("Error retrieving declaration by ID:", error);
+    console.error("Error retrieving purchase:", error);
     res.status(500).send("Internal Server Error");
   }
-
 }
+
+async function updatePurchase(req, res) {
+  try {
+    const { id } = req.params;
+    const {
+      date,
+      number,
+      truckNumber,
+      transportCost,
+      eslCustomCost,
+      transitFees,
+      purchaseProducts,
+    } = req.body;
+
+    const updatedPurchase = await prisma.purchase.update({
+      where: { id: parseInt(id) },
+      data: {
+        date: new Date(date),
+        number,
+        truckNumber,
+      },
+    });
+
+    const updatedProductPurchases = await Promise.all(
+      purchaseProducts.map(async (purchaseProduct) => {
+        const updatedProductPurchase = await prisma.productPurchase.upsert({
+          where: { purchaseId: purchaseProduct.purchaseId },
+          update: {
+            purchaseQuantity: purchaseProduct.purchaseQuantity,
+            purchaseUnitPrice: purchaseProduct.purchaseUnitPrice,
+            purchaseTotal:
+              purchaseProduct.purchaseQuantity *
+              purchaseProduct.purchaseUnitPrice,
+            transportCost: purchaseProduct.transportCost,
+            eslCustomCost: purchaseProduct.eslCustomCost,
+            transitFees: purchaseProduct.transitFees,
+            purchaseUnitCostOfGoods: purchaseProduct.purchaseUnitCostOfGoods,
+          },
+          create: {
+            purchaseId: updatedPurchase.id,
+            declarationId: purchaseProduct.declarationId,
+            productId: purchaseProduct.productId,
+            purchaseQuantity: purchaseProduct.purchaseQuantity,
+            purchaseUnitPrice: purchaseProduct.purchaseUnitPrice,
+            purchaseTotal:
+              purchaseProduct.purchaseQuantity *
+              purchaseProduct.purchaseUnitPrice,
+            transportCost: purchaseProduct.transportCost,
+            eslCustomCost: purchaseProduct.eslCustomCost,
+            transitFees: purchaseProduct.transitFees,
+            purchaseUnitCostOfGoods: purchaseProduct.purchaseUnitCostOfGoods,
+          },
+        });
+        return updatedProductPurchase;
+      })
+    );
+
+    res.json({ updatedPurchase, updatedProductPurchases});
+  } catch (error) {
+    console.error("Error updating purchase:", error);
+    res.status(500).send("Internal Server Error");
+  }
+}
+
+async function deletePurchase(req, res) {
+  try {
+    const { id } = req.params;
+
+    await prisma.productPurchase.deleteMany({
+      where: { purchaseId: parseInt(id) },
+    });
+
+    await prisma.purchase.delete({
+      where: { id: parseInt(id) },
+    });
+
+    res.json({ message: "Purchase deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting purchase:", error);
+    res.status(500).send("Internal Server Error");
+  }
+}
+
 module.exports = {
   getPurchases,
   createPurchase,
-  getPurchaseById
+  getPurchaseById,
+  updatePurchase,
+  deletePurchase,
 };
