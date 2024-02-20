@@ -165,6 +165,7 @@ async function getSaleById(req, res) {
 
 module.exports = {
     getSales, 
-    createSale
+    createSale,
+    getSaleById
 
 };
