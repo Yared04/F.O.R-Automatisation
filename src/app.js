@@ -8,6 +8,7 @@ const storeRoutes = require('./routes/store/storeRoutes');
 const supplierRoutes = require('./routes/supplier/supplierRoutes');
 const declarationRoutes =  require('./routes/declaration/declarationRoutes');
 const purchaseRoutes = require('./routes/purchase/purchaseRoutes');
+const inventoryRoutes = require('./routes/inventory/inventoryRoutes');
 const saleRoutes = require('./routes/sales/salesRoutes');
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./swagger'); 
@@ -28,6 +29,7 @@ app.use('/api', declarationRoutes);
 app.use('/api', purchaseRoutes);
 app.use('/api', saleRoutes);
 app.use('/api', driverRoutes);
+app.use('/api', inventoryRoutes);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 module.exports = app;
