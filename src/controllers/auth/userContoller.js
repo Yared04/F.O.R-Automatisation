@@ -11,7 +11,11 @@ async function getUsers(req, res) {
       select: {
         id: true,
         userName: true,
-        role: true,
+        roleId: true,
+        role:{ select: {
+          id: true,
+          name: true
+        }},
       },
       skip: (page - 1) * parseInt(pageSize, 10),
       take: parseInt(pageSize, 10),
@@ -45,6 +49,18 @@ async function createUser(req, res) {
       return res.status(400).json({ error: 'Password and password confirmation do not match' });
     }
 
+    const existingUser = await prisma.user.findUnique({
+      where: {
+        userName,
+      },
+    });
+
+    if (existingUser) {
+      return res.status(400).json({ 
+        error: 'Username already exists',
+       });
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const createdUser = await prisma.user.create({
@@ -59,9 +75,6 @@ async function createUser(req, res) {
     res.json(createdUser);
   } catch (error) {
     console.error('Error creating user:', error);
-    if (error.code === 'P2002') {
-      return res.status(400).json({ error: 'Username already exists' });
-    }
     res.status(500).send('Internal Server Error');
   }
 }
