@@ -23,7 +23,6 @@ async function getInventory(req, res) {
         const sale =
           (item.saleId && (await saleController.getSale(item.saleId))) || null;
         return {
-          ...item,
           purchase: purchase,
           sale: sale,
         };
@@ -43,6 +42,33 @@ async function getInventory(req, res) {
   }
 }
 
+async function getInventoryById(req, res) {
+  try {
+    const inventoryId = req.params.id;
+    const inventoryItem = await prisma.inventory.findUnique({
+      where: { id: inventoryId },
+    });
+
+    const purchase =
+      (inventoryItem.purchaseId &&
+        (await purchaseController.getPurchase(inventoryItem.purchaseId))) ||
+      null;
+    const sale =
+      (inventoryItem.saleId &&
+        (await saleController.getSale(inventoryItem.saleId))) ||
+      null;
+
+    res.json({
+      purchase: purchase,
+      sale: sale,
+    });
+  } catch (error) {
+    console.error("Error retrieving Inventory Item:", error);
+    res.status(500).send("Internal Server Error");
+  }
+}
+
 module.exports = {
   getInventory,
+  getInventoryById,
 };

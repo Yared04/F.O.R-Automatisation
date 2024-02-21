@@ -4,5 +4,6 @@ const inventoryController = require('../../controllers/inventory/inventoryContro
 const router = express.Router();
 
 router.get('/inventory', inventoryController.getInventory);
+router.get('/inventory/:id', inventoryController.getInventoryById);
 
 module.exports = router;
