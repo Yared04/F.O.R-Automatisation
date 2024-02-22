@@ -168,16 +168,6 @@ model SaleDetail {
   updatedAt             DateTime @updatedAt @map("updated_at")
 }
 
-model Inventory {
-  id                    String   @id @default(uuid()) @db.Uuid
-  purchaseId            String        @unique @map("purchase_id") @db.Uuid
-  purchase              Purchase      @relation(fields: [purchaseId], references: [id])
-  saleId                String        @unique @map("sale_id") @db.Uuid
-  sale                  Sale   @relation(fields: [saleId], references: [id])
-  createdAt             DateTime @default(now()) @map("created_at")
-  updatedAt             DateTime @updatedAt @map("updated_at")
-}
-
 model CashOfAccount {
   id                    String   @id @default(uuid()) @db.Uuid
   name                  String
@@ -206,4 +196,17 @@ model AccountSubType {
   accountType           AccountType      @relation(fields: [accountTypeId], references: [id])
   createdAt             DateTime @default(now()) @map("created_at")
   updatedAt             DateTime @updatedAt @map("updated_at")
+}
+
+model Inventory {
+  id          String   @id @default(uuid()) @db.Uuid
+  purchaseId  String?  @map("purchase_id") @db.Uuid
+  purchase    Purchase? @relation(fields: [purchaseId], references: [id])
+  saleId      String?  @map("sale_id") @db.Uuid
+  sale        Sale?     @relation(fields: [saleId], references: [id])
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@unique([purchaseId])
+  @@unique([saleId])
 }

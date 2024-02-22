@@ -8,6 +8,7 @@ const storeRoutes = require('./routes/store/storeRoutes');
 const supplierRoutes = require('./routes/supplier/supplierRoutes');
 const declarationRoutes =  require('./routes/declaration/declarationRoutes');
 const purchaseRoutes = require('./routes/purchase/purchaseRoutes');
+const inventoryRoutes = require('./routes/inventory/inventoryRoutes');
 const saleRoutes = require('./routes/sales/salesRoutes');
 const accountTypeRoutes = require('./routes/cash-of-account/accountTypeRoutes');
 const accountSubTypeRoutes = require('./routes/cash-of-account/accountSubTypeRoutes');
@@ -34,6 +35,7 @@ app.use('/api', driverRoutes);
 app.use('/api', accountTypeRoutes);
 app.use('/api', accountSubTypeRoutes);
 app.use('/api', cashOfAccountRoutes);
+app.use('/api', inventoryRoutes);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 module.exports = app;

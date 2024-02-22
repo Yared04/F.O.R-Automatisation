@@ -1,5 +1,6 @@
 const { parse } = require("path");
 const prisma = require("../../database");
+const e = require("express");
 
 async function getPurchases(req, res) {
   try {
@@ -136,6 +137,17 @@ async function createPurchase(req, res) {
       })
     );
 
+    try {
+      await prisma.inventory.create({
+        data: {
+          purchaseId: createdPurchase.id,
+        },
+      });
+    } catch (error) {
+      console.error("Error creating inventory:", error);
+      res.status(500).send("Internal Server Error");
+    }
+
     res.json(createdPurchase);
   } catch (error) {
     console.error("Error creating purchase:", error);
@@ -143,9 +155,8 @@ async function createPurchase(req, res) {
   }
 }
 
-async function getPurchaseById(req, res) {
+async function getPurchase(id) {
   try {
-    const { id } = req.params;
     const purchase = await prisma.purchase.findUnique({
       where: {
         id: id,
@@ -193,10 +204,22 @@ async function getPurchaseById(req, res) {
       },
     });
 
-    res.json({ purchase, purchaseProducts });
+    return { purchase, purchaseProducts };
   } catch (error) {
     console.error("Error retrieving purchase:", error);
-    res.status(500).send("Internal Server Error");
+    throw new Error("Internal Server Error");
+  }
+}
+
+async function getPurchaseById(req, res) {
+  try {
+    const { id } = req.params;
+    const response = await getPurchase(id);
+
+    res.json(response);
+  } catch (error) {
+    console.error("Error: ", error);
+    res.status(500).send(error.message);
   }
 }
 
@@ -256,7 +279,7 @@ async function updatePurchase(req, res) {
       })
     );
 
-    res.json({ updatedPurchase, updatedProductPurchases});
+    res.json({ updatedPurchase, updatedProductPurchases });
   } catch (error) {
     console.error("Error updating purchase:", error);
     res.status(500).send("Internal Server Error");
@@ -288,4 +311,5 @@ module.exports = {
   getPurchaseById,
   updatePurchase,
   deletePurchase,
+  getPurchase,
 };

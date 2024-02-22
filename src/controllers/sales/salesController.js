@@ -48,46 +48,65 @@ async function createSale(req, res) {
       },
     });
 
-    const availableProducts = await prisma.productPurchase.findMany({
-      where: {
-        productId: products.productId,
-      },
-      orderBy: {
-        createdAt: "asc",
-      },
-      select: {
-        id: true,
-        purchaseQuantity: true,
-        declarationId: true,
-        purchaseId: true,
-        productId: true,
-      },
-    });
+    const saleId = createdSale.id;
+    products.map(async (product) => {
+      const availableProducts = await prisma.productPurchase.findMany({
+        where: {
+          productId: product.productId,
+        },
+        orderBy: {
+          createdAt: "asc",
+        },
+        select: {
+          id: true,
+          purchaseQuantity: true,
+          declarationId: true,
+          purchaseId: true,
+          productId: true,
+          purchaseUnitCostOfGoods: true,
+        },
+      });
 
-    const totalPurchaseQuantity = availableProducts.reduce((acc, item) => acc + item.purchaseQuantity, 0);
+      const totalPurchaseQuantity = availableProducts.reduce(
+        (acc, item) => acc + item.purchaseQuantity,
+        0
+      );
 
-    products.map(async (product)=>{
-      let remainingSaleQuantity = product.saleQuantity;
+      let remainingSaleQuantity = parseInt(product.saleQuantity);
       let productPurchaseIndex = 0;
-      if(remainingSaleQuantity > totalPurchaseQuantity){
-        res.status(400).json({message: "Not Engough Products for Sale!"});
+      if (remainingSaleQuantity > totalPurchaseQuantity) {
+        res.status(400).json({ message: "Not Engough Products for Sale!" });
         return;
       }
       while (remainingSaleQuantity > 0) {
         const productPurchase = availableProducts[productPurchaseIndex];
         if (productPurchase.purchaseQuantity >= remainingSaleQuantity) {
+          const productDeclaration = await prisma.productDeclaration.findFirst({
+            where: {
+              productId: productPurchase.productId,
+              declarationId: productPurchase.declarationId,
+            },
+            select: {
+              unitIncomeTax: true,
+            },
+          });
+
           await prisma.saleDetail.create({
             data: {
               saleQuantity: remainingSaleQuantity,
-              saleUnitPrice: product.saleUnitPrice,
-              totalSales: product.saleUnitPrice * remainingSaleQuantity,
-              unitCostOfGoods: 0,
-              purchaseId: productPurchase.purchaseId,
-              declarationId: productPurchase.declarationId,
-              productId: productPurchase.productId,
+              saleUnitPrice: parseFloat(product.saleUnitPrice),
+              totalSales:
+                parseFloat(product.saleUnitPrice) * remainingSaleQuantity,
+              unitCostOfGoods:
+                productPurchase.purchaseUnitCostOfGoods +
+                productDeclaration.unitIncomeTax,
+              purchase: { connect: { id: productPurchase.purchaseId } },
+              declaration: { connect: { id: productPurchase.declarationId } },
+              product: { connect: { id: productPurchase.productId } },
+              sale: { connect: { id: saleId } },
             },
           });
-  
+
           await prisma.productPurchase.update({
             where: {
               id: productPurchase.id,
@@ -97,38 +116,50 @@ async function createSale(req, res) {
                 productPurchase.purchaseQuantity - remainingSaleQuantity,
             },
           });
-  
+
           remainingSaleQuantity = 0;
         } else {
           await prisma.saleDetail.create({
             data: {
               saleQuantity: productPurchase.purchaseQuantity,
               saleUnitPrice: product.saleUnitPrice,
-              totalSales: product.saleUnitPrice * productPurchase.purchaseQuantity,
-              unitCostOfGoods: 0,
+              totalSales:
+                product.saleUnitPrice * productPurchase.purchaseQuantity,
+              unitCostOfGoods:
+                productPurchase.purchaseUnitCostOfGoods +
+                productDeclaration.unitIncomeTax,
               purchaseId: productPurchase.purchaseId,
               declarationId: productPurchase.declarationId,
               productId: productPurchase.productId,
               sale: { connect: { id: saleId } },
             },
           });
-  
+
           await prisma.productPurchase.update({
             where: {
               id: productPurchase.id,
             },
             data: {
-              purchaseQuantity:0,
+              purchaseQuantity: 0,
             },
           });
-  
+
           remainingSaleQuantity -= productPurchase.purchaseQuantity;
           productPurchaseIndex += 1;
         }
       }
+    });
 
-    })
-
+    try {
+      await prisma.inventory.create({
+        data: {
+          saleId: saleId,
+        },
+      });
+    } catch (error) {
+      console.error("Error creating inventory:", error);
+      res.status(500).send("Internal Server Error");
+    }
 
     res.json(createdSale);
   } catch (error) {
@@ -137,9 +168,8 @@ async function createSale(req, res) {
   }
 }
 
-async function getSaleById(req, res) {
+async function getSale(id) {
   try {
-    const { id } = req.params;
     const sale = await prisma.sale.findUnique({
       where: {
         id: id,
@@ -184,17 +214,27 @@ async function getSaleById(req, res) {
       },
     });
 
-    res.json({...sale, saleDetails});
+    return { ...sale, saleDetails };
   } catch (error) {
     console.error("Error retrieving Sale:", error);
-    res.status(500).send("Internal Server Error");
+    throw new Error("Internal Server Error");
   }
 }
 
+async function getSaleById(req, res) {
+  try {
+    const { id } = req.params;
+    const response = await getSale(id);
+    res.json(response);
+  } catch (error) {
+    console.error("Error: ", error);
+    res.status(500).send(error.message);
+  }
+}
 
 module.exports = {
-    getSales, 
-    createSale,
-    getSaleById
-
+  getSales,
+  createSale,
+  getSaleById,
+  getSale,
 };
