@@ -177,3 +177,33 @@ model Inventory {
   createdAt             DateTime @default(now()) @map("created_at")
   updatedAt             DateTime @updatedAt @map("updated_at")
 }
+
+model CashOfAccount {
+  id                    String   @id @default(uuid()) @db.Uuid
+  name                  String
+  accountTypeId         String        @map("accountType_id") @db.Uuid
+  accountType           AccountType      @relation(fields: [accountTypeId], references: [id])
+  accountSubTypeId      String        @map("accountSubType_id") @db.Uuid
+  accountSubType        AccountSubType      @relation(fields: [accountSubTypeId], references: [id])
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+}
+
+model AccountType {
+  id                    String   @id @default(uuid()) @db.Uuid
+  name                  String
+  accountSubTypes        AccountSubType[]
+  cashOfAccount        CashOfAccount[]
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+}
+
+model AccountSubType {
+  id                    String   @id @default(uuid()) @db.Uuid
+  name                  String
+  accountTypeId         String       @map("accountType_id") @db.Uuid
+  cashOfAccount        CashOfAccount[]
+  accountType           AccountType      @relation(fields: [accountTypeId], references: [id])
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+}
