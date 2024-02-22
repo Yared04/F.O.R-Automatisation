@@ -78,6 +78,7 @@ async function createSale(req, res) {
         res.status(400).json({ message: "Not Engough Products for Sale!" });
         return;
       }
+      let sale = null;
       while (remainingSaleQuantity > 0) {
         const productPurchase = availableProducts[productPurchaseIndex];
         if (productPurchase.purchaseQuantity >= remainingSaleQuantity) {
@@ -91,7 +92,7 @@ async function createSale(req, res) {
             },
           });
 
-          await prisma.saleDetail.create({
+          sale = await prisma.saleDetail.create({
             data: {
               saleQuantity: remainingSaleQuantity,
               saleUnitPrice: parseFloat(product.saleUnitPrice),
@@ -119,7 +120,7 @@ async function createSale(req, res) {
 
           remainingSaleQuantity = 0;
         } else {
-          await prisma.saleDetail.create({
+          sale = await prisma.saleDetail.create({
             data: {
               saleQuantity: productPurchase.purchaseQuantity,
               saleUnitPrice: product.saleUnitPrice,
@@ -148,18 +149,40 @@ async function createSale(req, res) {
           productPurchaseIndex += 1;
         }
       }
-    });
 
-    try {
-      await prisma.inventory.create({
-        data: {
-          saleId: saleId,
+      const inventoryEntries = await prisma.inventory.findMany({
+        where: {
+          productId: product.productId,
+        },
+        select: {
+          balanceQuantity: true,
+          purchaseId: true,
+          saleId: true,
+        },
+        orderBy: {
+          createdAt: "desc",
         },
       });
-    } catch (error) {
-      console.error("Error creating inventory:", error);
-      res.status(500).send("Internal Server Error");
-    }
+
+      let purchaseEntry = inventoryEntries.find((entry) => entry.purchaseId);
+      let saleEntry = inventoryEntries.find((entry) => entry.saleId);
+
+      try {
+        await prisma.inventory.create({
+          data: {
+            saleId: saleId,
+            saleDetailId: sale.id,
+            productId: product.productId,
+            balanceQuantity: saleEntry
+              ? saleEntry.balanceQuantity - product.saleQuantity
+              : purchaseEntry.balanceQuantity - product.saleQuantity,
+          },
+        });
+      } catch (error) {
+        console.error("Error creating inventory:", error);
+        res.status(500).send("Internal Server Error");
+      }
+    });
 
     res.json(createdSale);
   } catch (error) {
@@ -168,17 +191,8 @@ async function createSale(req, res) {
   }
 }
 
-async function getSale(id) {
+async function getSaleDetails(id) {
   try {
-    const sale = await prisma.sale.findUnique({
-      where: {
-        id: id,
-      },
-      include: {
-        customer: true,
-      },
-    });
-
     const saleDetails = await prisma.saleDetail.findMany({
       where: {
         saleId: id,
@@ -213,8 +227,45 @@ async function getSale(id) {
         },
       },
     });
+    return saleDetails;
+  } catch (error) {
+    console.error("Error retrieving Sale Details:", error);
+    throw new Error("Internal Server Error");
+  }
+}
 
-    return { ...sale, saleDetails };
+async function getSaleDetailById(id) {
+  try {
+    const saleDetail = await prisma.saleDetail.findUnique({
+      where: {
+        id: id,
+      },
+      include: {
+        product: true,
+        declaration: true,
+        purchase: true,
+      },
+    });
+
+    return saleDetail;
+  } catch (error) {
+    console.error("Error retrieving Sale Detail:", error);
+    throw new Error("Internal Server Error");
+  }
+}
+
+async function getSale(id) {
+  try {
+    const sale = await prisma.sale.findUnique({
+      where: {
+        id: id,
+      },
+      include: {
+        customer: true,
+      },
+    });
+
+    return sale;
   } catch (error) {
     console.error("Error retrieving Sale:", error);
     throw new Error("Internal Server Error");
@@ -224,8 +275,9 @@ async function getSale(id) {
 async function getSaleById(req, res) {
   try {
     const { id } = req.params;
-    const response = await getSale(id);
-    res.json(response);
+    const sale = await getSale(id);
+    const saleDetails = await getSaleDetails(id);
+    res.json({ ...sale, saleDetails });
   } catch (error) {
     console.error("Error: ", error);
     res.status(500).send(error.message);
@@ -237,4 +289,6 @@ module.exports = {
   createSale,
   getSaleById,
   getSale,
+  getSaleDetails,
+  getSaleDetailById,
 };

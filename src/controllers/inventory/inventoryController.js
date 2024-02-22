@@ -8,6 +8,13 @@ async function getInventory(req, res) {
     const totalCount = await prisma.inventory.count();
 
     const inventory = await prisma.inventory.findMany({
+      select: {
+        balanceQuantity: true,
+        purchaseId: true,
+        saleId: true,
+        productPurchaseId: true,
+        saleDetailId: true,
+      },
       skip: (page - 1) * parseInt(pageSize, 10),
       take: parseInt(pageSize, 10),
     });
@@ -20,10 +27,24 @@ async function getInventory(req, res) {
           (item.purchaseId &&
             (await purchaseController.getPurchase(item.purchaseId))) ||
           null;
+        const productPurchase =
+          (item.productPurchaseId &&
+            (await purchaseController.getProductPurchaseById(
+              item.productPurchaseId
+            ))) ||
+          null;
         const sale =
           (item.saleId && (await saleController.getSale(item.saleId))) || null;
+        const saleDetail =
+          (item.saleDetailId &&
+            (await saleController.getSaleDetailById(item.saleDetailId))) ||
+          null;
+
         return {
+          ...item,
           purchase: purchase,
+          productPurchase: productPurchase,
+          saleDetail: saleDetail,
           sale: sale,
         };
       })

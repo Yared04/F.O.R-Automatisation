@@ -133,20 +133,54 @@ async function createPurchase(req, res) {
               productPurchase.purchaseUnitPrice,
           },
         });
+        const inventoryEntries = await prisma.inventory.findMany({
+          where: {
+            productId: productPurchase.productId,
+          },
+          select: {
+            balanceQuantity: true,
+            purchaseId: true,
+            saleId: true,
+          },
+          orderBy: {
+            createdAt: "desc",
+          },
+        });
+
+        let purchaseEntry = inventoryEntries.find((entry) => entry.purchaseId);
+        let saleEntry = inventoryEntries.find((entry) => entry.saleId);
+        try {
+          await prisma.inventory.create({
+            data: {
+              purchase: {
+                connect: {
+                  id: productPurchase.purchaseId,
+                },
+              },
+              productPurchase: {
+                connect: {
+                  id: productPurchase.id,
+                },
+              },
+              product: {
+                connect: {
+                  id: productPurchase.productId,
+                },
+              },
+              balanceQuantity: saleEntry
+                ? saleEntry.balanceQuantity + productPurchase.purchaseQuantity
+                : purchaseEntry.balanceQuantity +
+                  productPurchase.purchaseQuantity,
+            },
+          });
+        } catch (error) {
+          console.error("Error creating inventory:", error);
+          res.status(500).send("Internal Server Error");
+        }
+
         return updatedProductPurchase;
       })
     );
-
-    try {
-      await prisma.inventory.create({
-        data: {
-          purchaseId: createdPurchase.id,
-        },
-      });
-    } catch (error) {
-      console.error("Error creating inventory:", error);
-      res.status(500).send("Internal Server Error");
-    }
 
     res.json(createdPurchase);
   } catch (error) {
@@ -173,7 +207,55 @@ async function getPurchase(id) {
       return res.status(404).json({ error: "Purchase not found" });
     }
 
-    const purchaseProducts = await prisma.productPurchase.findMany({
+    return purchase;
+  } catch (error) {
+    console.error("Error retrieving purchase:", error);
+    throw new Error("Internal Server Error");
+  }
+}
+
+async function getProductPurchaseById(id) {
+  try {
+    const productPurchase = await prisma.productPurchase.findUnique({
+      where: {
+        id: id,
+      },
+      select: {
+        id: true,
+        purchaseQuantity: true,
+        purchaseUnitPrice: true,
+        purchaseTotal: true,
+        transportCost: true,
+        eslCustomCost: true,
+        transitFees: true,
+        purchaseUnitCostOfGoods: true,
+        product: {
+          select: {
+            id: true,
+            name: true,
+            category: true,
+            unitOfMeasurement: true,
+          },
+        },
+        declaration: {
+          select: {
+            id: true,
+            number: true,
+            date: true,
+          },
+        },
+      },
+    });
+    return productPurchase;
+  } catch (error) {
+    console.error("Error retrieving product purchase:", error);
+    throw new Error("Internal Server Error");
+  }
+}
+
+async function getProductPurchases(id) {
+  try {
+    const productPurchases = await prisma.productPurchase.findMany({
       where: {
         purchaseId: id,
       },
@@ -203,10 +285,9 @@ async function getPurchase(id) {
         },
       },
     });
-
-    return { purchase, purchaseProducts };
+    return productPurchases;
   } catch (error) {
-    console.error("Error retrieving purchase:", error);
+    console.error("Error retrieving product purchase:", error);
     throw new Error("Internal Server Error");
   }
 }
@@ -214,9 +295,10 @@ async function getPurchase(id) {
 async function getPurchaseById(req, res) {
   try {
     const { id } = req.params;
-    const response = await getPurchase(id);
+    const purchase = await getPurchase(id);
+    const productPurchases = await getProductPurchases(id);
 
-    res.json(response);
+    res.json({ ...purchase, productPurchases });
   } catch (error) {
     console.error("Error: ", error);
     res.status(500).send(error.message);
@@ -312,4 +394,6 @@ module.exports = {
   updatePurchase,
   deletePurchase,
   getPurchase,
+  getProductPurchases,
+  getProductPurchaseById,
 };
