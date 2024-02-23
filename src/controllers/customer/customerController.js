@@ -41,6 +41,15 @@ async function createCustomer(req, res) {
   try {
     const { firstName, middleName, lastName, tinNumber, phone, address } = req.body;
 
+    const existingTinNumber = await prisma.customer.findFirst({
+      where: {tinNumber : tinNumber}
+    })
+
+    if(existingTinNumber){
+      return res.status(400).json({ 
+        error: 'This tin number is already registered for another user.',
+       });
+    }
     const createdcustomer = await prisma.customer.create({
       data: {
         firstName: firstName,
