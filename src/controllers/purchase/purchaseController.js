@@ -77,7 +77,6 @@ async function createPurchase(req, res) {
 
         const currentDeclaration = await prisma.productDeclaration.findFirst({
           where: {
-            // Filter by productId and declarationId using nested filtering
             AND: [
               { productId: purchaseProduct.productId },
               { declarationId: purchaseProduct.declarationId },
@@ -86,10 +85,12 @@ async function createPurchase(req, res) {
         });
 
         if (!currentDeclaration) {
-          throw new Error("Declaration not found");
+          return res
+            .status(404)
+            .json({ error: `Declaration for product not found` });
         }
 
-        const updatedDeclaration = await prisma.productDeclaration.update({
+        await prisma.productDeclaration.update({
           where: {
             id: currentDeclaration.id,
           },
@@ -210,7 +211,7 @@ async function getPurchase(id) {
     return purchase;
   } catch (error) {
     console.error("Error retrieving purchase:", error);
-    throw new Error("Internal Server Error");
+    return res.status(500).send("Internal Server Error");
   }
 }
 
@@ -249,7 +250,7 @@ async function getProductPurchaseById(id) {
     return productPurchase;
   } catch (error) {
     console.error("Error retrieving product purchase:", error);
-    throw new Error("Internal Server Error");
+    return res.status(500).send("Internal Server Error");
   }
 }
 
@@ -288,7 +289,7 @@ async function getProductPurchases(id) {
     return productPurchases;
   } catch (error) {
     console.error("Error retrieving product purchase:", error);
-    throw new Error("Internal Server Error");
+    return res.status(500).send("Internal Server Error");
   }
 }
 
