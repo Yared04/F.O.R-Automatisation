@@ -164,14 +164,32 @@ async function login(req, res) {
     }
 
     const accessToken = jwtUtils.generateToken(user);
+    const refreshToken = jwtUtils.generateRefreshToken(user);
 
-    res.json({ accessToken, user });
+    res.json({ accessToken, refreshToken, user });
   } catch (error) {
     console.error('Error logging in:', error);
     res.status(500).send('Internal Server Error');
   }
 }
+async function refreshToken(req, res) {
+  try {
+    const { refreshToken } = req.body;
 
+    if (!refreshToken) {
+      return res.status(400).json({ error: 'Refresh token is required' });
+    }
+
+    const decoded = jwt.verify(refreshToken, jwtUtils.getSecretKey());
+
+    const newAccessToken = jwtUtils.generateToken(decoded.user);
+
+    res.json({ accessToken: newAccessToken });
+  } catch (error) {
+    console.error('Error refreshing token:', error);
+    res.status(401).json({ error: 'Invalid refresh token' });
+  }
+}
 module.exports = {
   getUsers,
   createUser,
@@ -179,4 +197,5 @@ module.exports = {
   deleteUser,
   getUserById,
   login,
+  refreshToken
 };

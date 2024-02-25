@@ -15,6 +15,21 @@ function generateToken(user) {
   return jwt.sign(payload, jwtSecret, options);
 }
 
+function generateRefreshToken(user) {
+  const payload = {
+    userId: user.id,
+    userName: user.userName,
+    roleId: user.roleId,
+  };
+
+  const options = {
+    expiresIn: '2d',
+  };
+
+  return jwt.sign(payload, jwtSecret, options);
+}
+
+
 function getSecretKey(){
   return jwtSecret;
 }
@@ -22,4 +37,5 @@ function getSecretKey(){
 module.exports = {
   generateToken,
   getSecretKey,
+  generateRefreshToken
 };

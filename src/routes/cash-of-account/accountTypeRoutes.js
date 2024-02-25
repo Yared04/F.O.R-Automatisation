@@ -4,10 +4,10 @@ const authenticate = require('../../middlewares/authenticate')
 
 const router = express.Router();
 
-router.post('/account-types', accountTypeController.createAccountType);
-router.get('/account-types', accountTypeController.getAllAccountTypes);
-router.get('/account-types/:id', accountTypeController.getAccountTypeById);
-router.put('/account-types/:id', accountTypeController.updateAccountType);
-router.delete('/account-types/:id', accountTypeController.deleteAccountType);
+router.post('/account-types', authenticate, accountTypeController.createAccountType);
+router.get('/account-types', authenticate, accountTypeController.getAllAccountTypes);
+router.get('/account-types/:id', authenticate, accountTypeController.getAccountTypeById);
+router.put('/account-types/:id', authenticate, accountTypeController.updateAccountType);
+router.delete('/account-types/:id', authenticate, accountTypeController.deleteAccountType);
 
 module.exports = router;

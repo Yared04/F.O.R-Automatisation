@@ -11,5 +11,6 @@ router.put('/users/:id', authenticate, userController.updateUser);
 router.delete('/users/:id', authenticate, userController.deleteUser);
 
 router.post('/login', userController.login);
+router.post('/refresh', userController.refreshToken);
 
 module.exports = router;
