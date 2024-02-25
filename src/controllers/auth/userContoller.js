@@ -1,6 +1,7 @@
 const bcrypt = require('bcrypt');
 const jwtUtils = require('../../services/jwtUtils');
 const prisma = require('../../database');
+const jwt = require('jsonwebtoken');
 
 async function getUsers(req, res) {
   try {
@@ -182,7 +183,8 @@ async function refreshToken(req, res) {
 
     const decoded = jwt.verify(refreshToken, jwtUtils.getSecretKey());
 
-    const newAccessToken = jwtUtils.generateToken(decoded.user);
+    const newAccessToken = jwtUtils.generateToken({id: decoded.id,
+      userName:decoded.userName, roleId: decoded.roleId});
 
     res.json({ accessToken: newAccessToken });
   } catch (error) {
