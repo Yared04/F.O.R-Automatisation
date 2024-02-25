@@ -230,7 +230,7 @@ async function getSaleDetails(id) {
     return saleDetails;
   } catch (error) {
     console.error("Error retrieving Sale Details:", error);
-    throw new Error("Internal Server Error");
+    return res.status(500).send("Internal Server Error");
   }
 }
 
@@ -250,7 +250,7 @@ async function getSaleDetailById(id) {
     return saleDetail;
   } catch (error) {
     console.error("Error retrieving Sale Detail:", error);
-    throw new Error("Internal Server Error");
+    return res.status(500).send("Internal Server Error");
   }
 }
 
@@ -268,7 +268,7 @@ async function getSale(id) {
     return sale;
   } catch (error) {
     console.error("Error retrieving Sale:", error);
-    throw new Error("Internal Server Error");
+    return res.status(500).send("Internal Server Error");
   }
 }
 
