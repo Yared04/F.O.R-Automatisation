@@ -223,7 +223,7 @@ model Inventory {
 }
 
 model CATransaction {
-  id          String   @id @default(uuid()) @db.Uuid
+  id                 String   @id @default(uuid()) @db.Uuid
   chartofAccountId   String  @map("chart_of_account_id") @db.Uuid
   chartofAccount     ChartOfAccount  @relation(fields: [chartofAccountId], references: [id])
   purchaseId         String?  @map("purchase_id") @db.Uuid
@@ -232,8 +232,8 @@ model CATransaction {
   sale               Sale?     @relation(fields: [saleId], references: [id])
   date               DateTime
   remark             String?
-  credit             Float
-  debit              Float
+  credit             Float?
+  debit              Float?
   accountDetails     String?
   createdAt         DateTime  @default(now()) @map("created_at")
   updatedAt          DateTime  @updatedAt @map("updated_at")

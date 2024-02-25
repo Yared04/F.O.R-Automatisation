@@ -15,6 +15,9 @@ async function getInventory(req, res) {
         productPurchaseId: true,
         saleDetailId: true,
       },
+      orderBy: {
+        createdAt: "desc",
+      },
       skip: (page - 1) * parseInt(pageSize, 10),
       take: parseInt(pageSize, 10),
     });
