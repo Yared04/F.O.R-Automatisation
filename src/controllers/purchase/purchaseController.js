@@ -1,6 +1,9 @@
 const { parse } = require("path");
 const prisma = require("../../database");
 const e = require("express");
+const {
+  createTransaction,
+} = require("../caTransaction/caTransactionController");
 
 async function getPurchases(req, res) {
   try {
@@ -179,6 +182,18 @@ async function createPurchase(req, res) {
           res.status(500).send("Internal Server Error");
         }
 
+        const transaction = await createTransaction(
+          "a0fc9f57-7a97-49d7-8b43-2a1f4d54669d",
+          "9145a724-1650-4416-bbcf-f1e1ac3619e5",
+          new Date(date),
+          `Purchase`,
+          productPurchase.purchaseTotal,
+          null,
+          productPurchase.purchaseId,
+          null,
+          null
+        );
+
         return updatedProductPurchase;
       })
     );
@@ -205,13 +220,13 @@ async function getPurchase(id) {
     });
 
     if (!purchase) {
-      return res.status(404).json({ error: "Purchase not found" });
+      return { error: "Purchase not found" };
     }
 
     return purchase;
   } catch (error) {
     console.error("Error retrieving purchase:", error);
-    return res.status(500).send("Internal Server Error");
+    return { error: "Internal Server Error" };
   }
 }
 
@@ -250,7 +265,7 @@ async function getProductPurchaseById(id) {
     return productPurchase;
   } catch (error) {
     console.error("Error retrieving product purchase:", error);
-    return res.status(500).send("Internal Server Error");
+    return { error: "Internal Server Error" };
   }
 }
 
@@ -289,7 +304,7 @@ async function getProductPurchases(id) {
     return productPurchases;
   } catch (error) {
     console.error("Error retrieving product purchase:", error);
-    return res.status(500).send("Internal Server Error");
+    return { error: "Internal Server Error" };
   }
 }
 

@@ -1,4 +1,7 @@
 const prisma = require("../../database");
+const {
+  createTransaction,
+} = require("../caTransaction/caTransactionController");
 
 async function getSales(req, res) {
   try {
@@ -81,17 +84,16 @@ async function createSale(req, res) {
       let sale = null;
       while (remainingSaleQuantity > 0) {
         const productPurchase = availableProducts[productPurchaseIndex];
+        const productDeclaration = await prisma.productDeclaration.findFirst({
+          where: {
+            productId: productPurchase.productId,
+            declarationId: productPurchase.declarationId,
+          },
+          select: {
+            unitIncomeTax: true,
+          },
+        });
         if (productPurchase.purchaseQuantity >= remainingSaleQuantity) {
-          const productDeclaration = await prisma.productDeclaration.findFirst({
-            where: {
-              productId: productPurchase.productId,
-              declarationId: productPurchase.declarationId,
-            },
-            select: {
-              unitIncomeTax: true,
-            },
-          });
-
           sale = await prisma.saleDetail.create({
             data: {
               saleQuantity: remainingSaleQuantity,
@@ -123,15 +125,15 @@ async function createSale(req, res) {
           sale = await prisma.saleDetail.create({
             data: {
               saleQuantity: productPurchase.purchaseQuantity,
-              saleUnitPrice: product.saleUnitPrice,
+              saleUnitPrice: parseFloat(product.saleUnitPrice),
               totalSales:
                 product.saleUnitPrice * productPurchase.purchaseQuantity,
               unitCostOfGoods:
                 productPurchase.purchaseUnitCostOfGoods +
                 productDeclaration.unitIncomeTax,
-              purchaseId: productPurchase.purchaseId,
-              declarationId: productPurchase.declarationId,
-              productId: productPurchase.productId,
+              purchase: { connect: { id: productPurchase.purchaseId } },
+              declaration: { connect: { id: productPurchase.declarationId } },
+              product: { connect: { id: productPurchase.productId } },
               sale: { connect: { id: saleId } },
             },
           });
@@ -182,6 +184,30 @@ async function createSale(req, res) {
         console.error("Error creating inventory:", error);
         res.status(500).send("Internal Server Error");
       }
+
+      const transaction = await createTransaction(
+        "6827d1d2-4706-46f5-bd07-4586c27088a0",
+        "6e57436a-8c19-426a-a260-f8fc5e6de0e1",
+        new Date(invoiceDate),
+        `sale`,
+        null,
+        product.saleQuantity,
+        null,
+        createdSale.id,
+        null
+      );
+
+      const transaction2 = await createTransaction(
+        "e89567ac-44f0-4b45-810d-9e66c1294bc0",
+        "a0fc9f57-7a97-49d7-8b43-2a1f4d54669d",
+        new Date(invoiceDate),
+        `sale`,
+        product.saleQuantity * sale.unitCostOfGoods,
+        null,
+        null,
+        createdSale.id,
+        null
+      );
     });
 
     res.json(createdSale);
