@@ -3,8 +3,11 @@ const caTransactionController = require("../../controllers/caTransaction/caTrans
 
 const router = express.Router();
 
-router.get("/caTransactions", caTransactionController.getCaTransactions);
-router.post("/caTransactions", caTransactionController.createCaTransaction);
-router.get("/caTransactions/:id", caTransactionController.getCaTransactionById);
+router.get("/ca-transactions", caTransactionController.getCaTransactions);
+router.post("/ca-transactions", caTransactionController.createCaTransaction);
+router.get(
+  "/ca-transactions/:id",
+  caTransactionController.getCaTransactionById
+);
 
 module.exports = router;
