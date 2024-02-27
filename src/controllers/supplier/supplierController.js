@@ -69,11 +69,11 @@ async function deleteSupplier(req, res) {
     try {
         const SupplierId = req.params.id;
     
-        await prisma.supplier.delete({
+        const deletedSupplier = await prisma.supplier.delete({
         where: { id: SupplierId },
         });
     
-        res.json({ message: 'Supplier deleted successfully' });
+        res.json(deletedSupplier);
     } catch (error) {
         console.error('Error deleting Supplier:', error);
         res.status(500).send('Internal Server Error');

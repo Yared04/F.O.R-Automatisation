@@ -106,13 +106,13 @@ async function deleteProduct(req, res) {
   try {
     const { id } = req.params;
 
-    await prisma.product.delete({
+    const deletedProduct = await prisma.product.delete({
       where: {
         id: id,
       },
     });
 
-    res.send("Product deleted");
+    res.send(deletedProduct);
   } catch (error) {
     console.error("Error deleting product:", error);
     res.status(500).send("Internal Server Error");

@@ -71,11 +71,11 @@ async function deleteStore(req, res) {
     try {
         const storeId = req.params.id;
     
-        await prisma.store.delete({
+        const deletedStore = await prisma.store.delete({
         where: { id: storeId },
         });
     
-        res.json({ message: 'Store deleted successfully' });
+        res.json(deletedStore);
     } catch (error) {
         console.error('Error deleting store:', error);
         res.status(500).send('Internal Server Error');

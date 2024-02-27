@@ -110,7 +110,7 @@ async function updateUser(req, res) {
 
 async function deleteUser(req, res) {
   try {
-    const userId = parseInt(req.params.id);
+    const userId = req.params.id;
 
     const deletedUser = await prisma.user.delete({
       where: { id: userId },
