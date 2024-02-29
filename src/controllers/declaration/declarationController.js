@@ -181,7 +181,6 @@ async function updateDeclaration(req, res) {
             declarationId: id,
             declarationBalance: 0,
             purchasedQuantity: 0,
-
           },
         });
         return updatedDeclarationProduct;

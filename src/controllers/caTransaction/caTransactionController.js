@@ -102,7 +102,7 @@ async function createTransaction(
   try {
     let createdCaTransaction1;
     let createdCaTransaction2;
-    if (parseFloat(debit) !== 0 && parseFloat(credit) !== 0) {
+    if (debit && credit) {
       createdCaTransaction1 = await prisma.CATransaction.create({
         data: {
           chartofAccount: {

@@ -151,8 +151,37 @@ async function createSale(req, res) {
           productPurchaseIndex += 1;
         }
       }
+      let inventoryEntries;
+      inventoryEntries = await prisma.inventory.findMany({
+        where: {
+          productId: product.productId,
+        },
+      });
 
-      const inventoryEntries = await prisma.inventory.findMany({
+      if (!inventoryEntries.length) {
+        await prisma.inventory.create({
+          data: {
+            sale: {
+              connect: {
+                id: saleId,
+              },
+            },
+            saleDetail: {
+              connect: {
+                id: sale.id,
+              },
+            },
+            product: {
+              connect: {
+                id: product.productId,
+              },
+            },
+            balanceQuantity: product.saleQuantity,
+          },
+        });
+      }
+
+      inventoryEntries = await prisma.inventory.findMany({
         where: {
           productId: product.productId,
         },
@@ -172,9 +201,21 @@ async function createSale(req, res) {
       try {
         await prisma.inventory.create({
           data: {
-            saleId: saleId,
-            saleDetailId: sale.id,
-            productId: product.productId,
+            sale: {
+              connect: {
+                id: saleId,
+              },
+            },
+            saleDetail: {
+              connect: {
+                id: sale.id,
+              },
+            },
+            product: {
+              connect: {
+                id: product.productId,
+              },
+            },
             balanceQuantity: saleEntry
               ? saleEntry.balanceQuantity - product.saleQuantity
               : purchaseEntry.balanceQuantity - product.saleQuantity,

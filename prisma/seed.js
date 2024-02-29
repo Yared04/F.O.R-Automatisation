@@ -748,7 +748,6 @@ const CAFullName = [
   },
 ];
 
-
 async function seedAccountTypes() {
   const createdAccountTypes = [];
   for (const accountType of accountTypes) {

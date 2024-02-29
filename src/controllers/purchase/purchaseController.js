@@ -137,7 +137,37 @@ async function createPurchase(req, res) {
               productPurchase.purchaseUnitPrice,
           },
         });
-        const inventoryEntries = await prisma.inventory.findMany({
+        let inventoryEntries;
+        inventoryEntries = await prisma.inventory.findMany({
+          where: {
+            productId: productPurchase.productId,
+          },
+        });
+
+        if (!inventoryEntries.length) {
+          await prisma.inventory.create({
+            data: {
+              purchase: {
+                connect: {
+                  id: productPurchase.purchaseId,
+                },
+              },
+              productPurchase: {
+                connect: {
+                  id: productPurchase.id,
+                },
+              },
+              product: {
+                connect: {
+                  id: productPurchase.productId,
+                },
+              },
+              balanceQuantity: productPurchase.purchaseQuantity,
+            },
+          });
+        }
+
+        inventoryEntries = await prisma.inventory.findMany({
           where: {
             productId: productPurchase.productId,
           },
@@ -182,7 +212,7 @@ async function createPurchase(req, res) {
           res.status(500).send("Internal Server Error");
         }
 
-        const transaction = await createTransaction(
+        await createTransaction(
           "a0fc9f57-7a97-49d7-8b43-2a1f4d54669d",
           "9145a724-1650-4416-bbcf-f1e1ac3619e5",
           new Date(date),
