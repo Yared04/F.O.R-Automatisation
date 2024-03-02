@@ -115,7 +115,6 @@ async function createDeclaration(req, res) {
             totalIncomeTax: parseInt(dp.totalIncomeTax),
             unitIncomeTax: dp.totalIncomeTax / dp.declarationQuantity,
             purchasedQuantity: 0,
-            declarationBalance: 0,
             product: { connect: { id: dp.productId } },
             declaration: { connect: { id: createdDeclaration.id } },
           },

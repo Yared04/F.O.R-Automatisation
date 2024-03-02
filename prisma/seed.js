@@ -807,11 +807,11 @@ const seedUser = async (roleId) => {
 
 async function main() {
   try {
+    await seedAccountTypes();
+    await seedAccountSubTypes();
     await seedChartOfAccounts();
-    // await seedAccountTypes();
-    // await seedAccountSubTypes();
-    // const createdRoles = await seedRoles();
-    // await seedUser(createdRoles[0].id);
+    const createdRoles = await seedRoles();
+    await seedUser(createdRoles[0].id);
     console.log("Seeded successfully.");
   } catch (error) {
     console.error("Error while seeding:", error);

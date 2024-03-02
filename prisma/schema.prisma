@@ -81,7 +81,7 @@ model ProductDeclaration {
   declarationQuantity  Int
   totalIncomeTax       Float
   unitIncomeTax        Float
-  declarationBalance   Float
+  declarationBalance   Float?
   purchasedQuantity    Int
   productId            String   @map("product_id") @db.Uuid
   product              Product  @relation(fields: [productId], references: [id])
