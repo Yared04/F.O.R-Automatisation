@@ -14,6 +14,7 @@ const accountTypeRoutes = require("./routes/cash-of-account/accountTypeRoutes");
 const accountSubTypeRoutes = require("./routes/cash-of-account/accountSubTypeRoutes");
 const cashOfAccountRoutes = require("./routes/cash-of-account/cashOfAccountRoutes");
 const caTransactionRoutes = require("./routes/caTransaction/caTransactionRoutes");
+const dashboardRoutes = require("./routes/dashboard/dashboardRoutes");
 const swaggerUi = require("swagger-ui-express");
 const swaggerSpec = require("./swagger");
 const cors = require("cors");
@@ -37,6 +38,7 @@ app.use("/api", accountSubTypeRoutes);
 app.use("/api", cashOfAccountRoutes);
 app.use("/api", inventoryRoutes);
 app.use("/api", caTransactionRoutes);
+app.use("/api", dashboardRoutes);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 module.exports = app;

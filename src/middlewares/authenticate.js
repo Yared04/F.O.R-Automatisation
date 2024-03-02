@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const jwtUtils = require('../services/jwtUtils');
-
+const { jwtSecret } = require('../config');
 async function authenticate(req, res, next) {
   const authHeader = req.header('Authorization');
 
@@ -15,10 +15,9 @@ async function authenticate(req, res, next) {
   }
 
   try {
-    const decoded = jwt.verify(token, jwtUtils.getSecretKey());
+    const decoded = jwt.verify(token, jwtSecret);
 
     req.user = decoded;
-
     next();
   } catch (error) {
     return res.status(401).json({ error: 'Unauthorized - Invalid token' });
