@@ -44,8 +44,10 @@ async function getCaTransactions(req, res) {
           if (currentProductPurchases) {
             purchaseNumber = currentPurchase.number;
             declarationNumbers = [
-              currentProductPurchases.map(
-                (productPurchase) => productPurchase.declaration.number
+              ...new Set(
+                currentProductPurchases.map(
+                  (productPurchase) => productPurchase.declaration.number
+                )
               ),
             ];
             updatedCATransaction = {
@@ -102,7 +104,7 @@ async function createTransaction(
   try {
     let createdCaTransaction1;
     let createdCaTransaction2;
-    if (parseFloat(debit) !== 0 && parseFloat(credit) !== 0) {
+    if (debit && credit) {
       createdCaTransaction1 = await prisma.CATransaction.create({
         data: {
           chartofAccount: {
