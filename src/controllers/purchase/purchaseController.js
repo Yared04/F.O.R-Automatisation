@@ -1,6 +1,4 @@
-const { parse } = require("path");
 const prisma = require("../../database");
-const e = require("express");
 const {
   createTransaction,
 } = require("../caTransaction/caTransactionController");
@@ -137,92 +135,122 @@ async function createPurchase(req, res) {
               productPurchase.purchaseUnitPrice,
           },
         });
+        //check if the product has invetory entries
         let inventoryEntries;
-        inventoryEntries = await prisma.inventory.findMany({
-          where: {
-            productId: productPurchase.productId,
-          },
-        });
-
-        if (!inventoryEntries.length) {
-          await prisma.inventory.create({
-            data: {
-              purchase: {
-                connect: {
-                  id: productPurchase.purchaseId,
-                },
-              },
-              productPurchase: {
-                connect: {
-                  id: productPurchase.id,
-                },
-              },
-              product: {
-                connect: {
-                  id: productPurchase.productId,
-                },
-              },
-              balanceQuantity: productPurchase.purchaseQuantity,
-            },
-          });
-        }
-
-        inventoryEntries = await prisma.inventory.findMany({
-          where: {
-            productId: productPurchase.productId,
-          },
-          select: {
-            balanceQuantity: true,
-            purchaseId: true,
-            saleId: true,
-          },
-          orderBy: {
-            createdAt: "desc",
-          },
-        });
-
-        let purchaseEntry = inventoryEntries.find((entry) => entry.purchaseId);
-        let saleEntry = inventoryEntries.find((entry) => entry.saleId);
         try {
-          await prisma.inventory.create({
-            data: {
-              purchase: {
-                connect: {
-                  id: productPurchase.purchaseId,
-                },
-              },
-              productPurchase: {
-                connect: {
-                  id: productPurchase.id,
-                },
-              },
-              product: {
-                connect: {
-                  id: productPurchase.productId,
-                },
-              },
-              balanceQuantity: saleEntry
-                ? saleEntry.balanceQuantity + productPurchase.purchaseQuantity
-                : purchaseEntry.balanceQuantity +
-                  productPurchase.purchaseQuantity,
+          inventoryEntries = await prisma.inventory.findMany({
+            where: {
+              productId: productPurchase.productId,
             },
           });
         } catch (error) {
-          console.error("Error creating inventory:", error);
-          res.status(500).send("Internal Server Error");
+          console.error("Error retrieving inventory:", error);
+          throw new Error("Internal Server Error");
+        }
+        //if the product has no inventory entries, create one
+        let isNewEntry = false;
+        if (!inventoryEntries.length) {
+          try {
+            await prisma.inventory.create({
+              data: {
+                purchase: {
+                  connect: {
+                    id: productPurchase.purchaseId,
+                  },
+                },
+                productPurchase: {
+                  connect: {
+                    id: productPurchase.id,
+                  },
+                },
+                product: {
+                  connect: {
+                    id: productPurchase.productId,
+                  },
+                },
+                balanceQuantity: productPurchase.purchaseQuantity,
+              },
+            });
+            isNewEntry = true;
+          } catch (error) {
+            console.error("Error creating inventory:", error);
+            throw new Error("Internal Server Error");
+          }
         }
 
-        await createTransaction(
-          "a0fc9f57-7a97-49d7-8b43-2a1f4d54669d",
-          "9145a724-1650-4416-bbcf-f1e1ac3619e5",
-          new Date(date),
-          `Purchase`,
-          productPurchase.purchaseTotal,
-          null,
-          productPurchase.purchaseId,
-          null,
-          null
-        );
+        //get the existing inventory entries to update the balance quantity
+        try {
+          inventoryEntries = await prisma.inventory.findMany({
+            where: {
+              productId: productPurchase.productId,
+            },
+            select: {
+              balanceQuantity: true,
+              purchaseId: true,
+              saleId: true,
+            },
+            orderBy: {
+              createdAt: "desc",
+            },
+          });
+        } catch (error) {
+          console.error("Error retrieving inventory:", error);
+          throw new Error("Internal Server Error");
+        }
+
+        //get the last purchase and sale entries
+        let purchaseEntry = inventoryEntries.find((entry) => entry.purchaseId);
+        let saleEntry = inventoryEntries.find((entry) => entry.saleId);
+
+        //create a new inventory entry
+        if (!isNewEntry) {
+          try {
+            await prisma.inventory.create({
+              data: {
+                purchase: {
+                  connect: {
+                    id: productPurchase.purchaseId,
+                  },
+                },
+                productPurchase: {
+                  connect: {
+                    id: productPurchase.id,
+                  },
+                },
+                product: {
+                  connect: {
+                    id: productPurchase.productId,
+                  },
+                },
+                balanceQuantity: saleEntry
+                  ? saleEntry.balanceQuantity + productPurchase.purchaseQuantity
+                  : purchaseEntry.balanceQuantity +
+                    productPurchase.purchaseQuantity,
+              },
+            });
+          } catch (error) {
+            console.error("Error creating inventory:", error);
+            throw new Error("Internal Server Error");
+          }
+        }
+
+        //create a transaction entry for the purchase
+        try {
+          await createTransaction(
+            "a0fc9f57-7a97-49d7-8b43-2a1f4d54669d",
+            "9145a724-1650-4416-bbcf-f1e1ac3619e5",
+            new Date(date),
+            `Purchase`,
+            productPurchase.purchaseTotal,
+            null,
+            productPurchase.purchaseId,
+            null,
+            null
+          );
+        } catch (error) {
+          console.error("Error creating transaction:", error);
+          throw new Error("Internal Server Error");
+        }
 
         return updatedProductPurchase;
       })

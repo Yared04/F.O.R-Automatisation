@@ -44,8 +44,10 @@ async function getCaTransactions(req, res) {
           if (currentProductPurchases) {
             purchaseNumber = currentPurchase.number;
             declarationNumbers = [
-              currentProductPurchases.map(
-                (productPurchase) => productPurchase.declaration.number
+              ...new Set(
+                currentProductPurchases.map(
+                  (productPurchase) => productPurchase.declaration.number
+                )
               ),
             ];
             updatedCATransaction = {

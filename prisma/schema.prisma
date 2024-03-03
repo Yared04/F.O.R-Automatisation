@@ -211,7 +211,7 @@ model Inventory {
   productPurchaseId  String?  @map("product_purchase_id") @db.Uuid
   productPurchase    ProductPurchase? @relation(fields: [productPurchaseId], references:[id])
   saleDetailId       String?  @map("sale_detail_id") @db.Uuid
-  SaleDetail         SaleDetail? @relation(fields: [saleDetailId], references:[id])
+  saleDetail         SaleDetail? @relation(fields: [saleDetailId], references:[id])
   saleId      String?   @map("sale_id") @db.Uuid
   sale        Sale?     @relation(fields: [saleId], references: [id])
   productId   String    @map("product_id") @db.Uuid
