@@ -233,12 +233,28 @@ async function createPurchase(req, res) {
             throw new Error("Internal Server Error");
           }
         }
+        let chartOfAccounts = [];
+        try {
+          chartOfAccounts = await prisma.chartOfAccount.findMany({
+            select: { id: true, name: true },
+          });
+        } catch {
+          throw new Error("Error fetching Chart of Accounts");
+        }
+
+        const accountsPayable = chartOfAccounts.find(
+          (account) => account.name === "Accounts Payable (A/P) - USD"
+        );
+
+        const inventoryAsset = chartOfAccounts.find(
+          (account) => account.name === "Inventory Asset"
+        );
 
         //create a transaction entry for the purchase
         try {
           await createTransaction(
-            "a0fc9f57-7a97-49d7-8b43-2a1f4d54669d",
-            "9145a724-1650-4416-bbcf-f1e1ac3619e5",
+            inventoryAsset.id,
+            accountsPayable.id,
             new Date(date),
             `Purchase`,
             productPurchase.purchaseTotal,
