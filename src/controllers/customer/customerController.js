@@ -39,7 +39,7 @@ async function getCustomers(req, res) {
 
 async function createCustomer(req, res) {
   try {
-    const { firstName, middleName, lastName, tinNumber, phone, address } = req.body;
+    const { firstName, lastName, tinNumber, phone, address } = req.body;
 
     const existingTinNumber = await prisma.customer.findFirst({
       where: {tinNumber : tinNumber}
@@ -53,7 +53,6 @@ async function createCustomer(req, res) {
     const createdcustomer = await prisma.customer.create({
       data: {
         firstName: firstName,
-        middleName: middleName,
         lastName: lastName,
         tinNumber: tinNumber,
         phone: phone,
@@ -71,13 +70,12 @@ async function createCustomer(req, res) {
 async function updateCustomer(req, res) {
   try {
     const customerId = req.params.id;
-    const { firstName, middleName, lastName, tinNumber, phone, address } = req.body;
+    const { firstName, lastName, tinNumber, phone, address } = req.body;
 
     const updatedCustomer = await prisma.customer.update({
       where: { id: customerId },
       data: {
         firstName: firstName,
-        middleName: middleName,
         lastName: lastName,
         tinNumber: tinNumber,
         phone: phone,

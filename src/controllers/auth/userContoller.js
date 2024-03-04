@@ -16,6 +16,8 @@ async function getUsers(req, res) {
         select: {
           id: true,
           userName: true,
+          firstName: true,
+          lastName: true,
           roleId: true,
           role: {
             select: {
@@ -61,7 +63,7 @@ async function getUsers(req, res) {
 
 async function createUser(req, res) {
   try {
-    const { userName, password, passwordConfirmation, roleId } = req.body;
+    const { userName, firstName, lastName, password, passwordConfirmation, roleId } = req.body;
 
     if (!userName || !password || !passwordConfirmation || !roleId) {
       return res.status(400).json({ error: "All fields are required" });
@@ -90,6 +92,8 @@ async function createUser(req, res) {
     const createdUser = await prisma.user.create({
       data: {
         userName,
+        firstName: firstName,
+        lastName: firstName,
         password: hashedPassword,
         roleId,
       },
@@ -105,8 +109,8 @@ async function createUser(req, res) {
 
 async function updateUser(req, res) {
   try {
-    const userId = parseInt(req.params.id);
-    const { userName, roleId } = req.body;
+    const userId = req.params.id;
+    const { userName, firstName, lastName, roleId } = req.body;
 
     if (!userName || !roleId) {
       return res
@@ -118,6 +122,8 @@ async function updateUser(req, res) {
       where: { id: userId },
       data: {
         userName,
+        firstName: firstName,
+        lastName: lastName,
         roleId,
       },
       include: { role: true },

@@ -203,6 +203,18 @@ async function deleteDeclaration(req, res) {
   try {
     const { id } = req.params; // Extract the declaration ID from request parameters
 
+    const hasAssociatedPurchases = await prisma.productPurchase.findFirst({
+      where: {
+        declarationId: id,
+      },
+    });
+
+    if (hasAssociatedPurchases) {
+      // Return a specific message indicating associated purchases exist
+      return res.status(400).json({
+        error: "You cannot delete this declaration. Associated purchases exist.",
+      });
+    }
     // Delete the associated product declarations
     await prisma.productDeclaration.deleteMany({
       where: {

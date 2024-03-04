@@ -798,6 +798,8 @@ const seedUser = async (roleId) => {
   await prisma.user.create({
     data: {
       userName: "admin",
+      firstName: "Admin",
+      lastName: "Admin",
       roleId: roleId,
       password: hashedPassword,
     },
