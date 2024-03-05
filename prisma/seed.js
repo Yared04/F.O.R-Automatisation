@@ -1,5 +1,7 @@
 const { PrismaClient } = require("@prisma/client");
 const bcrypt = require("bcrypt");
+const fs = require('fs/promises');
+const path = require('path');
 
 const prisma = new PrismaClient();
 
@@ -806,6 +808,21 @@ const seedUser = async (roleId) => {
   });
 };
 
+async function seedPermissions() {
+  const createdPermissions = [];
+  const permissionsFilePath = path.resolve(__dirname, 'permissions.json');
+  const permissionsData = await fs.readFile(permissionsFilePath, 'utf-8');
+  const permissions = JSON.parse(permissionsData);
+
+  for (const permission of permissions) {
+    const createdPermission = await prisma.permission.create({
+      data: permission,
+    });
+    createdPermissions.push(createdPermission);
+  }
+  return createdPermissions;
+}
+
 async function main() {
   try {
     await seedAccountTypes();
@@ -813,6 +830,7 @@ async function main() {
     await seedChartOfAccounts();
     const createdRoles = await seedRoles();
     await seedUser(createdRoles[0].id);
+    await seedPermissions()
     console.log("Seeded successfully.");
   } catch (error) {
     console.error("Error while seeding:", error);
