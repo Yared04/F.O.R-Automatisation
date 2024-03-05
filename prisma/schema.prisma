@@ -1,5 +1,6 @@
 generator client {
   provider = "prisma-client-js"
+  previewFeatures = ["referentialActions"]
 }
 
 datasource db {
@@ -103,6 +104,7 @@ model Purchase {
   caTransactions    CATransaction[]    
   createdAt         DateTime      @default(now()) @map("created_at")
   updatedAt         DateTime      @updatedAt @map("updated_at")
+
 }
 
 model ProductPurchase {
@@ -110,7 +112,7 @@ model ProductPurchase {
   productId             String        @map("product_id") @db.Uuid
   product               Product       @relation(fields: [productId], references: [id])
   purchaseId            String        @map("purchase_id") @db.Uuid
-  purchase              Purchase      @relation(fields: [purchaseId], references: [id])
+  purchase              Purchase      @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
   declarationId         String        @map("declaration_id") @db.Uuid
   declaration           Declaration   @relation(fields: [declarationId], references: [id])
   purchaseQuantity      Int
@@ -123,6 +125,7 @@ model ProductPurchase {
   inventories    Inventory[] 
   createdAt             DateTime      @default(now()) @map("created_at")
   updatedAt             DateTime      @updatedAt @map("updated_at")
+
 }
 
 model Store {
@@ -162,7 +165,7 @@ model SaleDetail {
   totalSales            Float    
   unitCostOfGoods       Float  
   saleId                String        @map("sale_id") @db.Uuid
-  sale                  Sale      @relation(fields: [saleId], references: [id])
+  sale                  Sale      @relation(fields: [saleId], references: [id], onDelete: Cascade)
   productId             String    @map("product_id") @db.Uuid
   product               Product   @relation(fields: [productId], references: [id])
   purchaseId            String        @map("purchase_id") @db.Uuid
@@ -208,13 +211,13 @@ model AccountSubType {
 model Inventory {
   id          String   @id @default(uuid()) @db.Uuid
   purchaseId  String?  @map("purchase_id") @db.Uuid
-  purchase    Purchase? @relation(fields: [purchaseId], references: [id])
+  purchase    Purchase? @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
   productPurchaseId  String?  @map("product_purchase_id") @db.Uuid
   productPurchase    ProductPurchase? @relation(fields: [productPurchaseId], references:[id])
   saleDetailId       String?  @map("sale_detail_id") @db.Uuid
   saleDetail         SaleDetail? @relation(fields: [saleDetailId], references:[id])
   saleId      String?   @map("sale_id") @db.Uuid
-  sale        Sale?     @relation(fields: [saleId], references: [id])
+  sale        Sale?     @relation(fields: [saleId], references: [id], onDelete: Cascade)
   productId   String    @map("product_id") @db.Uuid
   product     Product   @relation(fields:[productId], references: [id])
   createdAt   DateTime  @default(now()) @map("created_at")
@@ -228,9 +231,9 @@ model CATransaction {
   chartofAccountId   String  @map("chart_of_account_id") @db.Uuid
   chartofAccount     ChartOfAccount  @relation(fields: [chartofAccountId], references: [id])
   purchaseId         String?  @map("purchase_id") @db.Uuid
-  purchase           Purchase? @relation(fields: [purchaseId], references: [id])
+  purchase           Purchase? @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
   saleId             String?   @map("sale_id") @db.Uuid
-  sale               Sale?     @relation(fields: [saleId], references: [id])
+  sale               Sale?     @relation(fields: [saleId], references: [id], onDelete: Cascade)
   date               DateTime
   remark             String?
   credit             Float?
