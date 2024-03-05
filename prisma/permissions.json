@@ -1,0 +1,7 @@
+[
+    { "name": "CreateUser" },
+    { "name": "UpdateUser" },
+    { "name": "DeleteUser" },
+    { "name": "GetUsers" },
+    { "name": "GetUser" }
+]

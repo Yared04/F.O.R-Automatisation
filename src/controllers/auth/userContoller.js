@@ -93,7 +93,7 @@ async function createUser(req, res) {
       data: {
         userName,
         firstName: firstName,
-        lastName: firstName,
+        lastName: lastName,
         password: hashedPassword,
         roleId,
       },
@@ -225,6 +225,41 @@ async function refreshToken(req, res) {
     res.status(401).json({ error: "Invalid refresh token" });
   }
 }
+
+
+async function changePassword(req, res) {
+  try {
+    const { username, oldPassword, newPassword, newPasswordConfirmation } = req.body;
+
+    const user = await prisma.user.findUnique({
+      where: { userName: username },
+    });
+
+    if (!user || !(await bcrypt.compare(oldPassword, user.password))) {
+      return res.status(400).json({ error: "Incorrenct old password." });
+    }
+
+    if (oldPassword === newPassword) {
+      return res.status(400).json({ error: "New password can not be old password." });
+    }
+
+    if (newPasswordConfirmation !== newPassword) {
+      return res.status(400).json({ error: "Password and confirmation must be the same." });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    const updatedUser = await prisma.user.update({
+    where: { userName: username },
+    data: {
+      password: hashedPassword}
+    });
+    
+    return updatedUser;
+  } catch (error) {
+    console.error("Error logging in:", error);
+    res.status(500).send("Internal Server Error");
+  }
+}
 module.exports = {
   getUsers,
   createUser,
@@ -233,4 +268,5 @@ module.exports = {
   getUserById,
   login,
   refreshToken,
+  changePassword
 };

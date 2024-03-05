@@ -24,9 +24,30 @@ model Role {
   id    String   @id @default(uuid()) @db.Uuid
   name  String
   users User[]
+  permissions Permission[]
+  rolePermissions RolePermission[]
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 }
+
+model Permission {
+  id String    @id @default(uuid())  @db.Uuid
+  name  String
+  roles Role[]
+  rolePermissions RolePermission[]
+}
+
+model RolePermission {
+  id            String       @id @default(uuid()) @db.Uuid
+  roleId        String   @map("role_id") @db.Uuid
+  permissionId  String   @map("permission_id") @db.Uuid
+
+  role         Role      @relation(fields: [roleId], references: [id])
+  permission   Permission @relation(fields: [permissionId], references: [id])
+
+  @@unique([roleId, permissionId])
+}
+
 
 model Customer {
   id         String   @id @default(uuid()) @db.Uuid
