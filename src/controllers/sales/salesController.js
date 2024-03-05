@@ -468,6 +468,23 @@ async function getSaleById(req, res) {
   }
 }
 
+async function deleteSaleById(req, res) {
+  try {
+
+    const { id } = req.params;
+
+    await prisma.sale.delete({
+      where: {
+        id: id,
+      },
+    });
+    res.json({ message: "Sale deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting Sale:", error);
+    res.status(500).send("Internal Server Error");
+  }
+}
+
 module.exports = {
   getSales,
   createSale,
@@ -475,4 +492,5 @@ module.exports = {
   getSale,
   getSaleDetails,
   getSaleDetailById,
+  deleteSaleById,
 };
