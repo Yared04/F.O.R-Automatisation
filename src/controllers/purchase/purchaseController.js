@@ -264,6 +264,8 @@ async function createPurchase(req, res) {
           productPurchase.purchaseTotal,
           null,
           productPurchase.purchaseId,
+          productPurchase.id,
+          null,
           null,
           null
         );
@@ -406,56 +408,233 @@ async function updatePurchase(req, res) {
       transportCost,
       eslCustomCost,
       transitFees,
-      purchaseProducts,
+      productPurchases,
     } = req.body;
 
+    const saleDetail = await prisma.saleDetail.findFirst({
+      where: {
+        purchaseId: id,
+      },
+    });
+
+    if (saleDetail) {
+      return res.status(400).json({
+        error:
+          "Cannot update purchase with associated sale, Please delete the sale first.",
+      });
+    }
+
     const updatedPurchase = await prisma.purchase.update({
-      where: { id: parseInt(id) },
+      where: { id: id },
       data: {
         date: new Date(date),
         number,
         truckNumber,
       },
     });
+    let totalPurchaseQuantity = productPurchases.reduce(
+      (total, productPurchase) =>
+        total + parseInt(productPurchase.purchaseQuantity),
+      0
+    );
 
     const updatedProductPurchases = await Promise.all(
-      purchaseProducts.map(async (purchaseProduct) => {
+      productPurchases.map(async (productPurchase) => {
+        let currentDeclaration;
+        try {
+          currentDeclaration = await prisma.productDeclaration.findFirst({
+            where: {
+              AND: [
+                { productId: productPurchase.productId },
+                { declarationId: productPurchase.declarationId },
+              ],
+            },
+          });
+        } catch (error) {
+          console.error("Error retrieving declaration:", error);
+          throw new Error(error);
+        }
+
+        if (currentDeclaration) {
+          await prisma.productDeclaration.update({
+            where: {
+              id: currentDeclaration.id,
+            },
+            data: {
+              purchasedQuantity:
+                currentDeclaration.purchasedQuantity +
+                parseInt(productPurchase.purchaseQuantity),
+              declarationBalance:
+                currentDeclaration.declarationQuantity -
+                (currentDeclaration.purchasedQuantity +
+                  parseInt(productPurchase.purchaseQuantity)),
+            },
+          });
+        }
+
+        //find an exisiting product purchase with purchaseId, productId and declarationId
+        let currentProductPurchase;
+        try {
+          currentProductPurchase = await prisma.productPurchase.findFirst({
+            where: {
+              AND: [
+                { purchaseId: id },
+                { productId: productPurchase.productId },
+                { declarationId: productPurchase.declarationId },
+              ],
+            },
+          });
+        } catch (error) {
+          console.error("Error retrieving product purchase:", error);
+          throw new Error(error);
+        }
+
+        //update the product purchase
         const updatedProductPurchase = await prisma.productPurchase.upsert({
-          where: { purchaseId: purchaseProduct.purchaseId },
+          where: { id: currentProductPurchase.id },
           update: {
-            purchaseQuantity: purchaseProduct.purchaseQuantity,
-            purchaseUnitPrice: purchaseProduct.purchaseUnitPrice,
+            purchaseQuantity: productPurchase.purchaseQuantity,
+            purchaseUnitPrice: productPurchase.purchaseUnitPrice,
             purchaseTotal:
-              purchaseProduct.purchaseQuantity *
-              purchaseProduct.purchaseUnitPrice,
-            transportCost: purchaseProduct.transportCost,
-            eslCustomCost: purchaseProduct.eslCustomCost,
-            transitFees: purchaseProduct.transitFees,
-            purchaseUnitCostOfGoods: purchaseProduct.purchaseUnitCostOfGoods,
+              productPurchase.purchaseQuantity *
+              productPurchase.purchaseUnitPrice,
+            transportCost:
+              (transportCost * productPurchase.purchaseQuantity) /
+              totalPurchaseQuantity,
+            eslCustomCost:
+              (eslCustomCost * productPurchase.purchaseQuantity) /
+              totalPurchaseQuantity,
+            transitFees:
+              (transitFees * productPurchase.purchaseQuantity) /
+              totalPurchaseQuantity,
+            purchaseUnitCostOfGoods:
+              ((transportCost * productPurchase.purchaseQuantity) /
+                totalPurchaseQuantity +
+                (eslCustomCost * productPurchase.purchaseQuantity) /
+                  totalPurchaseQuantity +
+                (transitFees * productPurchase.purchaseQuantity) /
+                  totalPurchaseQuantity) /
+                productPurchase.purchaseQuantity +
+              productPurchase.purchaseUnitPrice,
           },
           create: {
-            purchaseId: updatedPurchase.id,
-            declarationId: purchaseProduct.declarationId,
-            productId: purchaseProduct.productId,
-            purchaseQuantity: purchaseProduct.purchaseQuantity,
-            purchaseUnitPrice: purchaseProduct.purchaseUnitPrice,
+            purchase: {
+              connect: {
+                id: updatedPurchase.id,
+              },
+            },
+            product: {
+              connect: {
+                id: productPurchase.productId,
+              },
+            },
+            declaration: {
+              connect: {
+                id: productPurchase.declarationId,
+              },
+            },
+            purchaseQuantity: productPurchase.purchaseQuantity,
+            purchaseUnitPrice: productPurchase.purchaseUnitPrice,
             purchaseTotal:
-              purchaseProduct.purchaseQuantity *
-              purchaseProduct.purchaseUnitPrice,
-            transportCost: purchaseProduct.transportCost,
-            eslCustomCost: purchaseProduct.eslCustomCost,
-            transitFees: purchaseProduct.transitFees,
-            purchaseUnitCostOfGoods: purchaseProduct.purchaseUnitCostOfGoods,
+              productPurchase.purchaseQuantity *
+              productPurchase.purchaseUnitPrice,
+            transportCost:
+              (transportCost * productPurchase.purchaseQuantity) /
+              totalPurchaseQuantity,
+            eslCustomCost:
+              (eslCustomCost * productPurchase.purchaseQuantity) /
+              totalPurchaseQuantity,
+            transitFees:
+              (transitFees * productPurchase.purchaseQuantity) /
+              totalPurchaseQuantity,
+            purchaseUnitCostOfGoods:
+              ((transportCost * productPurchase.purchaseQuantity) /
+                totalPurchaseQuantity +
+                (eslCustomCost * productPurchase.purchaseQuantity) /
+                  totalPurchaseQuantity +
+                (transitFees * productPurchase.purchaseQuantity) /
+                  totalPurchaseQuantity) /
+                productPurchase.purchaseQuantity +
+              productPurchase.purchaseUnitPrice,
           },
         });
+
+        //Get the product has invetory entries
+        let inventoryEntry;
+        try {
+          inventoryEntry = await prisma.inventory.findMany({
+            where: {
+              purchaseId: productPurchase.purchaseId,
+            },
+          });
+        } catch (error) {
+          console.error("Error retrieving inventory:", error);
+          throw new Error(error);
+        }
+
+        //update the inventory entry of the specific purchase
+        try {
+          await prisma.inventory.update({
+            where: {
+              id: inventoryEntry[0].id,
+            },
+            data: {
+              balanceQuantity: updatedProductPurchase.purchaseQuantity,
+            },
+          });
+        } catch (error) {
+          console.error("Error updating inventory:", error);
+          throw new Error(error);
+        }
+
+        //get the CA transactions associted with this purchase
+        let caTransactions;
+        try {
+          caTransactions = await prisma.CATransaction.findMany({
+            where: {
+              productPurchaseId: productPurchase.id,
+            },
+            orderBy: {
+              createdAt: "desc",
+            },
+          });
+        } catch (error) {
+          console.error("Error retrieving CA transactions:", error);
+          throw new Error(error);
+        }
+
+        // update the CA transactions
+        try {
+          await prisma.CATransaction.update({
+            where: {
+              id: caTransactions[0].id,
+            },
+            data: {
+              credit: updatedProductPurchase.purchaseTotal,
+            },
+          });
+
+          await prisma.CATransaction.update({
+            where: {
+              id: caTransactions[1].id,
+            },
+            data: {
+              debit: updatedProductPurchase.purchaseTotal,
+            },
+          });
+        } catch (error) {
+          console.error("Error updating CA transactions:", error);
+          throw new Error(error);
+        }
+
         return updatedProductPurchase;
       })
     );
 
-    res.json({ updatedPurchase, updatedProductPurchases });
+    res.json(updatedPurchase);
   } catch (error) {
     console.error("Error updating purchase:", error);
-    res.status(500).send("Internal Server Error");
+    res.status(500).send({ error: error.message });
   }
 }
 

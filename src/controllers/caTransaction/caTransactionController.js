@@ -98,7 +98,9 @@ async function createTransaction(
   debit,
   credit,
   purchaseId,
+  productPurchaseId,
   saleId,
+  saleDetailId,
   accountDetails
 ) {
   try {
@@ -148,6 +150,20 @@ async function createTransaction(
                 },
               }
             : undefined,
+          productPurchase: productPurchaseId
+            ? {
+                connect: {
+                  id: productPurchaseId,
+                },
+              }
+            : undefined,
+          saleDetail: saleDetailId
+            ? {
+                connect: {
+                  id: saleDetailId,
+                },
+              }
+            : undefined,
           date: new Date(date),
           remark: remark,
           debit: parseFloat(debit),
@@ -170,6 +186,20 @@ async function createTransaction(
             ? {
                 connect: {
                   id: purchaseId,
+                },
+              }
+            : undefined,
+          productPurchase: productPurchaseId
+            ? {
+                connect: {
+                  id: productPurchaseId,
+                },
+              }
+            : undefined,
+          saleDetail: saleDetailId
+            ? {
+                connect: {
+                  id: saleDetailId,
                 },
               }
             : undefined,
@@ -207,6 +237,8 @@ async function createCaTransaction(req, res) {
       remark,
       debit,
       credit,
+      null,
+      null,
       null,
       null,
       accountDetails

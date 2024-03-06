@@ -144,6 +144,7 @@ model ProductPurchase {
   eslCustomCost         Float
   purchaseUnitCostOfGoods Float
   inventories    Inventory[] 
+  caTransactions        CATransaction[]
   createdAt             DateTime      @default(now()) @map("created_at")
   updatedAt             DateTime      @updatedAt @map("updated_at")
 
@@ -194,6 +195,7 @@ model SaleDetail {
   declarationId         String        @map("declaration_id") @db.Uuid
   declaration           Declaration   @relation(fields: [declarationId], references: [id])
   inventories           Inventory[] 
+  caTransactions        CATransaction[]
   createdAt             DateTime @default(now()) @map("created_at")
   updatedAt             DateTime @updatedAt @map("updated_at")
 }
@@ -255,6 +257,10 @@ model CATransaction {
   purchase           Purchase? @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
   saleId             String?   @map("sale_id") @db.Uuid
   sale               Sale?     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  productPurchaseId  String?   @map("product_purchase_id") @db.Uuid
+  productPurchase    ProductPurchase?   @relation(fields: [productPurchaseId], references:[id], onDelete: Cascade)
+  saleDetailId       String?   @map("sale_detail_id") @db.Uuid
+  saleDetail         SaleDetail?    @relation(fields: [saleDetailId], references:[id], onDelete: Cascade)
   date               DateTime
   remark             String?
   credit             Float?

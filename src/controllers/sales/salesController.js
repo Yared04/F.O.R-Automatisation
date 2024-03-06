@@ -342,7 +342,9 @@ async function createSale(req, res) {
             parseFloat(product.saleQuantity) * parseFloat(sale.unitCostOfGoods),
             null,
             null,
+            null,
             createdSale.id,
+            product.id,
             null
           );
 
@@ -356,7 +358,9 @@ async function createSale(req, res) {
             null,
             parseFloat(sale.totalSales),
             null,
+            null,
             createdSale.id,
+            product.id,
             null
           );
         } catch (error) {
@@ -470,20 +474,21 @@ async function getSaleById(req, res) {
 
 async function deleteSaleById(req, res) {
   try {
-
     const { id } = req.params;
 
-    await prisma.sale.delete({
+    const deletedSale = await prisma.sale.delete({
       where: {
         id: id,
       },
     });
-    res.json({ message: "Sale deleted successfully" });
+    res.json(deletedSale);
   } catch (error) {
     console.error("Error deleting Sale:", error);
     res.status(500).send("Internal Server Error");
   }
 }
+
+async function updateSale(req, res) {}
 
 module.exports = {
   getSales,
@@ -493,4 +498,5 @@ module.exports = {
   getSaleDetails,
   getSaleDetailById,
   deleteSaleById,
+  updateSale,
 };

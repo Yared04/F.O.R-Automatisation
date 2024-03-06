@@ -1,0 +1,208 @@
+[
+    {
+      "name": "Current",
+      "id": "d3a09df7-eebc-4195-a293-fa1fbbf8dab5",
+      "accountTypeId": "05e94538-3700-42de-a5ab-89c663aa8575"
+    },
+    {
+      "name": "Cash and cash equivalents",
+      "id": "09f5be2a-1436-4c89-985a-7f884bc4b2e0",
+      "accountTypeId": "05e94538-3700-42de-a5ab-89c663aa8575"
+    },
+    {
+      "name": "Accounts Payable (A/P)",
+      "id": "dc65d736-c6fd-4569-b059-09a22ed49e3a",
+      "accountTypeId": "2bea0554-9e37-4c1f-bfd7-52e6f3b4e021"
+    },
+    {
+      "name": "Accounts Receivable (A/R)",
+      "id": "1631ee0a-36e5-4bb2-a16e-38b2a3da6958",
+      "accountTypeId": "1f94e15b-bb95-4419-a7d1-1ed7b7d9de6d"
+    },
+    {
+      "name": "Accrued liabilities",
+      "id": "c4957dcf-3c9e-419e-b88d-6c144a176019",
+      "accountTypeId": "4c845f5e-eb02-40d4-849a-87b1f10d0b4b"
+    },
+    {
+      "name": "Allowance for bad debts",
+      "id": "54a9e2b4-951b-4a58-93a2-3b0abbb88913",
+      "accountTypeId": "3d42e1c6-9216-4d68-9c48-f7a43c6c12e9"
+    },
+    {
+      "name": "Amortisation expense",
+      "id": "d9305f3c-f4c1-4347-809b-eb774fa6a051",
+      "accountTypeId": "5a71d6d4-cc3b-4780-a3d7-5fc1fbdd8565"
+    },
+  
+    {
+      "name": "Assets available for sale",
+      "id": "7f2f273f-8ae4-4aae-a900-5b179eb74d4b",
+      "accountTypeId": "b9bceaa1-06d5-4eeb-83a8-3e8c07d01e95"
+    },
+    {
+      "name": "Bad debts",
+      "id": "f7cbde2e-01a6-4424-a07a-85ac91d8e10b",
+      "accountTypeId": "5a71d6d4-cc3b-4780-a3d7-5fc1fbdd8565"
+    },
+    {
+      "name": "Charitable Contributions",
+      "id": "de8f93d5-9ef6-47d5-b849-f75e1f39e905",
+      "accountTypeId": "5a71d6d4-cc3b-4780-a3d7-5fc1fbdd8565"
+    },
+    {
+      "name": "Bank charges",
+      "id": "511d2a78-b2f5-4146-836f-7987c16982cb",
+      "accountTypeId": "5a71d6d4-cc3b-4780-a3d7-5fc1fbdd8565"
+    },
+    {
+      "name": "Supplies and materials - COS",
+      "id": "451d4a25-3444-472f-a78c-bc7f7ae0fd7c",
+      "accountTypeId": "6e15b6d8-8aa0-4e2b-bc1d-b5fe0b432b48"
+    },
+    {
+      "name": "Commissions and fees",
+      "id": "cf69ee39-f93e-4e30-8514-dca84940bf9b",
+      "accountTypeId": "5a71d6d4-cc3b-4780-a3d7-5fc1fbdd8565"
+    },
+    {
+      "name": "Taxes Paid",
+      "id": "07d22d9f-88e2-41b7-a56a-09b5c1809c94",
+      "accountTypeId": "5a71d6d4-cc3b-4780-a3d7-5fc1fbdd8565"
+    },
+    {
+      "name": "Discounts/Refunds Given",
+      "id": "e12e3ad2-62b1-4e2c-861d-64c4bcf89405",
+      "accountTypeId": "7bc65403-f50f-4991-a1d3-d377005f84d8"
+    },
+    {
+      "name": "Dividend disbursed",
+      "id": "e1eeb450-f007-4481-b6b2-32a89d4c8574",
+      "accountTypeId": "8e23d3d3-44f4-456a-8bc7-129d1c15aaee"
+    },
+    {
+      "name": "Shipping and delivery expense",
+      "id": "c72fd0e5-cce4-4d4f-8567-1dc3345c2b4d",
+      "accountTypeId": "5a71d6d4-cc3b-4780-a3d7-5fc1fbdd8565"
+    },
+    {
+      "name": "Exchange Gain or Loss",
+      "id": "be8b4871-6b69-4592-87e8-707ca1251f39",
+      "accountTypeId": "9b5f8a9b-4b5f-49f4-ba6c-07a40f72ae48"
+    },
+    {
+      "name": "Income tax expense",
+      "id": "ce70e7f0-0ba5-463d-9e6d-efbb51e7a4fc",
+      "accountTypeId": "5a71d6d4-cc3b-4780-a3d7-5fc1fbdd8565"
+    },
+    {
+      "name": "Income tax payable",
+      "id": "25c9cb45-55c5-4b2d-834e-4e7d067a5734",
+      "accountTypeId": "4c845f5e-eb02-40d4-849a-87b1f10d0b4b"
+    },
+    {
+      "name": "Insurance",
+      "id": "aa6abdd7-fca2-4d18-98e4-97c20552c24d",
+      "accountTypeId": "5a71d6d4-cc3b-4780-a3d7-5fc1fbdd8565"
+    },
+    {
+      "name": "Interest earned",
+      "id": "02e12f6b-9262-4b68-a528-56a3071ae12b",
+      "accountTypeId": "a8b2c827-889c-41c4-b299-64c1862ae2ab"
+    },
+    {
+      "name": "Inventory",
+      "id": "8f23f11e-d13c-4ac0-8b8b-1b82f3e6c3ad",
+      "accountTypeId": "3d42e1c6-9216-4d68-9c48-f7a43c6c12e9"
+    },
+    {
+      "name": "Legal and professional fees",
+      "id": "c6e72259-baf6-437b-b579-72b8d7ef00d4",
+      "accountTypeId": "5a71d6d4-cc3b-4780-a3d7-5fc1fbdd8565"
+    },
+    {
+      "name": "Cost of Labour",
+      "id": "9e883d81-85d6-4fe9-b8d2-6e405d9921aa",
+      "accountTypeId": "5a71d6d4-cc3b-4780-a3d7-5fc1fbdd8565"
+    },
+    {
+      "name": "Loan Payable",
+      "id": "0a5826c9-6660-4d45-87db-9debb4df9c77",
+      "accountTypeId": "4c845f5e-eb02-40d4-849a-87b1f10d0b4b"
+    },
+    {
+      "name": "Meals and entertainment",
+      "id": "3c8be1d3-7a63-46c5-aa3e-e90f32c7897d",
+      "accountTypeId": "5a71d6d4-cc3b-4780-a3d7-5fc1fbdd8565"
+    },
+    {
+      "name": "Office/General Administrative Expenses",
+      "id": "91d9fcb3-793d-4988-abe4-d72a5e02d3f8",
+      "accountTypeId": "5a71d6d4-cc3b-4780-a3d7-5fc1fbdd8565"
+    },
+    {
+      "name": "Other Expense",
+      "id": "df046b32-d6ab-47c5-9c11-d90df7f2d125",
+      "accountTypeId": "9b5f8a9b-4b5f-49f4-ba6c-07a40f72ae48"
+    },
+    {
+      "name": "Opening Balance Equity",
+      "id": "d8a6daa6-51e9-42e1-9910-91e472c5bcb2",
+      "accountTypeId": "8e23d3d3-44f4-456a-8bc7-129d1c15aaee"
+    },
+    {
+      "name": "Advertising/Promotional",
+      "id": "98ec2f35-185a-4909-bd82-f72a2ba52e48",
+      "accountTypeId": "5a71d6d4-cc3b-4780-a3d7-5fc1fbdd8565"
+    },
+    {
+      "name": "Other non-current assets",
+      "id": "34512b1b-4f70-4c42-a4e0-fec5d598b6ac",
+      "accountTypeId": "b9bceaa1-06d5-4eeb-83a8-3e8c07d01e95"
+    },
+    {
+      "name": "Supplies and materials",
+      "id": "af3b3dd6-2c6e-4fc4-bef7-13087a71ff2d",
+      "accountTypeId": "5a71d6d4-cc3b-4780-a3d7-5fc1fbdd8565"
+    },
+    {
+      "name": "Loans to Others",
+      "id": "4a6b501c-56b2-45bb-9e27-24c60c028418",
+      "accountTypeId": "4c845f5e-eb02-40d4-849a-87b1f10d0b4b"
+    },
+    {
+      "name": "Rent or Lease of Buildings",
+      "id": "1abfe2e6-d65e-4a6a-92e9-c1a54e1f8a1d",
+      "accountTypeId": "5a71d6d4-cc3b-4780-a3d7-5fc1fbdd8565"
+    },
+    {
+      "name": "Repair and maintenance",
+      "id": "77a20c5e-bf1c-47e2-ba60-5c4b94db78b6",
+      "accountTypeId": "5a71d6d4-cc3b-4780-a3d7-5fc1fbdd8565"
+    },
+    {
+      "name": "Retained Earnings",
+      "id": "0b3ed0d2-64a7-4b17-89dc-2f4f54664d5f",
+      "accountTypeId": "8e23d3d3-44f4-456a-8bc7-129d1c15aaee"
+    },
+    {
+      "name": "Sales of Product Income",
+      "id": "ab0b0731-9a33-4b4e-8fb4-cfa37eaf0ef5",
+      "accountTypeId": "7bc65403-f50f-4991-a1d3-d377005f84d8"
+    },
+    {
+      "name": "Share capital",
+      "id": "48b27605-49e1-409b-b201-4a0985b369c0",
+      "accountTypeId": "8e23d3d3-44f4-456a-8bc7-129d1c15aaee"
+    },
+    {
+      "name": "Payroll Expenses",
+      "id": "1b9a5abf-ae47-46f4-92fc-5f77d9b1e9ef",
+      "accountTypeId": "5a71d6d4-cc3b-4780-a3d7-5fc1fbdd8565"
+    },
+    {
+      "name": "Travel expenses - general and admin expenses",
+      "id": "be6e62b5-2649-4b8d-8988-802d202af9d4",
+      "accountTypeId": "5a71d6d4-cc3b-4780-a3d7-5fc1fbdd8565"
+    }
+  ]
