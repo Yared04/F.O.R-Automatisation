@@ -1,21 +1,32 @@
 const prisma = require("../../database");
 
 async function getExpenseDetails(req, res) {
-        try {
-            const expenses = await prisma.chartOfAccount.findMany({
+      const { startDate, endDate } = req.query;
+      const defaultStartDate = new Date();
+      defaultStartDate.setFullYear(new Date().getFullYear(), 0, 1);
+      defaultStartDate.setHours(0, 0, 0, 0);
+      const effectiveStartDate = startDate || defaultStartDate.toISOString();
+      const effectiveEndDate = endDate || new Date().toISOString();
+      
+      try {
+        const expenses = await prisma.chartOfAccount.findMany({
+          where: {
+            accountType: {
+              name: 'Expenses',
+            },
+          },
+          include: {
+            caTransactions: {
               where: {
-                accountType: {
-                  name: 'Expenses',
+                debit: { not: null },
+                createdAt: {
+                  gte: new Date(effectiveStartDate),
+                  lte: new Date(effectiveEndDate),
                 },
               },
-              include: {
-                caTransactions: {
-                  where: {
-                    debit: { not: null },
-                  },
-                },
-              },
-            });
+            },
+          },
+        });
         
             const totalExpense = expenses.reduce((sum, expense) => {
               const expenseTotal = expense.caTransactions.reduce((transactionSum, transaction) => transactionSum + (transaction.debit || 0), 0);
