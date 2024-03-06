@@ -18,12 +18,10 @@ const dashboardRoutes = require("./routes/dashboard/dashboardRoutes");
 const swaggerUi = require("swagger-ui-express");
 const swaggerSpec = require("./swagger");
 const cors = require("cors");
-const authenticateMiddleware = require('./middlewares/authenticate');
 const app = express();
 app.use(cors());
 
 app.use(express.json());
-app.use(authenticateMiddleware);
 app.use("/api", userRoutes);
 app.use("/api", roleRoutes);
 app.use("/api", productRoutes);
