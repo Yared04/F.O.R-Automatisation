@@ -197,8 +197,36 @@ async function login(req, res) {
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
-    const accessToken = jwtUtils.generateToken(user);
-    const refreshToken = jwtUtils.generateRefreshToken(user);
+    // Get role permissions
+    const rolePermissions = await prisma.rolePermission.findMany({
+      where: { roleId: user.role.id },
+      select: { permissionId: true },
+    });
+
+    // Extract permission IDs from the rolePermissions
+    const permissionIds = rolePermissions.map(rolePermission => rolePermission.permissionId);
+
+    // Fetch the actual permissions based on the extracted permission IDs
+    const permissions = await prisma.permission.findMany({
+      where: { id: { in: permissionIds } },
+    });
+
+    // Extract permission names
+    const permissionNames = permissions.map(permission => permission.name);
+
+    const accessToken = jwtUtils.generateToken({
+      id: user.id,
+      userName: user.userName,
+      roleId: user.role.id,
+      permissions: permissionNames,
+    });
+
+    const refreshToken = jwtUtils.generateRefreshToken({
+      id: user.id,
+      userName: user.userName,
+      roleId: user.role.id,
+      permissions: permissionNames,
+    });
 
     res.json({ accessToken, refreshToken, user });
   } catch (error) {
@@ -206,6 +234,7 @@ async function login(req, res) {
     res.status(500).send("Internal Server Error");
   }
 }
+
 async function refreshToken(req, res) {
   try {
     const { refreshToken } = req.body;
@@ -217,7 +246,7 @@ async function refreshToken(req, res) {
     const decoded = jwt.verify(refreshToken, jwtUtils.getSecretKey());
 
     const newAccessToken = jwtUtils.generateToken({id: decoded.id,
-      userName:decoded.userName, roleId: decoded.roleId});
+      userName:decoded.userName, roleId: decoded.roleId, permissions: decoded.permissions});
 
     res.json({ accessToken: newAccessToken });
   } catch (error) {

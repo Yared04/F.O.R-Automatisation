@@ -1,19 +1,46 @@
 const express = require('express');
 const roleController = require('../../controllers/auth/roleController');
 const permsssionController = require('../../controllers/auth/permissionController');
-const authenticate = require('../../middlewares/authenticate')
+const authenticate = require('../../middlewares/authenticate');
 
 const router = express.Router();
+router.use(authenticate);
 
-router.get('/roles',authenticate, roleController.getRoles);
-router.post('/roles',authenticate, roleController.createRole);
-router.put('/roles/:id',authenticate, roleController.updateRole);
-router.delete('/roles/:id',authenticate, roleController.deleteRole);
-router.get('/roles/:roleId/permissions', roleController.getRolePermissions);
+// Routes for Roles
+router.get('/roles', (req, res) => {
+  req.requiredPermissions = ['GetRoles'];
+  authenticate(req, res, () => roleController.getRoles(req, res));
+});
 
+router.post('/roles', (req, res) => {
+  req.requiredPermissions = ['CreateRole'];
+  authenticate(req, res, () =>  roleController.createRole(req, res));
+});
 
-router.get('/permissions', authenticate, permsssionController.getPermissions);
-router.post('/roles/:roleId/assign-revoke-permissions', authenticate, permsssionController.assignRevokePermissionsToRole);
+router.put('/roles/:id', (req, res) => {
+  req.requiredPermissions = ['UpdateRole'];
+  authenticate(req, res, () =>  roleController.updateRole(req, res));
+});
 
+router.delete('/roles/:id', (req, res) => {
+  req.requiredPermissions = ['DeleteRole'];
+  authenticate(req, res, () => roleController.deleteRole(req, res));
+});
+
+router.get('/roles/:roleId/permissions', (req, res) => {
+  req.requiredPermissions = ['GetRolePermissions'];
+  authenticate(req, res, () => roleController.getRolePermissions(req, res));
+});
+
+// Routes for Permissions
+router.get('/permissions', (req, res) => {
+  req.requiredPermissions = ['GetPermissions'];
+  authenticate(req, res, () => permsssionController.getPermissions(req, res));
+});
+
+router.post('/roles/:roleId/assign-revoke-permissions', (req, res) => {
+  req.requiredPermissions = ['AssignRevokePermissions'];
+  authenticate(req, res, () => permsssionController.assignRevokePermissionsToRole(req, res));
+});
 
 module.exports = router;
