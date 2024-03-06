@@ -1,13 +1,33 @@
-const express = require('express')
+const express = require('express');
 const purchaseController = require('../../controllers/purchase/purchaseController');
-const authenticate = require('../../middlewares/authenticate')
+const authenticate = require('../../middlewares/authenticate');
 
 const router = express.Router();
+router.use(authenticate);
 
-router.get('/purchases', authenticate, purchaseController.getPurchases);
-router.post('/purchases', authenticate, purchaseController.createPurchase);
-router.get('/purchases/:id', authenticate, purchaseController.getPurchaseById);
-router.put('/purchases/:id', authenticate, purchaseController.updatePurchase);
-router.delete('/purchases/:id', authenticate, purchaseController.deletePurchase);
+router.get('/purchases', (req, res) => {
+  req.requiredPermissions = ['GetPurchases'];
+  authenticate(req, res, () => purchaseController.getPurchases(req, res));
+});
+
+router.post('/purchases', (req, res) => {
+  req.requiredPermissions = ['CreatePurchase'];
+  authenticate(req, res, () => purchaseController.createPurchase(req, res));
+});
+
+router.get('/purchases/:id', (req, res) => {
+  req.requiredPermissions = ['GetPurchaseById'];
+  authenticate(req, res, () => purchaseController.getPurchaseById(req, res));
+});
+
+router.put('/purchases/:id', (req, res) => {
+  req.requiredPermissions = ['UpdatePurchase'];
+  authenticate(req, res, () => purchaseController.updatePurchase(req, res));
+});
+
+router.delete('/purchases/:id', (req, res) => {
+  req.requiredPermissions = ['DeletePurchase'];
+  authenticate(req, res, () => purchaseController.deletePurchase(req, res));
+});
 
 module.exports = router;

@@ -6,6 +6,7 @@ function generateToken(user) {
     id: user.id,
     userName: user.userName,
     roleId: user.roleId,
+    permissions: user.permissions
   };
 
   const options = {
@@ -20,6 +21,7 @@ function generateRefreshToken(user) {
     id: user.id,
     userName: user.userName,
     roleId: user.roleId,
+    permissions: user.permissions
   };
 
   const options = {
