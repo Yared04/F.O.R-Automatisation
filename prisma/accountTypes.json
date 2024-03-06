@@ -1,0 +1,29 @@
+[
+  { "name": "Bank", "id": "05e94538-3700-42de-a5ab-89c663aa8575" },
+  {
+    "name": "Accounts Receivable(A/R)",
+    "id": "1f94e15b-bb95-4419-a7d1-1ed7b7d9de6d"
+  },
+  {
+    "name": "Accounts Payable(A/P)",
+    "id": "2bea0554-9e37-4c1f-bfd7-52e6f3b4e021"
+  },
+  {
+    "name": "Other Current Assets",
+    "id": "3d42e1c6-9216-4d68-9c48-f7a43c6c12e9"
+  },
+  {
+    "name": "Other Current Liabilities",
+    "id": "4c845f5e-eb02-40d4-849a-87b1f10d0b4b"
+  },
+  { "name": "Expenses", "id": "5a71d6d4-cc3b-4780-a3d7-5fc1fbdd8565" },
+  {
+    "name": "Cost of Goods Sold",
+    "id": "6e15b6d8-8aa0-4e2b-bc1d-b5fe0b432b48"
+  },
+  { "name": "Income", "id": "7bc65403-f50f-4991-a1d3-d377005f84d8" },
+  { "name": "Equity", "id": "8e23d3d3-44f4-456a-8bc7-129d1c15aaee" },
+  { "name": "Other Expenses", "id": "9b5f8a9b-4b5f-49f4-ba6c-07a40f72ae48" },
+  { "name": "Other Income", "id": "a8b2c827-889c-41c4-b299-64c1862ae2ab" },
+  { "name": "Other Assets", "id": "b9bceaa1-06d5-4eeb-83a8-3e8c07d01e95" }
+]
