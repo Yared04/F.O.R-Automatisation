@@ -52,8 +52,9 @@
     { "name": "DeletePurchase" },
     { "name": "GetSales" },
     { "name": "CreateSale" },
+    { "name": "UpdateSale" },
     { "name": "GetSaleById" },
-    { "name": "DeleteSaleById" },
+    { "name": "DeleteSale" },
     { "name": "GetStores" },
     { "name": "CreateStore" },
     { "name": "UpdateStore" },
@@ -63,5 +64,13 @@
     { "name": "CreateSupplier" },
     { "name": "UpdateSupplier" },
     { "name": "DeleteSupplier" },
-    { "name": "GetSupplierById" }
+    { "name": "GetSupplierById" },
+    { "name": "GetCaTransactions" },
+    { "name": "CreateCaTransaction" },
+    { "name": "GetCaTransactionById" },
+    { "name": "GetCustomers" },
+    { "name": "CreateCustomer" },
+    { "name": "UpdateCustomer" },
+    { "name": "DeleteCustomer" },
+    { "name": "GetCustomerById" }
 ]

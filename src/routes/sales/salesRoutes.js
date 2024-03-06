@@ -21,7 +21,7 @@ router.get('/sales/:id', (req, res) => {
 });
 
 router.delete('/sales/:id', (req, res) => {
-  req.requiredPermissions = ['DeleteSaleById'];
+  req.requiredPermissions = ['DeleteSale'];
   authenticate(req, res, () => salesController.deleteSaleById(req, res));
 });
 
