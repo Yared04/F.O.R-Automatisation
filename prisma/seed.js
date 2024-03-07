@@ -49,7 +49,7 @@ async function seedAccountSubTypes() {
 
 async function seedChartOfAccounts() {
   const createdChartOfAccounts = [];
-  const CAFullNameFilePath = path.resolve(__dirname, 'chartOfAccounts.json');
+  const CAFullNameFilePath = path.resolve(__dirname, 'CAFullName.json');
   const CAFullNameData = await fs.readFile(CAFullNameFilePath, 'utf-8');
   const CAFullName = JSON.parse(CAFullNameData);
   for (const chartOfAccount of CAFullName) {
