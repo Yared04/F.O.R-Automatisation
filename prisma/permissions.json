@@ -72,5 +72,7 @@
     { "name": "CreateCustomer" },
     { "name": "UpdateCustomer" },
     { "name": "DeleteCustomer" },
-    { "name": "GetCustomerById" }
+    { "name": "GetProductCategories" },
+    { "name": "CreateProductCategory" },
+    { "name": "UpdateProductCategory" }
 ]
