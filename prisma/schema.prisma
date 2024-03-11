@@ -162,6 +162,7 @@ model Supplier {
   id          String   @id @default(uuid()) @db.Uuid
   name        String
   address     String
+  currency    String
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 }
