@@ -35,12 +35,13 @@ async function getSuppliers(req, res) {
 
 async function createSupplier(req, res) {
   try {
-    const { name, address } = req.body;
+    const { name, address, currency } = req.body;
 
     const createdSupplier = await prisma.supplier.create({
       data: {
         name,
         address,
+        currency
       },
     });
 
@@ -54,13 +55,14 @@ async function createSupplier(req, res) {
 async function updateSupplier(req, res) {
   try {
     const SupplierId = req.params.id;
-    const { name, address } = req.body;
+    const { name, address, currency } = req.body;
 
     const updatedSupplier = await prisma.supplier.update({
       where: { id: SupplierId },
       data: {
         name: name,
         address: address,
+        currency: currency
       },
     });
 
