@@ -78,14 +78,24 @@ model Driver {
 model Product {
   id                String   @id @default(uuid()) @db.Uuid
   name              String   @unique
-  category          String
+  productCategoryId String   @map("productCategory_id") @db.Uuid
+  category          ProductCategory  @relation(fields: [productCategoryId], references: [id])
   unitOfMeasurement String
+  startingQuantity  Int
+  startingQuantityUnitPrice  Float
+  startingQuantityDate   DateTime
   purchases         ProductPurchase[]
   declarations      ProductDeclaration[]
   sales             SaleDetail[]
   inventories    Inventory[] 
   createdAt         DateTime @default(now()) @map("created_at")
   updatedAt         DateTime @updatedAt @map("updated_at")
+}
+
+model ProductCategory{
+  id                String   @id @default(uuid()) @db.Uuid
+  name              String   @unique
+  products    Product[]
 }
 
 model Declaration {
