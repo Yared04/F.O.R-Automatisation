@@ -74,5 +74,6 @@
     { "name": "DeleteCustomer" },
     { "name": "GetProductCategories" },
     { "name": "CreateProductCategory" },
-    { "name": "UpdateProductCategory" }
+    { "name": "UpdateProductCategory" },
+    { "name": "DeleteProductCategory" }
 ]
