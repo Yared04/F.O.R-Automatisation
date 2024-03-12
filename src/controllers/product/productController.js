@@ -13,6 +13,9 @@ async function getProducts(req, res) {
           name: true,
           category: true,
           unitOfMeasurement: true,
+          startingQuantity: true,
+          startingQuantityUnitPrice: true,
+          startingQuantityDate: true
         },
         skip: (page - 1) * parseInt(pageSize, 10),
         take: parseInt(pageSize, 10),
@@ -24,6 +27,9 @@ async function getProducts(req, res) {
           name: true,
           category: true,
           unitOfMeasurement: true,
+          startingQuantity: true,
+          startingQuantityUnitPrice: true,
+          startingQuantityDate: true
         },
       });
     }
@@ -62,14 +68,18 @@ async function getProductById(req, res) {
 
 async function createProduct(req, res) {
   try {
-    const { name, category, unitOfMeasurement } = req.body;
-
+    const { name,unitOfMeasurement,startingQuantity, startingQuantityUnitPrice,category,startingQuantityDate} = req.body;
     const createdProduct = await prisma.product.create({
       data: {
-        name,
-        category,
-        unitOfMeasurement,
-      },
+        name:name,
+        productCategoryId:category.id,
+        unitOfMeasurement:unitOfMeasurement,
+        startingQuantity: parseInt(startingQuantity),
+        startingQuantityUnitPrice: parseFloat(startingQuantityUnitPrice),
+        startingQuantityDate: new Date(startingQuantityDate)
+      },include:{
+        category: true
+      }
     });
 
     res.json(createdProduct);
@@ -82,17 +92,22 @@ async function createProduct(req, res) {
 async function updateProduct(req, res) {
   try {
     const { id } = req.params;
-    const { name, category, unitOfMeasurement } = req.body;
+    const { name,unitOfMeasurement,startingQuantity, startingQuantityUnitPrice,category,startingQuantityDate} = req.body;
 
     const updatedProduct = await prisma.product.update({
       where: {
         id: id,
       },
       data: {
-        name,
-        category,
-        unitOfMeasurement,
-      },
+        name:name,
+        productCategoryId:category.id,
+        unitOfMeasurement:unitOfMeasurement,
+        startingQuantity: parseInt(startingQuantity),
+        startingQuantityUnitPrice: parseFloat(startingQuantityUnitPrice),
+        startingQuantityDate: new Date(startingQuantityDate)
+      },include:{
+        category: true
+      }
     });
 
     res.json(updatedProduct);

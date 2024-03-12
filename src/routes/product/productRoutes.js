@@ -46,4 +46,9 @@ router.put('/product-categories/:id', (req, res) => {
   authenticate(req, res, () => productCategoryController.updateProductCategory(req, res));
 });
 
+router.delete('/product-categories/:id', (req, res) => {
+  req.requiredPermissions = ['DeleteProductCategory'];
+  authenticate(req, res, () => productCategoryController.deleteProductCategory(req, res));
+});
+
 module.exports = router;
