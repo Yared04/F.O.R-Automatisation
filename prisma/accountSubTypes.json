@@ -1,15 +1,5 @@
 [
     {
-      "name": "Current",
-      "id": "d3a09df7-eebc-4195-a293-fa1fbbf8dab5",
-      "accountTypeId": "05e94538-3700-42de-a5ab-89c663aa8575"
-    },
-    {
-      "name": "Cash and cash equivalents",
-      "id": "09f5be2a-1436-4c89-985a-7f884bc4b2e0",
-      "accountTypeId": "05e94538-3700-42de-a5ab-89c663aa8575"
-    },
-    {
       "name": "Accounts Payable (A/P)",
       "id": "dc65d736-c6fd-4569-b059-09a22ed49e3a",
       "accountTypeId": "2bea0554-9e37-4c1f-bfd7-52e6f3b4e021"
