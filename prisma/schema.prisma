@@ -56,6 +56,7 @@ model Customer {
   phone     String
   address   String
   sales     Sale[]
+  caTransactions  CATransaction[]
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 }
@@ -208,6 +209,7 @@ model Supplier {
   address   String
   currency  String
   purchases Purchase[]
+  caTransactions  CATransaction[]
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 }
@@ -307,11 +309,17 @@ model CATransaction {
   productPurchase   ProductPurchase? @relation(fields: [productPurchaseId], references: [id], onDelete: Cascade)
   saleDetailId      String?          @map("sale_detail_id") @db.Uuid
   saleDetail        SaleDetail?      @relation(fields: [saleDetailId], references: [id], onDelete: Cascade)
+  supplierId        String?          @map("supplier_id") @db.Uuid
+  supplier          Supplier?         @relation(fields: [supplierId], references: [id])
+  customerId        String?          @map("customer_id") @db.Uuid
+  customer          Customer?         @relation(fields: [customerId], references: [id])
   date              DateTime
+  type              String
   remark            String?
   credit            Float?
   debit             Float?
-  accountDetails    String?
+  exchangeRate      Float?
+  USDAmount         Float?
   createdAt         DateTime         @default(now()) @map("created_at")
   updatedAt         DateTime         @updatedAt @map("updated_at")
 }
