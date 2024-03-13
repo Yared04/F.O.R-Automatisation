@@ -1,0 +1,122 @@
+[
+  {
+    "name": "Bridging Bank Account",
+    "id": "a51a13e7-6b18-43bc-93b0-022a146aeb4b",
+    "accountTypeId": "05e94538-3700-42de-a5ab-89c663aa8575",
+    "accountSubTypeId": "d3a09df7-eebc-4195-a293-fa1fbbf8dab5"
+  },
+  {
+    "name": "Cashier F.O.R",
+    "id": "f7a6a19d-5c2c-4d45-b9e5-5dfb32ad79dc",
+    "accountTypeId": "05e94538-3700-42de-a5ab-89c663aa8575",
+    "accountSubTypeId": "d3a09df7-eebc-4195-a293-fa1fbbf8dab5"
+  },
+  {
+    "name": "Fouad Abysinia02",
+    "id": "cf26c2e6-13c2-4e29-8d1f-cb0d184343c7",
+    "accountTypeId": "05e94538-3700-42de-a5ab-89c663aa8575",
+    "accountSubTypeId": "d3a09df7-eebc-4195-a293-fa1fbbf8dab5"
+  },
+  {
+    "name": "Fouad Abysinia77",
+    "id": "ff932b7e-06c3-4e0d-8a6d-b56a0e6abf28",
+    "accountTypeId": "05e94538-3700-42de-a5ab-89c663aa8575",
+    "accountSubTypeId": "d3a09df7-eebc-4195-a293-fa1fbbf8dab5"
+  },
+  {
+    "name": "FOUAD AWASH",
+    "id": "f124bb40-27b8-4e41-9d08-bf70c70d0009",
+    "accountTypeId": "05e94538-3700-42de-a5ab-89c663aa8575",
+    "accountSubTypeId": "d3a09df7-eebc-4195-a293-fa1fbbf8dab5"
+  },
+  {
+    "name": "FOUAD CBE",
+    "id": "91f0d24f-218e-4709-8590-b214af6e4c5d",
+    "accountTypeId": "05e94538-3700-42de-a5ab-89c663aa8575",
+    "accountSubTypeId": "d3a09df7-eebc-4195-a293-fa1fbbf8dab5"
+  },
+  {
+    "name": "Fouad Coop",
+    "id": "aa84b7c7-267d-49a5-ae80-3d4f34e2e769",
+    "accountTypeId": "05e94538-3700-42de-a5ab-89c663aa8575",
+    "accountSubTypeId": "d3a09df7-eebc-4195-a293-fa1fbbf8dab5"
+  },
+  {
+    "name": "Fouad Dashen",
+    "id": "28c556c8-aa01-48a0-a55d-8909e9e5e3aa",
+    "accountTypeId": "05e94538-3700-42de-a5ab-89c663aa8575",
+    "accountSubTypeId": "d3a09df7-eebc-4195-a293-fa1fbbf8dab5"
+  },
+  {
+    "name": "Fouad Nib",
+    "id": "72f09dcb-cf97-4f9c-b1fd-20e62e729358",
+    "accountTypeId": "05e94538-3700-42de-a5ab-89c663aa8575",
+    "accountSubTypeId": "d3a09df7-eebc-4195-a293-fa1fbbf8dab5"
+  },
+  {
+    "name": "Fouad OIB",
+    "id": "c3a1c9b8-4e34-47b8-88e6-70b81cc7974b",
+    "accountTypeId": "05e94538-3700-42de-a5ab-89c663aa8575",
+    "accountSubTypeId": "d3a09df7-eebc-4195-a293-fa1fbbf8dab5"
+  },
+  {
+    "name": "Fouad Siinqee C/A",
+    "id": "d5be1c45-d6f3-4515-bdd2-9ac5eef51385",
+    "accountTypeId": "05e94538-3700-42de-a5ab-89c663aa8575",
+    "accountSubTypeId": "d3a09df7-eebc-4195-a293-fa1fbbf8dab5"
+  },
+  {
+    "name": "Fouad Siinqee R/A",
+    "id": "d8e4fb47-66a7-4c12-b90d-9d1d7fc893f7",
+    "accountTypeId": "05e94538-3700-42de-a5ab-89c663aa8575",
+    "accountSubTypeId": "d3a09df7-eebc-4195-a293-fa1fbbf8dab5"
+  },
+  {
+    "name": "FOUAD ZEMEN C/A",
+    "id": "f3f3819f-5a2b-4d4f-92d8-6ecf7b03f0a5",
+    "accountTypeId": "05e94538-3700-42de-a5ab-89c663aa8575",
+    "accountSubTypeId": "d3a09df7-eebc-4195-a293-fa1fbbf8dab5"
+  },
+  {
+    "name": "FOUAD Zemen D/A",
+    "id": "f8b3b6b1-8b23-4b84-8365-318c1e1d04b0",
+    "accountTypeId": "05e94538-3700-42de-a5ab-89c663aa8575",
+    "accountSubTypeId": "d3a09df7-eebc-4195-a293-fa1fbbf8dab5"
+  },
+  {
+    "name": "FOUAD ZEMEN R/A",
+    "id": "ef25f918-ee30-4f47-b281-00f4bc1cf2c7",
+    "accountTypeId": "05e94538-3700-42de-a5ab-89c663aa8575",
+    "accountSubTypeId": "d3a09df7-eebc-4195-a293-fa1fbbf8dab5"
+  },
+  {
+    "name": "Messay Bunna",
+    "id": "540c6890-4e2e-4cbf-9a7f-4da9e29c36d7",
+    "accountTypeId": "05e94538-3700-42de-a5ab-89c663aa8575",
+    "accountSubTypeId": "d3a09df7-eebc-4195-a293-fa1fbbf8dab5"
+  },
+  {
+    "name": "Messay CBE Mobile",
+    "id": "1a2a5e6b-6549-4f3e-90ab-85a2737c5051",
+    "accountTypeId": "05e94538-3700-42de-a5ab-89c663aa8575",
+    "accountSubTypeId": "d3a09df7-eebc-4195-a293-fa1fbbf8dab5"
+  },
+  {
+    "name": "Muktar NIB",
+    "id": "ea389293-4f0a-4d3d-b747-14f55b8c5b38",
+    "accountTypeId": "05e94538-3700-42de-a5ab-89c663aa8575",
+    "accountSubTypeId": "d3a09df7-eebc-4195-a293-fa1fbbf8dab5"
+  },
+  {
+    "name": "Muktar Oromia International",
+    "id": "784c5f77-ae2a-4b3e-8587-0abff5967a79",
+    "accountTypeId": "05e94538-3700-42de-a5ab-89c663aa8575",
+    "accountSubTypeId": "d3a09df7-eebc-4195-a293-fa1fbbf8dab5"
+  },
+  {
+    "name": "Petty Cash",
+    "id": "2a156743-7769-45e3-b246-79273eb9b3d3",
+    "accountTypeId": "05e94538-3700-42de-a5ab-89c663aa8575",
+    "accountSubTypeId": "09f5be2a-1436-4c89-985a-7f884bc4b2e0"
+  }
+]
