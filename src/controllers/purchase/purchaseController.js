@@ -1,7 +1,9 @@
+const e = require("cors");
 const prisma = require("../../database");
 const {
   createTransaction,
 } = require("../caTransaction/caTransactionController");
+const { parse } = require("path");
 
 async function getPurchases(req, res) {
   try {
@@ -14,6 +16,13 @@ async function getPurchases(req, res) {
         date: true,
         number: true,
         truckNumber: true,
+        exchangeRate: true,
+        supplier: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
       skip: (page - 1) * parseInt(pageSize, 10),
       take: parseInt(pageSize, 10),
@@ -40,38 +49,84 @@ async function createPurchase(req, res) {
       date,
       number,
       truckNumber,
+      exchangeRate,
+      supplierId,
       transportCost,
       eslCustomCost,
       transitFees,
       purchaseProducts,
     } = req.body;
 
-    const createdPurchase = await prisma.purchase.create({
-      data: {
-        number: parseInt(number),
-        date: new Date(date),
-        truckNumber,
-      },
-    });
+    let createdPurchase = null;
+    let purchaseTotalAmount = 0;
+    let accountsPayable;
+    let inventoryAsset;
+    const totalPurchaseQuantity = purchaseProducts.reduce(
+      (total, productPurchase) =>
+        total + parseInt(productPurchase.purchaseQuantity),
+      0
+    );
 
-    let totalPurchaseQuantity = 0;
+    for (product of purchaseProducts) {
+      const currentDeclaration = await prisma.productDeclaration.findFirst({
+        where: {
+          AND: [
+            { productId: product.productId },
+            { declarationId: product.declarationId },
+          ],
+        },
+      });
+      const declarationBalance =
+        currentDeclaration.declarationQuantity - product.purchasedQuantity;
+      if (declarationBalance < 0) {
+        res.status(400).send({
+          error: `The purchase quantity for the product ${product.id} is greater than the declaration quantity`,
+        });
+      }
+    }
 
     const createdProductPurchases = await Promise.all(
       purchaseProducts.map(async (purchaseProduct) => {
-        totalPurchaseQuantity += parseFloat(purchaseProduct.purchaseQuantity);
+        if (!createdPurchase) {
+          createdPurchase = await prisma.purchase.create({
+            data: {
+              date: new Date(date),
+              number: parseInt(number),
+              truckNumber,
+              exchangeRate: parseFloat(exchangeRate),
+              supplier: {
+                connect: {
+                  id: supplierId,
+                },
+              },
+            },
+          });
+        }
         const createdProductPurchase = await prisma.productPurchase.create({
           data: {
-            purchaseId: createdPurchase.id,
-            declarationId: purchaseProduct.declarationId,
-            productId: purchaseProduct.productId,
+            purchase: {
+              connect: {
+                id: createdPurchase.id,
+              },
+            },
+            declaration: {
+              connect: {
+                id: purchaseProduct.declarationId,
+              },
+            },
+            product: {
+              connect: {
+                id: purchaseProduct.productId,
+              },
+            },
             purchaseQuantity: parseInt(purchaseProduct.purchaseQuantity),
-            purchaseUnitPrice: parseFloat(purchaseProduct.purchaseUnitPrice),
-            purchaseTotal:
-              purchaseProduct.purchaseQuantity *
-              purchaseProduct.purchaseUnitPrice,
-            transportCost: 0,
-            eslCustomCost: 0,
-            transitFees: 0,
+            purchaseUnitPriceETB:
+              parseFloat(purchaseProduct.purchaseUnitPrice) *
+              parseFloat(exchangeRate),
+            purchaseUnitPriceUSD: parseFloat(purchaseProduct.purchaseUnitPrice),
+            purchaseTotalETB:
+              parseInt(purchaseProduct.purchaseQuantity) *
+              parseFloat(purchaseProduct.purchaseUnitPrice),
             purchaseUnitCostOfGoods: 0,
           },
         });
@@ -84,12 +139,6 @@ async function createPurchase(req, res) {
             ],
           },
         });
-
-        if (!currentDeclaration) {
-          return res
-            .status(404)
-            .json({ error: `Declaration for product not found` });
-        }
 
         await prisma.productDeclaration.update({
           where: {
@@ -112,33 +161,72 @@ async function createPurchase(req, res) {
 
     for (const productPurchase of createdProductPurchases) {
       try {
+        const transportFee = parseFloat(
+          (transportCost * productPurchase.purchaseQuantity) /
+            totalPurchaseQuantity
+        );
+        const eslCustomFee = parseFloat(
+          (eslCustomCost * productPurchase.purchaseQuantity) /
+            totalPurchaseQuantity
+        );
+        const transitFee = parseFloat(
+          (transitFees * productPurchase.purchaseQuantity) /
+            totalPurchaseQuantity
+        );
+
+        const transport = await prisma.transport.create({
+          data: {
+            purchase: {
+              connect: {
+                id: createdPurchase.id,
+              },
+            },
+            date: createdPurchase.date,
+            cost: transportFee,
+            type: "Bill",
+          },
+        });
+
+        const eslCustom = await prisma.ESL.create({
+          data: {
+            purchase: {
+              connect: {
+                id: createdPurchase.id,
+              },
+            },
+            date: createdPurchase.date,
+            cost: eslCustomFee,
+            type: "Bill",
+          },
+        });
+
+        const transit = await prisma.transit.create({
+          data: {
+            purchase: {
+              connect: {
+                id: createdPurchase.id,
+              },
+            },
+            date: createdPurchase.date,
+            cost: transitFee,
+            type: "Bill",
+          },
+        });
+
         const updatedProductPurchase = await prisma.productPurchase.update({
           where: { id: productPurchase.id },
           data: {
-            transportCost:
-              (transportCost * productPurchase.purchaseQuantity) /
-              totalPurchaseQuantity,
-            eslCustomCost:
-              (eslCustomCost * productPurchase.purchaseQuantity) /
-              totalPurchaseQuantity,
-            transitFees:
-              (transitFees * productPurchase.purchaseQuantity) /
-              totalPurchaseQuantity,
             purchaseUnitCostOfGoods:
-              ((transportCost * productPurchase.purchaseQuantity) /
-                totalPurchaseQuantity +
-                (eslCustomCost * productPurchase.purchaseQuantity) /
-                  totalPurchaseQuantity +
-                (transitFees * productPurchase.purchaseQuantity) /
-                  totalPurchaseQuantity) /
-                productPurchase.purchaseQuantity +
-              productPurchase.purchaseUnitPrice,
+              (transportFee + eslCustomFee + transitFee) /
+                parseInt(productPurchase.purchaseQuantity) +
+              parseFloat(productPurchase.purchaseUnitPriceETB),
           },
         });
       } catch (error) {
-        console.error("Error updating product purchase:", error);
+        console.error("Error creating a product purchase:", error);
         throw new Error(error);
       }
+
       //check if the product has invetory entries
       let inventoryEntries;
       try {
@@ -151,6 +239,7 @@ async function createPurchase(req, res) {
         console.error("Error retrieving inventory:", error);
         throw new Error(error);
       }
+
       //if the product has no inventory entries, create one
       let isNewEntry = false;
       if (!inventoryEntries.length) {
@@ -237,6 +326,7 @@ async function createPurchase(req, res) {
           throw new Error(error);
         }
       }
+
       let chartOfAccounts = [];
       try {
         chartOfAccounts = await prisma.chartOfAccount.findMany({
@@ -246,33 +336,60 @@ async function createPurchase(req, res) {
         throw new Error("Error fetching Chart of Accounts");
       }
 
-      const accountsPayable = chartOfAccounts.find(
+      accountsPayable = chartOfAccounts.find(
         (account) => account.name === "Accounts Payable (A/P) - USD"
       );
 
-      const inventoryAsset = chartOfAccounts.find(
+      inventoryAsset = chartOfAccounts.find(
         (account) => account.name === "Inventory Asset"
       );
 
-      //create a transaction entry for the purchase
+      //create a transaction entry for the debit
       try {
         await createTransaction(
           inventoryAsset.id,
-          accountsPayable.id,
           new Date(date),
-          `Purchase`,
+          productPurchase.declarationId,
+          "Bill",
           productPurchase.purchaseTotal,
           null,
           productPurchase.purchaseId,
           productPurchase.id,
           null,
           null,
+          supplierId,
+          null,
+          null,
           null
         );
+        purchaseTotalAmount += productPurchase.purchaseTotal;
       } catch (error) {
         console.error("Error creating transaction:", error);
         throw new Error(error);
       }
+    }
+
+    //create a transaction entry for the credit
+    try {
+      await createTransaction(
+        accountsPayable.id,
+        new Date(date),
+        "Purchase",
+        "Bill",
+        null,
+        purchaseTotalAmount,
+        createdPurchase.id,
+        null,
+        null,
+        null,
+        supplierId,
+        null,
+        parseFloat(exchangeRate),
+        purchaseTotalAmount / parseFloat(exchangeRate)
+      );
+    } catch (error) {
+      console.error("Error creating transaction:", error);
+      throw new Error(error);
     }
 
     res.json(createdPurchase);
@@ -316,11 +433,9 @@ async function getProductPurchaseById(id) {
       select: {
         id: true,
         purchaseQuantity: true,
-        purchaseUnitPrice: true,
-        purchaseTotal: true,
-        transportCost: true,
-        eslCustomCost: true,
-        transitFees: true,
+        purchaseUnitPriceETB: true,
+        purchaseUnitPriceUSD: true,
+        purchaseTotalETB: true,
         purchaseUnitCostOfGoods: true,
         product: {
           select: {
@@ -355,11 +470,9 @@ async function getProductPurchases(id) {
       select: {
         id: true,
         purchaseQuantity: true,
-        purchaseUnitPrice: true,
-        purchaseTotal: true,
-        transportCost: true,
-        eslCustomCost: true,
-        transitFees: true,
+        purchaseUnitPriceETB: true,
+        purchaseUnitPriceUSD: true,
+        purchaseTotalETB: true,
         purchaseUnitCostOfGoods: true,
         product: {
           select: {
@@ -653,6 +766,64 @@ async function deletePurchase(req, res) {
         error:
           "Cannot delete purchase with associated sale, Please delete the sale first.",
       });
+    }
+
+    const productPurchases = await prisma.productPurchase.findMany({
+      where: {
+        purchaseId: id,
+      },
+    });
+    
+    for (let productPurchase of productPurchases) {
+      const currentDeclaration = await prisma.productDeclaration.findFirst({
+        where: {
+          AND: [
+            { productId: productPurchase.productId },
+            { declarationId: productPurchase.declarationId },
+          ],
+        },
+      });
+
+      await prisma.productDeclaration.update({
+        where: {
+          id: currentDeclaration.id,
+        },
+        data: {
+          purchasedQuantity:
+            currentDeclaration.purchasedQuantity -
+            parseInt(productPurchase.purchaseQuantity),
+          declarationBalance:
+            currentDeclaration.declarationQuantity -
+            (currentDeclaration.purchasedQuantity -
+              parseInt(productPurchase.purchaseQuantity)),
+        },
+      });
+
+      const inventoryEntry = await prisma.inventory.findMany({
+        where: {
+          purchaseId: id,
+        },
+      });
+
+      await prisma.inventory.deleteMany({
+        where: {
+          id: inventoryEntry[0].id,
+        },
+      });
+
+      const caTransactions = await prisma.CATransaction.findMany({
+        where: {
+          productPurchaseId: productPurchase.id,
+        },
+      });
+
+      for (let caTransaction of caTransactions) {
+        await prisma.CATransaction.delete({
+          where: {
+            id: caTransaction.id,
+          },
+        });
+      }
     }
 
     const deletedPurchase = await prisma.purchase.delete({
