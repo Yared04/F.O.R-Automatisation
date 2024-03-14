@@ -92,16 +92,20 @@ async function getCaTransactions(req, res) {
 
 async function createTransaction(
   chartofAccountId1,
-  chartofAccountId2,
   date,
   remark,
+  type,
   debit,
   credit,
   purchaseId,
   productPurchaseId,
   saleId,
   saleDetailId,
-  accountDetails
+  supplierId,
+  customerId,
+  exchangeRate,
+  USDAmount,
+
 ) {
   try {
     let createdCaTransaction1;
@@ -116,22 +120,21 @@ async function createTransaction(
           remark: remark,
           debit: parseFloat(debit),
           credit: null,
-          accountDetails: accountDetails,
         },
       });
 
-      createdCaTransaction2 = await prisma.CATransaction.create({
-        data: {
-          chartofAccount: {
-            connect: { id: chartofAccountId2 },
-          },
-          date: new Date(date),
-          remark: remark,
-          debit: null,
-          credit: parseFloat(credit),
-          accountDetails: accountDetails,
-        },
-      });
+      // createdCaTransaction2 = await prisma.CATransaction.create({
+      //   data: {
+      //     chartofAccount: {
+      //       connect: { id: chartofAccountId2 },
+      //     },
+      //     date: new Date(date),
+      //     remark: remark,
+      //     debit: null,
+      //     credit: parseFloat(credit),
+      //     accountDetails: accountDetails,
+      //   },
+      // });
     } else {
       createdCaTransaction1 = await prisma.CATransaction.create({
         data: {
@@ -164,55 +167,71 @@ async function createTransaction(
                 },
               }
             : undefined,
+          supplier: supplierId 
+            ? {
+              connect: {
+                id: supplierId,
+              },
+            }
+            : undefined,
+          customer: customerId
+            ? {
+              connect: {
+                id: customerId,
+              },
+            }
+            : undefined,
+          exchangeRate: exchangeRate,
+          USDAmount: USDAmount,
+          type: type,
           date: new Date(date),
           remark: remark,
           debit: parseFloat(debit),
           credit: parseFloat(credit),
-          accountDetails: accountDetails,
         },
       });
 
-      createdCaTransaction2 = await prisma.CATransaction.create({
-        data: {
-          chartofAccount: {
-            connect: { id: chartofAccountId2 },
-          },
-          sale: saleId
-            ? {
-                connect: { id: saleId },
-              }
-            : undefined,
-          purchase: purchaseId
-            ? {
-                connect: {
-                  id: purchaseId,
-                },
-              }
-            : undefined,
-          productPurchase: productPurchaseId
-            ? {
-                connect: {
-                  id: productPurchaseId,
-                },
-              }
-            : undefined,
-          saleDetail: saleDetailId
-            ? {
-                connect: {
-                  id: saleDetailId,
-                },
-              }
-            : undefined,
-          date: new Date(date),
-          remark: remark,
-          debit: parseFloat(credit),
-          credit: parseFloat(debit),
-          accountDetails: accountDetails,
-        },
-      });
+      // createdCaTransaction2 = await prisma.CATransaction.create({
+      //   data: {
+      //     chartofAccount: {
+      //       connect: { id: chartofAccountId2 },
+      //     },
+      //     sale: saleId
+      //       ? {
+      //           connect: { id: saleId },
+      //         }
+      //       : undefined,
+      //     purchase: purchaseId
+      //       ? {
+      //           connect: {
+      //             id: purchaseId,
+      //           },
+      //         }
+      //       : undefined,
+      //     productPurchase: productPurchaseId
+      //       ? {
+      //           connect: {
+      //             id: productPurchaseId,
+      //           },
+      //         }
+      //       : undefined,
+      //     saleDetail: saleDetailId
+      //       ? {
+      //           connect: {
+      //             id: saleDetailId,
+      //           },
+      //         }
+      //       : undefined,
+      //     date: new Date(date),
+      //     remark: remark,
+      //     debit: parseFloat(credit),
+      //     credit: parseFloat(debit),
+      //     accountDetails: accountDetails,
+      //   },
+      // });
     }
 
-    return { createdCaTransaction1, createdCaTransaction2 };
+    return createdCaTransaction1;
   } catch (error) {
     console.error("Error creating CA Transaction:", error);
     return error, "Internal Server Error";
