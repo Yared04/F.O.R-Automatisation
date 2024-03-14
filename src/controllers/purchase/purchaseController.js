@@ -374,7 +374,7 @@ async function createPurchase(req, res) {
           new Date(date),
           productPurchase.declarationId,
           "Bill",
-          productPurchase.purchaseTotal,
+          productPurchase.purchaseTotalETB,
           null,
           productPurchase.purchaseId,
           productPurchase.id,
@@ -385,7 +385,7 @@ async function createPurchase(req, res) {
           null,
           null
         );
-        purchaseTotalAmount += productPurchase.purchaseTotal;
+        purchaseTotalAmount += productPurchase.purchaseTotalETB;
       } catch (error) {
         console.error("Error creating transaction:", error);
         throw new Error(error);
@@ -599,6 +599,7 @@ async function updatePurchase(req, res) {
         },
       },
     });
+    let purchaseTotalAmount;
 
     const updatedProductPurchases = await Promise.all(
       productPurchases.map(async (productPurchase) => {
@@ -827,40 +828,24 @@ async function updatePurchase(req, res) {
         }
 
         //get the CA transactions associted with this purchase
-        let caTransactions;
+        let caTransaction1;
         try {
-          caTransactions = await prisma.CATransaction.findMany({
+          caTransaction1 = await prisma.CATransaction.findFirst({
             where: {
               productPurchaseId: productPurchase.id,
             },
-            orderBy: {
-              createdAt: "desc",
-            },
-          });
-        } catch (error) {
-          console.error("Error retrieving CA transactions:", error);
-          throw new Error(error);
-        }
-
-        // update the CA transactions
-        try {
-          await prisma.CATransaction.update({
-            where: {
-              id: caTransactions[0].id,
-            },
-            data: {
-              credit: updatedProductPurchase.purchaseTotal,
-            },
           });
 
+          // update the CA transactions
           await prisma.CATransaction.update({
             where: {
-              id: caTransactions[1].id,
+              id: caTransaction1.id,
             },
             data: {
-              debit: updatedProductPurchase.purchaseTotal,
+              credit: updatedProductPurchase.purchaseTotalETB,
             },
           });
+          purchaseTotalAmount += updatedProductPurchase.purchaseTotalETB;
         } catch (error) {
           console.error("Error updating CA transactions:", error);
           throw new Error(error);
@@ -869,6 +854,39 @@ async function updatePurchase(req, res) {
         return updatedProductPurchase;
       })
     );
+
+    try {
+      //get the CA transactions associted with this purchase
+      let caTransaction2;
+      const chartOfAccounts = await prisma.chartOfAccount.findMany({
+        select: { id: true, name: true },
+      });
+
+      accountsPayable = chartOfAccounts.find(
+        (account) => account.name === "Accounts Payable (A/P) - USD"
+      );
+
+      caTransaction2 = await prisma.CATransaction.findFirst({
+        where: {
+          purchaseId: updatedPurchase.id,
+          chartofAccountId: accountsPayable.id,
+        },
+      });
+
+      await prisma.CATransaction.update({
+        where: {
+          id: caTransaction2.id,
+        },
+        data: {
+          credit: purchaseTotalAmount,
+        },
+      });
+
+
+    } catch (error) {
+      console.error("Error updating transaction:", error);
+      throw new Error(error);
+    }
 
     res.json(updatedPurchase);
   } catch (error) {
