@@ -149,6 +149,8 @@ model Transport {
   date           DateTime
   cost           Float
   type           String
+  productPurchaseId       String?         @db.Uuid @unique
+  productPurchase     ProductPurchase?    @relation(fields: [productPurchaseId], references: [id])
   purchaseId              String          @map("purchase_id") @db.Uuid
   purchase                Purchase        @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
   paidAmount     Float?
@@ -159,6 +161,8 @@ model ESL {
   date           DateTime
   cost           Float
   type           String
+  productPurchaseId       String?         @db.Uuid @unique
+  productPurchase     ProductPurchase?    @relation(fields: [productPurchaseId], references: [id])
   purchaseId              String          @map("purchase_id") @db.Uuid
   purchase                Purchase        @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
   paidAmount     Float?
@@ -169,6 +173,8 @@ model Transit {
   date           DateTime
   cost           Float
   type           String
+  productPurchaseId       String?         @db.Uuid @unique
+  productPurchase     ProductPurchase?    @relation(fields: [productPurchaseId], references: [id])
   purchaseId              String         @map("purchase_id") @db.Uuid
   purchase                Purchase      @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
   paidAmount     Float?
@@ -189,6 +195,9 @@ model ProductPurchase {
   purchaseUnitCostOfGoods Float?
   inventories             Inventory[]
   caTransactions          CATransaction[]
+  transit                 Transit?
+  transport               Transport?
+  esl                     ESL?
   createdAt               DateTime        @default(now()) @map("created_at")
   updatedAt               DateTime        @updatedAt @map("updated_at")
 }
