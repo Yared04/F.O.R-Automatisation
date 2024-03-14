@@ -128,7 +128,7 @@ async function createPurchase(req, res) {
               : parseFloat(purchaseProduct.purchaseUnitPrice),
             purchaseUnitPriceUSD: exchangeRate
               ? parseFloat(purchaseProduct.purchaseUnitPrice)
-              : 0,
+              : null,
             purchaseTotalETB: exchangeRate
               ? parseInt(purchaseProduct.purchaseQuantity) *
                 parseFloat(purchaseProduct.purchaseUnitPrice) *
