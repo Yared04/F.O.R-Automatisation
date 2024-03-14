@@ -75,5 +75,8 @@
     { "name": "GetProductCategories" },
     { "name": "CreateProductCategory" },
     { "name": "UpdateProductCategory" },
-    { "name": "DeleteProductCategory" }
+    { "name": "DeleteProductCategory" },
+    { "name": "GetTransportCost" },
+    { "name": "GetEslCustomCost" },
+    { "name": "GetTransiFees" }
 ]

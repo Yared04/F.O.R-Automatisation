@@ -30,4 +30,19 @@ router.delete('/purchases/:id', (req, res) => {
   authenticate(req, res, () => purchaseController.deletePurchase(req, res));
 });
 
+router.get('/transports', (req, res) => {
+  req.requiredPermissions = ['GetTransportCost'];
+  authenticate(req, res, () => purchaseController.getTransportCosts(req, res));
+});
+
+router.get('/esl', (req, res) => {
+  req.requiredPermissions = ['GetEslCustomCost'];
+  authenticate(req, res, () => purchaseController.getEslCosts(req, res));
+});
+
+router.get('/transit-fees', (req, res) => {
+  req.requiredPermissions = ['GetTransiFees'];
+  authenticate(req, res, () => purchaseController.getTransiFees(req, res));
+});
+
 module.exports = router;

@@ -43,10 +43,16 @@ async function getInventory(req, res) {
             (await saleController.getSaleDetailById(item.saleDetailId))) ||
           null;
 
+        let productId = null;
+        if (productPurchase) {
+          productId = productPurchase.productId || null;
+        }
+
         return {
           ...item,
           purchase: purchase,
           productPurchase: productPurchase,
+          productId: productId, // Adding productId
           saleDetail: saleDetail,
           sale: sale,
         };
