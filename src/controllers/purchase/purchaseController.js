@@ -99,6 +99,8 @@ async function createPurchase(req, res) {
                   id: supplierId,
                 },
               },
+            },include: {
+              supplier: true,
             },
           });
         }
@@ -975,6 +977,11 @@ async function getTransportCosts(req, res) {
           cost:true,
           type:true,
           purchase:true,
+          productPurchase:{
+            select:{
+              declaration: true
+            }
+          },
           paidAmount:true
         },
         skip: (page - 1) * parseInt(pageSize, 10),
@@ -988,6 +995,11 @@ async function getTransportCosts(req, res) {
           cost:true,
           type:true,
           purchase:true,
+          productPurchase:{
+            select:{
+              declaration: true
+            }
+          },
           paidAmount:true
         },
       });
@@ -1022,6 +1034,11 @@ async function getEslCosts(req, res) {
           cost:true,
           type:true,
           purchase:true,
+          productPurchase:{
+            select:{
+              declaration: true
+            }
+          },
           paidAmount:true
         },
         skip: (page - 1) * parseInt(pageSize, 10),
@@ -1035,6 +1052,11 @@ async function getEslCosts(req, res) {
           cost:true,
           type:true,
           purchase:true,
+          productPurchase:{
+            select:{
+              declaration: true
+            }
+          },
           paidAmount:true
         },
       });
@@ -1069,6 +1091,11 @@ async function getTransiFees(req, res) {
           cost:true,
           type:true,
           purchase:true,
+          productPurchase:{
+            select:{
+              declaration: true
+            }
+          },
           paidAmount:true
         },
         skip: (page - 1) * parseInt(pageSize, 10),
@@ -1082,6 +1109,11 @@ async function getTransiFees(req, res) {
           cost:true,
           type:true,
           purchase:true,
+          productPurchase:{
+            select:{
+              declaration: true
+            }
+          },
           paidAmount:true
         },
       });
