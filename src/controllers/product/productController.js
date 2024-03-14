@@ -82,6 +82,35 @@ async function createProduct(req, res) {
       }
     });
 
+    const createdProductPurchase = await prisma.productPurchase.create({
+      data:{
+        product: {
+          connect: {
+            id: createdProduct.id
+          }
+        },
+        purchaseQuantity: parseInt(startingQuantity),
+        purchaseUnitPriceETB: parseFloat(startingQuantityUnitPrice),
+      }
+    })
+
+    const inventory = await prisma.inventory.create({
+      data:{
+        product: {
+          connect: {
+            id: createdProduct.id
+          }
+        },
+        productPurchase:{
+          connect: {
+            id: createdProductPurchase.id
+          }
+        },
+        balanceQuantity: parseInt(startingQuantity),
+        createdAt: startingQuantityDate
+      }
+    })
+
     res.json(createdProduct);
   } catch (error) {
     console.error("Error creating product:", error);
@@ -121,6 +150,19 @@ async function deleteProduct(req, res) {
   try {
     const { id } = req.params;
 
+    const declaration = await prisma.productDeclaration.findFirst({
+      where: {
+        productId: id
+      }
+    })
+
+    if(declaration){
+      return res
+      .status(400)
+      .json({
+        error: "Can not delete product, There are related declarations.",
+      });
+    }
     const deletedProduct = await prisma.product.delete({
       where: {
         id: id,

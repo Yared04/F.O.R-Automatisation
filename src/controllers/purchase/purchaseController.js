@@ -837,6 +837,147 @@ async function deletePurchase(req, res) {
   }
 }
 
+async function getTransportCosts(req, res) {
+  try {
+    const { page, pageSize } = req.query;
+    const totalCount = await prisma.transport.count();
+
+    let transports;
+    if (page && pageSize) {
+      transports = await prisma.transport.findMany({
+        select: {
+          id: true,
+          date: true,
+          cost:true,
+          type:true,
+          purchase:true,
+          paidAmount:true
+        },
+        skip: (page - 1) * parseInt(pageSize, 10),
+        take: parseInt(pageSize, 10),
+      });
+    } else {
+      transports = await prisma.transport.findMany({
+        select: {
+          id: true,
+          date: true,
+          cost:true,
+          type:true,
+          purchase:true,
+          paidAmount:true
+        },
+      });
+    }
+
+    const totalPages = Math.ceil(totalCount / parseInt(pageSize, 10));
+
+    res.json({
+      items: transports,
+      totalCount: totalCount,
+      pageSize: parseInt(pageSize, 10),
+      currentPage: parseInt(page, 10),
+      totalPages: totalPages,
+    });
+  } catch (error) {
+    console.error("Error retrieving transport costs:", error);
+    res.status(500).send("Internal Server Error");
+  }
+}
+
+async function getEslCosts(req, res) {
+  try {
+    const { page, pageSize } = req.query;
+    const totalCount = await prisma.ESL.count();
+
+    let esls;
+    if (page && pageSize) {
+      esls = await prisma.ESL.findMany({
+        select: {
+          id: true,
+          date: true,
+          cost:true,
+          type:true,
+          purchase:true,
+          paidAmount:true
+        },
+        skip: (page - 1) * parseInt(pageSize, 10),
+        take: parseInt(pageSize, 10),
+      });
+    } else {
+      esls = await prisma.ESL.findMany({
+        select: {
+          id: true,
+          date: true,
+          cost:true,
+          type:true,
+          purchase:true,
+          paidAmount:true
+        },
+      });
+    }
+
+    const totalPages = Math.ceil(totalCount / parseInt(pageSize, 10));
+
+    res.json({
+      items: esls,
+      totalCount: totalCount,
+      pageSize: parseInt(pageSize, 10),
+      currentPage: parseInt(page, 10),
+      totalPages: totalPages,
+    });
+  } catch (error) {
+    console.error("Error retrieving esl costs:", error);
+    res.status(500).send("Internal Server Error");
+  }
+}
+
+async function getTransiFees(req, res) {
+  try {
+    const { page, pageSize } = req.query;
+    const totalCount = await prisma.transit.count();
+
+    let transitFees;
+    if (page && pageSize) {
+      transitFees = await prisma.transit.findMany({
+        select: {
+          id: true,
+          date: true,
+          cost:true,
+          type:true,
+          purchase:true,
+          paidAmount:true
+        },
+        skip: (page - 1) * parseInt(pageSize, 10),
+        take: parseInt(pageSize, 10),
+      });
+    } else {
+      transitFees = await prisma.transit.findMany({
+        select: {
+          id: true,
+          date: true,
+          cost:true,
+          type:true,
+          purchase:true,
+          paidAmount:true
+        },
+      });
+    }
+
+    const totalPages = Math.ceil(totalCount / parseInt(pageSize, 10));
+
+    res.json({
+      items: transitFees,
+      totalCount: totalCount,
+      pageSize: parseInt(pageSize, 10),
+      currentPage: parseInt(page, 10),
+      totalPages: totalPages,
+    });
+  } catch (error) {
+    console.error("Error retrieving transit fees:", error);
+    res.status(500).send("Internal Server Error");
+  }
+}
+
 module.exports = {
   getPurchases,
   createPurchase,
@@ -846,4 +987,7 @@ module.exports = {
   getPurchase,
   getProductPurchases,
   getProductPurchaseById,
+  getTransportCosts,
+  getEslCosts,
+  getTransiFees
 };
