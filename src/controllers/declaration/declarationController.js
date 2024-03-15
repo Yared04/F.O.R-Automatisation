@@ -101,6 +101,17 @@ async function getDeclarations(req, res) {
 async function createDeclaration(req, res) {
   try {
     const { number, date, declarationProducts } = req.body;
+    const existingDeclaration = await prisma.declaration.findFirst({
+      where:{
+        number: number
+      }
+    })
+
+    if(existingDeclaration){
+      return res
+      .status(400)
+      .json({error: 'There is already a declaration by this declaration number'});
+    }
     const createdDeclaration = await prisma.declaration.create({
       data: {
         number,
@@ -147,52 +158,30 @@ async function createDeclaration(req, res) {
 async function updateDeclaration(req, res) {
   try {
     const { id } = req.params; // Extract the declaration ID from request parameters
-    const { number, date, declarationProducts } = req.body; // Extract updated data from request body
+    const { number, date} = req.body; // Extract updated data from request body
+
+    const existingDeclaration = await prisma.declaration.findFirst({
+      where:{
+        number: number
+      }
+    })
+
+    if((existingDeclaration) && existingDeclaration.id !== id){
+      return res
+      .status(400)
+      .json({error: 'There is already a declaration by this declaration number'});
+    }
 
     // Update the Declaration
     const updatedDeclaration = await prisma.declaration.update({
       where: { id: id }, // Convert id to integer if needed
       data: {
         number,
-        date,
-      },
+        date: new Date(date),
+      }
     });
 
-    // Update the associated products
-    const updatedDeclarationProducts = await Promise.all(
-      declarationProducts.map(async (dp) => {
-        let updatedDeclarationProduct = await prisma.productDeclaration.upsert({
-          where: {
-            productId_declarationId: {
-              productId: dp.product.id,
-              declarationId: id,
-            },
-          },
-          update: {
-            declarationQuantity: parseInt(dp.declarationQuantity),
-            totalIncomeTax: parseInt(dp.totalIncomeTax),
-            unitIncomeTax: dp.totalIncomeTax / dp.declarationQuantity,
-          },
-          create: {
-            declarationQuantity: parseInt(dp.declarationQuantity),
-            totalIncomeTax: parseInt(dp.totalIncomeTax),
-            unitIncomeTax: dp.totalIncomeTax / dp.declarationQuantity,
-            productId: dp.product.id,
-            declarationId: id,
-            declarationBalance: 0,
-            purchasedQuantity: 0,
-          },
-        });
-        return updatedDeclarationProduct;
-      })
-    );
-
-    // If the declaration is not found, return a 404 response
-    if (!updatedDeclaration) {
-      return res.status(404).json({ error: "Declaration not found" });
-    }
-
-    res.json({ updatedDeclaration, updatedDeclarationProducts });
+    res.json(updatedDeclaration);
   } catch (error) {
     console.error("Error updating declaration:", error);
     res.status(500).send("Internal Server Error");
