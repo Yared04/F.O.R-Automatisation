@@ -277,10 +277,115 @@ async function getDeclarationById(req, res) {
   }
 }
 
+
+async function updateProductDeclaration(req, res) {
+  try {
+    const { id } = req.params; // Extract the productDeclaration ID from request parameters
+    const { declarationQuantity, totalIncomeTax, productId } = req.body; // Extract updated data from request body
+
+    // Fetch the existing product declaration
+    const existingProductDeclaration = await prisma.productDeclaration.findUnique({
+      where: { id: id },
+    });
+
+    if (!existingProductDeclaration) {
+      return res.status(404).json({ error: "Product declaration not found" });
+    }
+
+    // Check if purchased quantity is 0
+    if (existingProductDeclaration.purchasedQuantity !== 0) {
+      return res.status(400).json({ error: "Product declaration cannot be updated because purchased quantity is not 0" });
+    }
+
+    // Calculate unitIncomeTax based on totalIncomeTax and declarationQuantity
+    const unitIncomeTax = parseFloat(totalIncomeTax) / parseFloat(declarationQuantity);
+
+    // Update the ProductDeclaration
+    const updatedProductDeclaration = await prisma.productDeclaration.update({
+      where: { id: id },
+      data: {
+        declarationQuantity: parseInt(declarationQuantity),
+        totalIncomeTax: parseInt(totalIncomeTax),
+        unitIncomeTax: unitIncomeTax,
+        product: { connect: { id: productId } }, // Assuming product object has an 'id' field
+      },include:{
+        product:true
+      }
+    });
+
+    res.json(updatedProductDeclaration);
+  } catch (error) {
+    console.error("Error updating product declaration:", error);
+    res.status(500).send("Internal Server Error");
+  }
+}
+
+async function deleteProductDeclaration(req, res) {
+  try {
+    const { id } = req.params; // Extract the productDeclaration ID from request parameters
+
+    // Fetch the existing product declaration
+    const existingProductDeclaration = await prisma.productDeclaration.findUnique({
+      where: { id: id },
+    });
+
+    if (!existingProductDeclaration) {
+      return res.status(404).json({ error: "Product declaration not found" });
+    }
+
+    // Check if purchased quantity is 0
+    if (existingProductDeclaration.purchasedQuantity !== 0) {
+      return res.status(400).json({ error: "Product declaration cannot be deleted because purchased quantity is not 0" });
+    }
+
+    // Delete the ProductDeclaration
+    const deletedProductDeclaration = await prisma.productDeclaration.delete({
+      where: { id: id },
+    });
+
+    res.json(deletedProductDeclaration);
+  } catch (error) {
+    console.error("Error deleting product declaration:", error);
+    res.status(500).send("Internal Server Error");
+  }
+}
+
+
+async function createProductDeclaration(req, res) {
+  try {
+    const { declarationQuantity, totalIncomeTax, productId, declarationId } = req.body; // Extract updated data from request body
+
+    // Calculate unitIncomeTax based on totalIncomeTax and declarationQuantity
+    const unitIncomeTax = parseFloat(totalIncomeTax) / parseFloat(declarationQuantity);
+
+    // Update the ProductDeclaration
+    const productDeclaration = await prisma.productDeclaration.create({
+      data: {
+        declarationQuantity: parseInt(declarationQuantity),
+        totalIncomeTax: parseInt(totalIncomeTax),
+        unitIncomeTax: unitIncomeTax,
+        purchasedQuantity: 0,
+        product: { connect: { id: productId } },
+        declaration: { connect: { id: declarationId } },
+      }, include:{
+        product: true
+      }
+    });
+
+    res.json(productDeclaration);
+  } catch (error) {
+    console.error("Error creating product declaration:", error);
+    res.status(500).send("Internal Server Error");
+  }
+}
+
 module.exports = {
   getDeclarationById,
   updateDeclaration,
   getDeclarations,
   createDeclaration,
   deleteDeclaration,
+  updateProductDeclaration,
+  deleteProductDeclaration,
+  createProductDeclaration
 };
