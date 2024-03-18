@@ -338,6 +338,14 @@ async function deleteProductDeclaration(req, res) {
       return res.status(400).json({ error: "Product declaration cannot be deleted because purchased quantity is not 0" });
     }
 
+    const declarationProducts = await prisma.productDeclaration.findMany({
+      where:{declarationId: existingProductDeclaration.declarationId}
+    })
+
+    if(declarationProducts.length == 1){
+      return res.status(400).json({ error: "There should atleast be one product in a declaration." });
+    }
+
     // Delete the ProductDeclaration
     const deletedProductDeclaration = await prisma.productDeclaration.delete({
       where: { id: id },
