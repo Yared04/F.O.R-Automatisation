@@ -84,26 +84,26 @@ async function createPurchase(req, res) {
         });
       }
     }
+    createdPurchase = await prisma.purchase.create({
+      data: {
+        date: new Date(date),
+        number: parseInt(number),
+        truckNumber,
+        exchangeRate: parseFloat(exchangeRate),
+        supplier: {
+          connect: {
+            id: supplierId,
+          },
+        },
+      },
+      include: {
+        supplier: true,
+      },
+    });
 
     const createdProductPurchases = await Promise.all(
       purchaseProducts.map(async (purchaseProduct) => {
-        if (!createdPurchase) {
-          createdPurchase = await prisma.purchase.create({
-            data: {
-              date: new Date(date),
-              number: parseInt(number),
-              truckNumber,
-              exchangeRate: parseFloat(exchangeRate),
-              supplier: {
-                connect: {
-                  id: supplierId,
-                },
-              },
-            },include: {
-              supplier: true,
-            },
-          });
-        }
+
         const createdProductPurchase = await prisma.productPurchase.create({
           data: {
             purchase: {
@@ -881,8 +881,6 @@ async function updatePurchase(req, res) {
           credit: purchaseTotalAmount,
         },
       });
-
-
     } catch (error) {
       console.error("Error updating transaction:", error);
       throw new Error(error);
@@ -992,15 +990,15 @@ async function getTransportCosts(req, res) {
         select: {
           id: true,
           date: true,
-          cost:true,
-          type:true,
-          purchase:true,
-          productPurchase:{
-            select:{
-              declaration: true
-            }
+          cost: true,
+          type: true,
+          purchase: true,
+          productPurchase: {
+            select: {
+              declaration: true,
+            },
           },
-          paidAmount:true
+          paidAmount: true,
         },
         skip: (page - 1) * parseInt(pageSize, 10),
         take: parseInt(pageSize, 10),
@@ -1010,15 +1008,15 @@ async function getTransportCosts(req, res) {
         select: {
           id: true,
           date: true,
-          cost:true,
-          type:true,
-          purchase:true,
-          productPurchase:{
-            select:{
-              declaration: true
-            }
+          cost: true,
+          type: true,
+          purchase: true,
+          productPurchase: {
+            select: {
+              declaration: true,
+            },
           },
-          paidAmount:true
+          paidAmount: true,
         },
       });
     }
@@ -1049,15 +1047,15 @@ async function getEslCosts(req, res) {
         select: {
           id: true,
           date: true,
-          cost:true,
-          type:true,
-          purchase:true,
-          productPurchase:{
-            select:{
-              declaration: true
-            }
+          cost: true,
+          type: true,
+          purchase: true,
+          productPurchase: {
+            select: {
+              declaration: true,
+            },
           },
-          paidAmount:true
+          paidAmount: true,
         },
         skip: (page - 1) * parseInt(pageSize, 10),
         take: parseInt(pageSize, 10),
@@ -1067,15 +1065,15 @@ async function getEslCosts(req, res) {
         select: {
           id: true,
           date: true,
-          cost:true,
-          type:true,
-          purchase:true,
-          productPurchase:{
-            select:{
-              declaration: true
-            }
+          cost: true,
+          type: true,
+          purchase: true,
+          productPurchase: {
+            select: {
+              declaration: true,
+            },
           },
-          paidAmount:true
+          paidAmount: true,
         },
       });
     }
@@ -1106,15 +1104,15 @@ async function getTransiFees(req, res) {
         select: {
           id: true,
           date: true,
-          cost:true,
-          type:true,
-          purchase:true,
-          productPurchase:{
-            select:{
-              declaration: true
-            }
+          cost: true,
+          type: true,
+          purchase: true,
+          productPurchase: {
+            select: {
+              declaration: true,
+            },
           },
-          paidAmount:true
+          paidAmount: true,
         },
         skip: (page - 1) * parseInt(pageSize, 10),
         take: parseInt(pageSize, 10),
@@ -1124,15 +1122,15 @@ async function getTransiFees(req, res) {
         select: {
           id: true,
           date: true,
-          cost:true,
-          type:true,
-          purchase:true,
-          productPurchase:{
-            select:{
-              declaration: true
-            }
+          cost: true,
+          type: true,
+          purchase: true,
+          productPurchase: {
+            select: {
+              declaration: true,
+            },
           },
-          paidAmount:true
+          paidAmount: true,
         },
       });
     }
@@ -1163,5 +1161,5 @@ module.exports = {
   getProductPurchaseById,
   getTransportCosts,
   getEslCosts,
-  getTransiFees
+  getTransiFees,
 };
