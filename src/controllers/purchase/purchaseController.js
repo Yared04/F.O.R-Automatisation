@@ -456,6 +456,10 @@ async function createPurchase(req, res) {
       throw new Error(error);
     }
 
+    createdPurchase.totalTransportCost = transportCost;
+    createdPurchase.totalEslCost = eslCustomCost;
+    createdPurchase.totalTransitCost = transitFees;
+
     res.json(createdPurchase);
   } catch (error) {
     console.error("Error creating purchase:", error);
