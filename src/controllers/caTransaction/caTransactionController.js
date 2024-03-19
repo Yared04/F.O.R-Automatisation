@@ -91,7 +91,7 @@ async function getCaTransactions(req, res) {
 }
 
 async function createTransaction(
-  chartofAccountId1,
+  chartofAccountId,
   date,
   remark,
   type,
@@ -104,134 +104,66 @@ async function createTransaction(
   supplierId,
   customerId,
   exchangeRate,
-  USDAmount,
-
+  USDAmount
 ) {
   try {
-    let createdCaTransaction1;
-    let createdCaTransaction2;
-    if (debit && credit) {
-      createdCaTransaction1 = await prisma.CATransaction.create({
-        data: {
-          chartofAccount: {
-            connect: { id: chartofAccountId1 },
-          },
-          date: new Date(date),
-          remark: remark,
-          debit: parseFloat(debit),
-          credit: null,
+    let createdCaTransaction;
+    createdCaTransaction = await prisma.CATransaction.create({
+      data: {
+        chartofAccount: {
+          connect: { id: chartofAccountId },
         },
-      });
-
-      // createdCaTransaction2 = await prisma.CATransaction.create({
-      //   data: {
-      //     chartofAccount: {
-      //       connect: { id: chartofAccountId2 },
-      //     },
-      //     date: new Date(date),
-      //     remark: remark,
-      //     debit: null,
-      //     credit: parseFloat(credit),
-      //     accountDetails: accountDetails,
-      //   },
-      // });
-    } else {
-      createdCaTransaction1 = await prisma.CATransaction.create({
-        data: {
-          chartofAccount: {
-            connect: { id: chartofAccountId1 },
-          },
-          sale: saleId
-            ? {
-                connect: { id: saleId },
-              }
-            : undefined,
-          purchase: purchaseId
-            ? {
-                connect: {
-                  id: purchaseId,
-                },
-              }
-            : undefined,
-          productPurchase: productPurchaseId
-            ? {
-                connect: {
-                  id: productPurchaseId,
-                },
-              }
-            : undefined,
-          saleDetail: saleDetailId
-            ? {
-                connect: {
-                  id: saleDetailId,
-                },
-              }
-            : undefined,
-          supplier: supplierId 
-            ? {
+        sale: saleId
+          ? {
+              connect: { id: saleId },
+            }
+          : undefined,
+        purchase: purchaseId
+          ? {
+              connect: {
+                id: purchaseId,
+              },
+            }
+          : undefined,
+        productPurchase: productPurchaseId
+          ? {
+              connect: {
+                id: productPurchaseId,
+              },
+            }
+          : undefined,
+        saleDetail: saleDetailId
+          ? {
+              connect: {
+                id: saleDetailId,
+              },
+            }
+          : undefined,
+        supplier: supplierId
+          ? {
               connect: {
                 id: supplierId,
               },
             }
-            : undefined,
-          customer: customerId
-            ? {
+          : undefined,
+        customer: customerId
+          ? {
               connect: {
                 id: customerId,
               },
             }
-            : undefined,
-          exchangeRate: exchangeRate,
-          USDAmount: USDAmount,
-          type: type,
-          date: new Date(date),
-          remark: remark,
-          debit: parseFloat(debit),
-          credit: parseFloat(credit),
-        },
-      });
+          : undefined,
+        exchangeRate: exchangeRate,
+        USDAmount: USDAmount,
+        type: type,
+        date: new Date(date),
+        remark: remark,
+        debit: parseFloat(debit),
+        credit: parseFloat(credit),
+      },
+    });
 
-      // createdCaTransaction2 = await prisma.CATransaction.create({
-      //   data: {
-      //     chartofAccount: {
-      //       connect: { id: chartofAccountId2 },
-      //     },
-      //     sale: saleId
-      //       ? {
-      //           connect: { id: saleId },
-      //         }
-      //       : undefined,
-      //     purchase: purchaseId
-      //       ? {
-      //           connect: {
-      //             id: purchaseId,
-      //           },
-      //         }
-      //       : undefined,
-      //     productPurchase: productPurchaseId
-      //       ? {
-      //           connect: {
-      //             id: productPurchaseId,
-      //           },
-      //         }
-      //       : undefined,
-      //     saleDetail: saleDetailId
-      //       ? {
-      //           connect: {
-      //             id: saleDetailId,
-      //           },
-      //         }
-      //       : undefined,
-      //     date: new Date(date),
-      //     remark: remark,
-      //     debit: parseFloat(credit),
-      //     credit: parseFloat(debit),
-      //     accountDetails: accountDetails,
-      //   },
-      // });
-    }
-
-    return createdCaTransaction1;
+    return createdCaTransaction;
   } catch (error) {
     console.error("Error creating CA Transaction:", error);
     return error, "Internal Server Error";
@@ -241,27 +173,39 @@ async function createTransaction(
 async function createCaTransaction(req, res) {
   try {
     const {
-      chartofAccountId1,
-      chartofAccountId2,
+      chartofAccountId,
       date,
       remark,
+      type,
       debit,
       credit,
-      accountDetails,
+      purchaseId,
+      productPurchaseId,
+      saleId,
+      saleDetailId,
+      supplierId,
+      customerId,
+      exchangeRate,
+      USDAmount,
     } = req.body;
     await createTransaction(
-      chartofAccountId1,
-      chartofAccountId2,
+      chartofAccountId,
       date,
       remark,
+      type,
       debit,
       credit,
-      null,
-      null,
-      null,
-      null,
-      accountDetails
+      purchaseId,
+      productPurchaseId,
+      saleId,
+      saleDetailId,
+      supplierId,
+      customerId,
+      exchangeRate,
+      USDAmount
     );
+    
+    res.status(201).send("CA Transaction created successfully");
   } catch (error) {
     console.error("Error creating CA Transaction:", error);
     res.status(500).send("Internal Server Error");
