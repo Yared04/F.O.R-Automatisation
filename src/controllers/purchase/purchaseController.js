@@ -23,10 +23,39 @@ async function getPurchases(req, res) {
             name: true,
           },
         },
+        products: true,
+        transports: true,
+        esls: true,
+        transits: true,
       },
       skip: (page - 1) * parseInt(pageSize, 10),
       take: parseInt(pageSize, 10),
     });
+
+    // Recalculate total costs for each purchase
+    for (const purchase of purchases) {
+      let totalTransportCost = 0;
+      let totalEslCost = 0;
+      let totalTransitCost = 0;
+
+      // Sum up the costs from associated tables
+      for (const transport of purchase.transports) {
+        totalTransportCost += transport.cost;
+      }
+
+      for (const esl of purchase.esls) {
+        totalEslCost += esl.cost;
+      }
+
+      for (const transit of purchase.transits) {
+        totalTransitCost += transit.cost;
+      }
+
+      // Assign the total costs to the purchase
+      purchase.totalTransportCost = totalTransportCost;
+      purchase.totalEslCost = totalEslCost;
+      purchase.totalTransitCost = totalTransitCost;
+    }
 
     const totalPages = Math.ceil(totalCount / parseInt(pageSize, 10));
 
@@ -66,6 +95,18 @@ async function createPurchase(req, res) {
         total + parseInt(productPurchase.purchaseQuantity),
       0
     );
+
+    const existingPurchase = await prisma.purchase.findFirst({
+      where:{
+        number: number
+      }
+    })
+
+    if(existingPurchase){
+      return res
+      .status(400)
+      .json({error: 'There is already a purchase by this purchase number'});
+    }
 
     for (product of purchaseProducts) {
       const currentDeclaration = await prisma.productDeclaration.findFirst({
@@ -415,6 +456,10 @@ async function createPurchase(req, res) {
       throw new Error(error);
     }
 
+    createdPurchase.totalTransportCost = transportCost;
+    createdPurchase.totalEslCost = eslCustomCost;
+    createdPurchase.totalTransitCost = transitFees;
+
     res.json(createdPurchase);
   } catch (error) {
     console.error("Error creating purchase:", error);
@@ -536,355 +581,146 @@ async function getPurchaseById(req, res) {
 
 async function updatePurchase(req, res) {
   try {
-    const { id } = req.params;
     const {
       date,
       number,
       truckNumber,
-      exchangeRate,
       supplierId,
       transportCost,
       eslCustomCost,
       transitFees,
-      productPurchases,
     } = req.body;
 
-    const saleDetail = await prisma.saleDetail.findFirst({
+    const { id } = req.params;
+
+    const purchase = await prisma.purchase.findFirst({
+      where:{
+        number: number
+      }
+    })
+
+    if((purchase) && purchase.id !== id){
+      return res
+      .status(400)
+      .json({error: 'There is already a purchase by this purchase number'});
+    }
+
+
+    // Check if the purchase exists
+    const existingPurchase = await prisma.purchase.findUnique({
       where: {
-        purchaseId: id,
+        id: id,
+      },
+      include: {
+        products: true,
+        transports: true,
+        esls: true,
+        transits: true,
       },
     });
 
-    if (saleDetail) {
-      return res.status(400).json({
-        error:
-          "Cannot update purchase with associated sale, Please delete the sale first.",
-      });
+    if (!existingPurchase) {
+      return res.status(404).json({ error: "Purchase not found" });
     }
-    const totalPurchaseQuantity = productPurchases.reduce(
+
+    // Calculate total purchase quantity
+    const totalPurchaseQuantity = existingPurchase.products.reduce(
       (total, productPurchase) =>
         total + parseInt(productPurchase.purchaseQuantity),
       0
     );
 
-    for (product of productPurchases) {
-      const currentDeclaration = await prisma.productDeclaration.findFirst({
-        where: {
-          AND: [
-            { productId: product.productId },
-            { declarationId: product.declarationId },
-          ],
-        },
-      });
-      const declarationBalance =
-        currentDeclaration.declarationQuantity - product.purchasedQuantity;
-      if (declarationBalance < 0) {
-        res.status(400).send({
-          error: `The purchase quantity for the product ${product.id} is greater than the declaration quantity`,
-        });
-      }
-    }
-
+    // Update the purchase
     const updatedPurchase = await prisma.purchase.update({
-      where: { id: id },
+      where: {
+        id: id,
+      },
       data: {
         date: new Date(date),
         number: parseInt(number),
         truckNumber,
-        exchangeRate: parseFloat(exchangeRate),
         supplier: {
           connect: {
             id: supplierId,
           },
-        },
-      },
+        }
+      },include:{
+        supplier: true
+      }
     });
-    let purchaseTotalAmount;
 
-    const updatedProductPurchases = await Promise.all(
-      productPurchases.map(async (productPurchase) => {
-        let currentDeclaration;
-        try {
-          currentDeclaration = await prisma.productDeclaration.findFirst({
+    // Recalculate transport costs
+    if (existingPurchase.transports.length > 0) {
+      await Promise.all(
+        existingPurchase.transports.map(async (transport) => {
+          const productPurchase = await prisma.productPurchase.findUnique({
             where: {
-              AND: [
-                { productId: productPurchase.productId },
-                { declarationId: productPurchase.declarationId },
-              ],
+              id: transport.productPurchaseId,
             },
           });
-        } catch (error) {
-          console.error("Error retrieving declaration:", error);
-          throw new Error(error);
-        }
-
-        if (currentDeclaration) {
-          await prisma.productDeclaration.update({
+          const recalculatedTransportCost =
+            parseFloat((transportCost * productPurchase.purchaseQuantity) / totalPurchaseQuantity);
+          await prisma.transport.update({
             where: {
-              id: currentDeclaration.id,
+              id: transport.id,
             },
             data: {
-              purchasedQuantity:
-                currentDeclaration.purchasedQuantity +
-                parseInt(productPurchase.purchaseQuantity),
-              declarationBalance:
-                currentDeclaration.declarationQuantity -
-                (currentDeclaration.purchasedQuantity +
-                  parseInt(productPurchase.purchaseQuantity)),
+              cost: recalculatedTransportCost,
             },
           });
-        }
-
-        //find an exisiting product purchase with purchaseId, productId and declarationId
-        let currentProductPurchase;
-        let updatedProductPurchase;
-        try {
-          currentProductPurchase = await prisma.productPurchase.findFirst({
-            where: {
-              AND: [
-                { purchaseId: id },
-                { productId: productPurchase.productId },
-                { declarationId: productPurchase.declarationId },
-              ],
-            },
-          });
-        } catch (error) {
-          console.error("Error retrieving product purchase:", error);
-          throw new Error(error);
-        }
-
-        try {
-          const transportFee = parseFloat(
-            (transportCost * productPurchase.purchaseQuantity) /
-              totalPurchaseQuantity
-          );
-          const eslCustomFee = parseFloat(
-            (eslCustomCost * productPurchase.purchaseQuantity) /
-              totalPurchaseQuantity
-          );
-          const transitFee = parseFloat(
-            (transitFees * productPurchase.purchaseQuantity) /
-              totalPurchaseQuantity
-          );
-
-          await prisma.transport.upsert({
-            where: {
-              productPurchaseId: productPurchase.id,
-            },
-            update: {
-              date: updatedPurchase.date,
-              cost: transportFee,
-            },
-            create: {
-              purchase: {
-                connect: {
-                  id: updatedPurchase.id,
-                },
-              },
-              date: updatedPurchase.date,
-              cost: transportFee,
-              type: "Bill",
-              productPurchase: {
-                connect: {
-                  id: productPurchase.id,
-                },
-              },
-            },
-          });
-
-          const eslCustom = await prisma.ESL.upsert({
-            where: {
-              productPurchaseId: productPurchase.id,
-            },
-            update: {
-              date: updatedPurchase.date,
-              cost: eslCustomFee,
-            },
-            create: {
-              purchase: {
-                connect: {
-                  id: updatedPurchase.id,
-                },
-              },
-              date: updatedPurchase.date,
-              cost: eslCustomFee,
-              type: "Bill",
-              productPurchase: {
-                connect: {
-                  id: productPurchase.id,
-                },
-              },
-            },
-          });
-
-          const transit = await prisma.transit.upsert({
-            where: {
-              productPurchaseId: productPurchase.id,
-            },
-            update: {
-              date: updatedPurchase.date,
-              cost: transitFee,
-            },
-            create: {
-              purchase: {
-                connect: {
-                  id: updatedPurchase.id,
-                },
-              },
-              date: updatedPurchase.date,
-              cost: transitFee,
-              type: "Bill",
-              productPurchase: {
-                connect: {
-                  id: productPurchase.id,
-                },
-              },
-            },
-          });
-
-          //update the product purchase
-          updatedProductPurchase = await prisma.productPurchase.upsert({
-            where: { id: currentProductPurchase.id },
-            update: {
-              purchaseQuantity: parseInt(productPurchase.purchaseQuantity),
-              purchaseUnitPriceETB:
-                parseFloat(productPurchase.purchaseUnitPrice) *
-                parseFloat(exchangeRate),
-              purchaseUnitPriceUSD: parseFloat(
-                productPurchase.purchaseUnitPrice
-              ),
-              purchaseTotalETB:
-                parseInt(productPurchase.purchaseQuantity) *
-                parseFloat(productPurchase.purchaseUnitPrice),
-              purchaseUnitCostOfGoods:
-                (transportFee + eslCustomFee + transitFee) /
-                  parseInt(productPurchase.purchaseQuantity) +
-                parseFloat(productPurchase.purchaseUnitPrice) *
-                  parseFloat(exchangeRate),
-            },
-            create: {
-              purchase: {
-                connect: {
-                  id: id,
-                },
-              },
-              declaration: {
-                connect: {
-                  id: productPurchase.declarationId,
-                },
-              },
-              product: {
-                connect: {
-                  id: productPurchase.productId,
-                },
-              },
-              purchaseQuantity: parseInt(productPurchase.purchaseQuantity),
-              purchaseUnitPriceETB:
-                parseFloat(productPurchase.purchaseUnitPrice) *
-                parseFloat(exchangeRate),
-              purchaseUnitPriceUSD: parseFloat(
-                productPurchase.purchaseUnitPrice
-              ),
-              purchaseTotalETB:
-                parseInt(productPurchase.purchaseQuantity) *
-                parseFloat(productPurchase.purchaseUnitPrice),
-              purchaseUnitCostOfGoods:
-                (transportFee + eslCustomFee + transitFee) /
-                  parseInt(productPurchase.purchaseQuantity) +
-                parseFloat(productPurchase.purchaseUnitPrice) *
-                  parseFloat(exchangeRate),
-            },
-          });
-        } catch (error) {
-          console.error("Error creating a product purchase:", error);
-          throw new Error(error);
-        }
-        //Get the product has invetory entries
-        let inventoryEntry;
-        try {
-          inventoryEntry = await prisma.inventory.findMany({
-            where: {
-              purchaseId: productPurchase.purchaseId,
-            },
-          });
-        } catch (error) {
-          console.error("Error retrieving inventory:", error);
-          throw new Error(error);
-        }
-
-        //update the inventory entry of the specific purchase
-        try {
-          await prisma.inventory.update({
-            where: {
-              id: inventoryEntry[0].id,
-            },
-            data: {
-              balanceQuantity: updatedProductPurchase.purchaseQuantity,
-            },
-          });
-        } catch (error) {
-          console.error("Error updating inventory:", error);
-          throw new Error(error);
-        }
-
-        //get the CA transactions associted with this purchase
-        let caTransaction1;
-        try {
-          caTransaction1 = await prisma.CATransaction.findFirst({
-            where: {
-              productPurchaseId: productPurchase.id,
-            },
-          });
-
-          // update the CA transactions
-          await prisma.CATransaction.update({
-            where: {
-              id: caTransaction1.id,
-            },
-            data: {
-              credit: updatedProductPurchase.purchaseTotalETB,
-            },
-          });
-          purchaseTotalAmount += updatedProductPurchase.purchaseTotalETB;
-        } catch (error) {
-          console.error("Error updating CA transactions:", error);
-          throw new Error(error);
-        }
-
-        return updatedProductPurchase;
-      })
-    );
-
-    try {
-      //get the CA transactions associted with this purchase
-      let caTransaction2;
-      const chartOfAccounts = await prisma.chartOfAccount.findMany({
-        select: { id: true, name: true },
-      });
-
-      accountsPayable = chartOfAccounts.find(
-        (account) => account.name === "Accounts Payable (A/P) - USD"
+        })
       );
-
-      caTransaction2 = await prisma.CATransaction.findFirst({
-        where: {
-          purchaseId: updatedPurchase.id,
-          chartofAccountId: accountsPayable.id,
-        },
-      });
-
-      await prisma.CATransaction.update({
-        where: {
-          id: caTransaction2.id,
-        },
-        data: {
-          credit: purchaseTotalAmount,
-        },
-      });
-    } catch (error) {
-      console.error("Error updating transaction:", error);
-      throw new Error(error);
     }
+
+    // Recalculate ESL costs
+    if (existingPurchase.esls.length > 0) {
+      await Promise.all(
+        existingPurchase.esls.map(async (esl) => {
+          const productPurchase = await prisma.productPurchase.findUnique({
+            where: {
+              id: esl.productPurchaseId,
+            },
+          });
+          const recalculatedEslCustomCost =
+            parseFloat((eslCustomCost * productPurchase.purchaseQuantity) / totalPurchaseQuantity);
+          await prisma.ESL.update({
+            where: {
+              id: esl.id,
+            },
+            data: {
+              cost: recalculatedEslCustomCost,
+            },
+          });
+        })
+      );
+    }
+
+    // Recalculate transit fees
+    if (existingPurchase.transits.length > 0) {
+      await Promise.all(
+        existingPurchase.transits.map(async (transit) => {
+          const productPurchase = await prisma.productPurchase.findUnique({
+            where: {
+              id: transit.productPurchaseId,
+            },
+          });
+          const recalculatedTransitFees =
+            parseFloat((transitFees * productPurchase.purchaseQuantity) / totalPurchaseQuantity);
+          await prisma.transit.update({
+            where: {
+              id: transit.id,
+            },
+            data: {
+              cost: recalculatedTransitFees,
+            },
+          });
+        })
+      );
+    }
+
+    updatedPurchase.totalTransportCost = transportCost;
+    updatedPurchase.totalEslCost = eslCustomCost;
+    updatedPurchase.totalTransitCost = transitFees;
 
     res.json(updatedPurchase);
   } catch (error) {
