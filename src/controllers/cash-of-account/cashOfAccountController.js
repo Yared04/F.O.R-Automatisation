@@ -31,7 +31,7 @@ async function getAllBanks(req, res) {
 
 async function getAllChartOfAccounts(req, res) {
   try {
-    const { page = 1, pageSize = 10 } = req.query;
+    const { page, pageSize } = req.query;
 
     let chartOfAccounts;
     let totalCount;

@@ -8,77 +8,118 @@ async function getCaTransactions(req, res) {
       orderBy: {
         createdAt: "desc",
       },
+      include: {
+        supplier: {
+          select: {
+            name: true,
+          },
+        },
+        customer: {
+          select: {
+            firstName: true,
+            lastName: true,
+          },
+        
+        },
+        productPurchase: true,
+        saleDetail: true,
+        bank: {
+          select: {
+            name: true,
+          },
+        },
+        purchase: {
+          select: {
+            number: true,
+          },
+        
+        },
+        sale: {
+          select: {
+            invoiceNumber: true,
+          },
+        },
+        chartofAccount: {
+          select: {
+            name: true,
+          },
+        },
+      },
       skip: (page - 1) * parseInt(pageSize, 10),
       take: parseInt(pageSize, 10),
     });
-    let caTransactionsList = [];
-    caTransactionsList = await Promise.all(
-      caTransactions.map(async (caTransaction) => {
-        const {
-          createdAt,
-          updatedAt,
-          purchaseId,
-          saleId,
-          chartofAccountId,
-          ...updatedCaTransaction
-        } = caTransaction;
-        let updatedCATransaction = updatedCaTransaction;
+    // let caTransactionsList = [];
+    // caTransactionsList = await Promise.all(
+    //   caTransactions.map(async (caTransaction) => {
+    //     const {
+    //       createdAt,
+    //       updatedAt,
+    //       purchaseId,
+    //       saleId,
+    //       chartofAccountId,
+    //       ...updatedCaTransaction
+    //     } = caTransaction;
+    //     let updatedCATransaction = updatedCaTransaction;
 
-        const chartofAccount = await prisma.chartOfAccount.findUnique({
-          where: { id: caTransaction.chartofAccountId },
-        });
-        updatedCATransaction.chartofAccount = chartofAccount.name;
+    //     const chartofAccount = caTransaction.chartofAccountId
+    //       ? await prisma.chartOfAccount.findUnique({
+    //           where: { id: caTransaction.chartofAccountId },
+    //         })
+    //       : await prisma.bank.findUnique({
+    //           where: { id: caTransaction.bankId },
+    //         });
+    //     updatedCATransaction.chartofAccount = chartofAccount.name;
 
-        if (caTransaction.purchaseId) {
-          let declarationNumbers = [];
-          let purchaseNumber;
-          const currentPurchase = await prisma.purchase.findUnique({
-            where: { id: caTransaction.purchaseId },
-          });
-          const currentProductPurchases = await prisma.productPurchase.findMany(
-            {
-              where: { purchaseId: caTransaction.purchaseId },
-              include: { declaration: true },
-            }
-          );
-          if (currentProductPurchases) {
-            purchaseNumber = currentPurchase.number;
-            declarationNumbers = [
-              ...new Set(
-                currentProductPurchases.map(
-                  (productPurchase) => productPurchase.declaration.number
-                )
-              ),
-            ];
-            updatedCATransaction = {
-              ...updatedCATransaction,
-              purchaseNumber,
-              declarationNumbers,
-            };
-          }
-        }
+    //     if (caTransaction.purchaseId) {
+    //       let declarationNumbers = [];
+    //       let purchaseNumber;
+    //       const currentPurchase = await prisma.purchase.findUnique({
+    //         where: { id: caTransaction.purchaseId },
+    //       });
+    //       const currentProductPurchases = await prisma.productPurchase.findMany(
+    //         {
+    //           where: { purchaseId: caTransaction.purchaseId },
+    //           include: { declaration: true },
+    //         }
+    //       );
+    //       if (currentProductPurchases) {
+    //         purchaseNumber = currentPurchase.number;
+    //         declarationNumbers = [
+    //           ...new Set(
+    //             currentProductPurchases.map(
+    //               (productPurchase) => productPurchase.declaration.number
+    //             )
+    //           ),
+    //         ];
+    //         updatedCATransaction = {
+    //           ...updatedCATransaction,
+    //           purchaseNumber,
+    //           declarationNumbers,
+    //         };
+    //       }
+    //     }
 
-        if (caTransaction.saleId) {
-          let saleNum;
-          const sale = await prisma.sale.findUnique({
-            where: { id: caTransaction.saleId },
-          });
-          if (sale) {
-            saleNum = sale.invoiceNumber;
-            updatedCATransaction = {
-              ...updatedCATransaction,
-              invoiceNumber: saleNum,
-            };
-          }
-        }
+    //     if (caTransaction.saleId) {
+    //       let saleNum;
+    //       const sale = await prisma.sale.findUnique({
+    //         where: { id: caTransaction.saleId },
+    //       });
+    //       if (sale) {
+    //         saleNum = sale.invoiceNumber;
+    //         updatedCATransaction = {
+    //           ...updatedCATransaction,
+    //           invoiceNumber: saleNum,
+    //         };
+    //       }
+    //     }
 
-        return updatedCATransaction;
-      })
-    );
+    //     return updatedCATransaction;
+    //   })
+    // );
 
     const totalPages = Math.ceil(totalCount / parseInt(pageSize, 10));
     res.json({
-      items: caTransactionsList,
+      items: caTransactions,
       totalCount: totalCount,
       pageSize: parseInt(pageSize, 10),
       currentPage: parseInt(page, 10),
@@ -90,8 +131,45 @@ async function getCaTransactions(req, res) {
   }
 }
 
+async function createSupplierPayment(req, res) {
+  try {
+    const {
+      supplierId,
+      date,
+      exchangeRate,
+      number,
+      paidAmountETB,
+      paidAmountUSD,
+    } = req.body;
+    const purchaseNumber = await prisma.purchase.findUnique({
+      where: { id: number },
+    });
+    const createdSupplierPayment = await prisma.purchase.create({
+      data: {
+        supplier: {
+          connect: {
+            id: supplierId,
+          },
+        },
+        date: new Date(date),
+        number: purchaseNumber.number,
+        exchangeRate: exchangeRate,
+        paidAmountUSD: exchangeRate ? paidAmountUSD : null,
+        paidAmountETB: exchangeRate
+          ? exchangeRate * paidAmountETB
+          : paidAmountUSD,
+      },
+    });
+    res.json(createdSupplierPayment);
+  } catch (error) {
+    console.error("Error creating supplier payment:", error);
+    res.status(500).send("Internal Server Error");
+  }
+}
+
 async function createTransaction(
   chartofAccountId,
+  bankId,
   date,
   remark,
   type,
@@ -110,9 +188,12 @@ async function createTransaction(
     let createdCaTransaction;
     createdCaTransaction = await prisma.CATransaction.create({
       data: {
-        chartofAccount: {
-          connect: { id: chartofAccountId },
-        },
+        chartofAccount: chartofAccountId
+          ? {
+              connect: { id: chartofAccountId },
+            }
+          : undefined,
+        bank: bankId ? { connect: { id: bankId } } : undefined,
         sale: saleId
           ? {
               connect: { id: saleId },
@@ -174,6 +255,7 @@ async function createCaTransaction(req, res) {
   try {
     const {
       chartofAccountId,
+      bankId,
       date,
       remark,
       type,
@@ -188,8 +270,9 @@ async function createCaTransaction(req, res) {
       exchangeRate,
       USDAmount,
     } = req.body;
-    await createTransaction(
+    const transaction = await createTransaction(
       chartofAccountId,
+      bankId,
       date,
       remark,
       type,
@@ -204,8 +287,8 @@ async function createCaTransaction(req, res) {
       exchangeRate,
       USDAmount
     );
-    
-    res.status(201).send("CA Transaction created successfully");
+
+    res.json(transaction);
   } catch (error) {
     console.error("Error creating CA Transaction:", error);
     res.status(500).send("Internal Server Error");
@@ -287,4 +370,5 @@ module.exports = {
   createCaTransaction,
   getCaTransactionById,
   createTransaction,
+  createSupplierPayment,
 };
