@@ -130,6 +130,8 @@ model Purchase {
   date           DateTime?
   number         Int?
   truckNumber    String?
+  paidAmountETB  Float?
+  paidAmountUSD  Float?
   exchangeRate   Float?
   supplierId     String?           @map("supplier_id") @db.Uuid
   supplier       Supplier?         @relation(fields:[supplierId], references:[id])
@@ -306,8 +308,10 @@ model Inventory {
 
 model CATransaction {
   id                String           @id @default(uuid()) @db.Uuid
-  chartofAccountId  String           @map("chart_of_account_id") @db.Uuid
-  chartofAccount    ChartOfAccount   @relation(fields: [chartofAccountId], references: [id])
+  chartofAccountId  String?           @map("chart_of_account_id") @db.Uuid
+  chartofAccount    ChartOfAccount?   @relation(fields: [chartofAccountId], references: [id])
+  bankId  String?                      @map("bank_id") @db.Uuid
+  bank    Bank?   @relation(fields: [bankId], references: [id])
   purchaseId        String?          @map("purchase_id") @db.Uuid
   purchase          Purchase?        @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
   saleId            String?          @map("sale_id") @db.Uuid
@@ -346,6 +350,7 @@ model Bank {
   chartofAccountId String?         @db.Uuid @unique
   chartofAccount   ChartOfAccount? @relation(fields: [chartofAccountId], references: [id])
   exchangeRate     Float?
+  caTransactions  CATransaction[]
   createdAt        DateTime        @default(now()) @map("created_at")
   updatedAt        DateTime        @updatedAt @map("updated_at")
 }
