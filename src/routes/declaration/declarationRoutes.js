@@ -30,4 +30,19 @@ router.get('/declarations/:id', (req, res) => {
   authenticate(req, res, () => declarationController.getDeclarationById(req, res));
 });
 
+router.delete('/declaration-detail/:id', (req, res) => {
+  req.requiredPermissions = ['DeleteDeclarationDetail'];
+  authenticate(req, res, () => declarationController.deleteProductDeclaration(req, res));
+});
+
+router.put('/declaration-detail/:id', (req, res) => {
+  req.requiredPermissions = ['UpdateDeclarationDetail'];
+  authenticate(req, res, () => declarationController.updateProductDeclaration(req, res));
+});
+
+router.post('/declaration-detail', (req, res) => {
+  req.requiredPermissions = ['CreateDeclarationDetail'];
+  authenticate(req, res, () => declarationController.createProductDeclaration(req, res));
+});
+
 module.exports = router;

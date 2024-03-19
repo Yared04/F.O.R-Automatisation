@@ -100,7 +100,7 @@ model ProductCategory{
 
 model Declaration {
   id        String               @id @default(uuid()) @db.Uuid
-  number    String
+  number    String               @unique
   date      DateTime
   paidAmount   Float?
   products  ProductDeclaration[]
