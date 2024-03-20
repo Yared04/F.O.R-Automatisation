@@ -1,3 +1,4 @@
+const { parse } = require("path");
 const prisma = require("../../database");
 
 async function getCaTransactions(req, res) {
@@ -19,20 +20,22 @@ async function getCaTransactions(req, res) {
             firstName: true,
             lastName: true,
           },
-        
         },
         productPurchase: true,
         saleDetail: true,
-        bank: {
+        bankTransaction: {
           select: {
-            name: true,
+            bank: {
+              select: {
+                name: true,
+              },
+            },
           },
         },
         purchase: {
           select: {
             number: true,
           },
-        
         },
         sale: {
           select: {
@@ -131,6 +134,61 @@ async function getCaTransactions(req, res) {
   }
 }
 
+async function createBankTransaction(req, res) {
+  const {
+    bankId,
+    payee,
+    foreignCurrency,
+    payment,
+    deposit,
+    type,
+    chartofAccountId,
+    exchangeRate,
+  } = req.body;
+  try {
+    const bankTransactions = await prisma.bankTransaction.findMany({
+      where: { bankId: bankId },
+      orderBy: { createdAt: "desc" },
+    });
+
+    const supplier = payee
+      ? await prisma.supplier.findUnique({
+          where: { id: payee },
+        })
+      : null;
+    const createdBankTransaction = await prisma.bankTransaction.create({
+      data: {
+        bank: {
+          connect: {
+            id: bankId,
+          },
+        },
+        payee: supplier ? supplier.name : null,
+        foreignCurrency: parseFloat(foreignCurrency),
+        balance: bankTransactions[0]
+          ? bankTransactions[0].balance ??
+            0 - parseFloat(payment) ??
+            0 + parseFloat(deposit) ??
+            0
+          : parseFloat(deposit) ?? 0 - parseFloat(payment) ?? 0,
+        payment: parseFloat(payment),
+        deposit: parseFloat(deposit),
+        type: type,
+        chartofAccount: {
+          connect: {
+            id: chartofAccountId,
+          },
+        },
+        exchangeRate: exchangeRate,
+      },
+    });
+    res.json(createdBankTransaction);
+  } catch (error) {
+    console.error("Error creating bank transaction:", error);
+    res.status(500).send("Internal Server Error");
+  }
+}
+
 async function createSupplierPayment(req, res) {
   try {
     const {
@@ -186,6 +244,10 @@ async function createTransaction(
 ) {
   try {
     let createdCaTransaction;
+    const bankTransactions = await prisma.bankTransaction.findMany({
+      where: { bankId: bankId },
+      orderBy: { createdAt: "desc" },
+    });
     createdCaTransaction = await prisma.CATransaction.create({
       data: {
         chartofAccount: chartofAccountId
@@ -193,7 +255,9 @@ async function createTransaction(
               connect: { id: chartofAccountId },
             }
           : undefined,
-        bank: bankId ? { connect: { id: bankId } } : undefined,
+        bankTransaction: bankTransactions[0]
+          ? { connect: { id: bankTransactions[0].id } }
+          : undefined,
         sale: saleId
           ? {
               connect: { id: saleId },
@@ -371,4 +435,5 @@ module.exports = {
   getCaTransactionById,
   createTransaction,
   createSupplierPayment,
+  createBankTransaction,
 };

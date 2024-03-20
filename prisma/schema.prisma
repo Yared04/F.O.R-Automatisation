@@ -138,7 +138,7 @@ model Purchase {
   products       ProductPurchase[]
   transports     Transport[]
   esls           ESL[]
-  transists      Transit[]
+  transits      Transit[]
   sales          SaleDetail[]
   inventories    Inventory[]
   caTransactions CATransaction[]
@@ -267,7 +267,7 @@ model ChartOfAccount {
   caTransactions   CATransaction[]
   createdAt        DateTime        @default(now()) @map("created_at")
   updatedAt        DateTime        @updatedAt @map("updated_at")
-  bank             Bank?
+  bankTransaction  BankTransaction?
 }
 
 model AccountType {
@@ -310,8 +310,8 @@ model CATransaction {
   id                String           @id @default(uuid()) @db.Uuid
   chartofAccountId  String?           @map("chart_of_account_id") @db.Uuid
   chartofAccount    ChartOfAccount?   @relation(fields: [chartofAccountId], references: [id])
-  bankId  String?                      @map("bank_id") @db.Uuid
-  bank    Bank?   @relation(fields: [bankId], references: [id])
+  bankTransactionId  String?                      @map("bank_transaction_id") @db.Uuid
+  bankTransaction    BankTransaction?   @relation(fields: [bankTransactionId], references: [id])
   purchaseId        String?          @map("purchase_id") @db.Uuid
   purchase          Purchase?        @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
   saleId            String?          @map("sale_id") @db.Uuid
@@ -340,13 +340,22 @@ model Bank {
   name             String
   address          String
   startingValue    Float
-  startingValueDate  DateTime
+  startingValueDate  DateTime 
+  bankTransactions   BankTransaction[]
+  createdAt        DateTime        @default(now()) @map("created_at")
+  updatedAt        DateTime        @updatedAt @map("updated_at")
+}
+
+model BankTransaction {
+  id               String          @id @default(uuid()) @db.Uuid
   payee            String?
   foreignCurrency  Float?
   balance          Float
   payment          Float?
   deposit          Float?
   type             String?
+  bankId           String          @map("bank_id") @db.Uuid
+  bank             Bank            @relation(fields: [bankId], references: [id], onDelete: Cascade)
   chartofAccountId String?         @db.Uuid @unique
   chartofAccount   ChartOfAccount? @relation(fields: [chartofAccountId], references: [id])
   exchangeRate     Float?

@@ -10,12 +10,32 @@ async function getBanks(req, res) {
     if (page && pageSize) {
       totalCount = await prisma.bank.count();
       banks = await prisma.bank.findMany({
+        select: {
+          id: true,
+          name: true,
+          address: true,
+          startingValue: true,
+          startingValueDate: true,
+          bankTransactions: {
+            orderBy: { createdAt: "desc" },
+          },
+        },
         skip: (page - 1) * parseInt(pageSize, 10),
         take: parseInt(pageSize, 10),
         orderBy: { createdAt: "desc" },
       });
     } else {
       banks = await prisma.bank.findMany({
+        select: {
+          id: true,
+          name: true,
+          address: true,
+          startingValue: true,
+          startingValueDate: true,
+          bankTransactions: {
+            orderBy: { createdAt: "desc" },
+          },
+        },
         orderBy: { createdAt: "desc" },
       });
 
@@ -42,6 +62,19 @@ async function getBankById(req, res) {
     const bankId = req.params.id;
     const bank = await prisma.bank.findUnique({
       where: { id: bankId },
+      select: {
+        id: true,
+        name: true,
+        address: true,
+        startingValue: true,
+        startingValueDate: true,
+        bankTransactions: {
+          include: {
+            chartofAccount: true,
+          },
+          orderBy: { createdAt: "desc" },
+        },
+      },
     });
     res.json(bank);
   } catch (error) {
@@ -59,9 +92,20 @@ async function createBank(req, res) {
         address: address,
         startingValue: parseFloat(startingValue),
         startingValueDate: new Date(startingValueDate),
-        balance: parseFloat(startingValue),
       },
     });
+
+    const createdBankTransaction = await prisma.bankTransaction.create({
+      data: {
+        bank: {
+          connect: {
+            id: createdBank.id,
+          },
+        },
+        balance: parseFloat(startingValue), // Starting value
+      },
+    });
+
     res.json(createdBank);
   } catch (error) {
     console.error("Error creating bank:", error);
@@ -81,7 +125,15 @@ async function updateBank(req, res) {
         address: address,
         startingValue: parseFloat(startingValue),
         startingValueDate: new Date(startingValueDate),
-        balance: parseFloat(startingValue),
+      },
+    });
+
+    const updatedBankTransaction = await prisma.bankTransaction.update({
+      where: {
+        bankId: bankId,
+      },
+      data: {
+        balance: parseFloat(startingValue), // Starting value
       },
     });
 
