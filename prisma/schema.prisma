@@ -149,7 +149,7 @@ model Purchase {
 model Transport {
   id             String            @id @default(uuid()) @db.Uuid
   date           DateTime
-  cost           Float
+  cost           Float?
   type           String
   productPurchaseId       String?         @db.Uuid @unique
   productPurchase     ProductPurchase?    @relation(fields: [productPurchaseId], references: [id])
@@ -267,7 +267,7 @@ model ChartOfAccount {
   caTransactions   CATransaction[]
   createdAt        DateTime        @default(now()) @map("created_at")
   updatedAt        DateTime        @updatedAt @map("updated_at")
-  bankTransaction  BankTransaction?
+  bankTransactions  BankTransaction[]
 }
 
 model AccountType {
@@ -356,7 +356,7 @@ model BankTransaction {
   type             String?
   bankId           String          @map("bank_id") @db.Uuid
   bank             Bank            @relation(fields: [bankId], references: [id], onDelete: Cascade)
-  chartofAccountId String?         @db.Uuid @unique
+  chartofAccountId String?         @map("chart_of_account_id") @db.Uuid 
   chartofAccount   ChartOfAccount? @relation(fields: [chartofAccountId], references: [id])
   exchangeRate     Float?
   caTransactions  CATransaction[]

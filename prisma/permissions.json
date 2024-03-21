@@ -81,5 +81,6 @@
     { "name": "GetTransiFees" },
     { "name": "DeleteDeclarationDetail" },
     { "name": "UpdateDeclarationDetail" },
-    { "name": "CreateDeclarationDetail" }
+    { "name": "CreateDeclarationDetail" },
+    { "name": "CreateTransportPayment"}
 ]
