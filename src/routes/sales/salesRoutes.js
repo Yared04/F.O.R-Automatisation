@@ -25,4 +25,9 @@ router.delete('/sales/:id', (req, res) => {
   authenticate(req, res, () => salesController.deleteSaleById(req, res));
 });
 
+router.put('/sales/:id', (req, res) => {
+  req.requiredPermissions = ['UpdateSale'];
+  authenticate(req, res, () => salesController.updateSale(req, res));
+});
+
 module.exports = router;
