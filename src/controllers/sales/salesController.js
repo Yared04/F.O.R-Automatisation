@@ -488,7 +488,41 @@ async function deleteSaleById(req, res) {
   }
 }
 
-async function updateSale(req, res) {}
+async function updateSale(req, res) {
+  try {
+    const { id } = req.params; // Extract the sale ID from request parameters
+    const { invoiceNumber, invoiceDate, customerId} = req.body; // Extract updated data from request body
+
+    const existingSale = await prisma.sale.findFirst({
+      where:{
+        invoiceNumber: parseInt(invoiceNumber)
+      }
+    })
+
+    if((existingSale) && existingSale.id !== id){
+      return res
+      .status(400)
+      .json({error: 'There is already a sale by this invoice number'});
+    }
+
+    // Update the Declaration
+    const updatedSale = await prisma.sale.update({
+      where: { id: id }, // Convert id to integer if needed
+      data: {
+        invoiceNumber: parseInt(invoiceNumber),
+        invoiceDate: new Date(invoiceDate),
+        customerId: customerId
+      }, include:{
+        customer: true
+      }
+    });
+
+    res.json(updatedSale);
+  } catch (error) {
+    console.error("Error updating sale:", error);
+    res.status(500).send("Internal Server Error");
+  }
+}
 
 module.exports = {
   getSales,
