@@ -98,7 +98,7 @@ async function createPurchase(req, res) {
 
     const existingPurchase = await prisma.purchase.findFirst({
       where:{
-        number: number
+        number: parseInt(number)
       }
     })
 
@@ -802,6 +802,12 @@ async function deletePurchase(req, res) {
           },
         });
       }
+
+      await prisma.productPurchase.delete({
+        where: {
+          id: productPurchase.id,
+        },
+      });
     }
 
     const deletedPurchase = await prisma.purchase.delete({
