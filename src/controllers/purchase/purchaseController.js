@@ -1,9 +1,7 @@
-const e = require("cors");
 const prisma = require("../../database");
 const {
   createTransaction,
 } = require("../caTransaction/caTransactionController");
-const { parse } = require("path");
 
 async function getPurchases(req, res) {
   try {
@@ -102,10 +100,10 @@ async function createPurchase(req, res) {
       }
     })
 
-    if(existingPurchase){
+    if (existingPurchase) {
       return res
-      .status(400)
-      .json({error: 'There is already a purchase by this purchase number'});
+        .status(400)
+        .json({ error: "There is already a purchase by this purchase number" });
     }
 
     for (product of purchaseProducts) {
@@ -144,7 +142,6 @@ async function createPurchase(req, res) {
 
     const createdProductPurchases = await Promise.all(
       purchaseProducts.map(async (purchaseProduct) => {
-
         const createdProductPurchase = await prisma.productPurchase.create({
           data: {
             purchase: {
@@ -594,17 +591,16 @@ async function updatePurchase(req, res) {
     const { id } = req.params;
 
     const purchase = await prisma.purchase.findFirst({
-      where:{
-        number: number
-      }
-    })
+      where: {
+        number: number,
+      },
+    });
 
-    if((purchase) && purchase.id !== id){
+    if (purchase && purchase.id !== id) {
       return res
-      .status(400)
-      .json({error: 'There is already a purchase by this purchase number'});
+        .status(400)
+        .json({ error: "There is already a purchase by this purchase number" });
     }
-
 
     // Check if the purchase exists
     const existingPurchase = await prisma.purchase.findUnique({
@@ -643,10 +639,11 @@ async function updatePurchase(req, res) {
           connect: {
             id: supplierId,
           },
-        }
-      },include:{
-        supplier: true
-      }
+        },
+      },
+      include: {
+        supplier: true,
+      },
     });
 
     // Recalculate transport costs
@@ -658,8 +655,10 @@ async function updatePurchase(req, res) {
               id: transport.productPurchaseId,
             },
           });
-          const recalculatedTransportCost =
-            parseFloat((transportCost * productPurchase.purchaseQuantity) / totalPurchaseQuantity);
+          const recalculatedTransportCost = parseFloat(
+            (transportCost * productPurchase.purchaseQuantity) /
+              totalPurchaseQuantity
+          );
           await prisma.transport.update({
             where: {
               id: transport.id,
@@ -681,8 +680,10 @@ async function updatePurchase(req, res) {
               id: esl.productPurchaseId,
             },
           });
-          const recalculatedEslCustomCost =
-            parseFloat((eslCustomCost * productPurchase.purchaseQuantity) / totalPurchaseQuantity);
+          const recalculatedEslCustomCost = parseFloat(
+            (eslCustomCost * productPurchase.purchaseQuantity) /
+              totalPurchaseQuantity
+          );
           await prisma.ESL.update({
             where: {
               id: esl.id,
@@ -704,8 +705,10 @@ async function updatePurchase(req, res) {
               id: transit.productPurchaseId,
             },
           });
-          const recalculatedTransitFees =
-            parseFloat((transitFees * productPurchase.purchaseQuantity) / totalPurchaseQuantity);
+          const recalculatedTransitFees = parseFloat(
+            (transitFees * productPurchase.purchaseQuantity) /
+              totalPurchaseQuantity
+          );
           await prisma.transit.update({
             where: {
               id: transit.id,
@@ -842,6 +845,9 @@ async function getTransportCosts(req, res) {
           },
           paidAmount: true,
         },
+        orderBy: {
+          createdAt: "desc",
+        },
         skip: (page - 1) * parseInt(pageSize, 10),
         take: parseInt(pageSize, 10),
       });
@@ -899,6 +905,9 @@ async function getEslCosts(req, res) {
           },
           paidAmount: true,
         },
+        orderBy: {
+          createdAt: "desc",
+        },
         skip: (page - 1) * parseInt(pageSize, 10),
         take: parseInt(pageSize, 10),
       });
@@ -955,6 +964,9 @@ async function getTransiFees(req, res) {
             },
           },
           paidAmount: true,
+        },
+        orderBy: {
+          createdAt: "desc",
         },
         skip: (page - 1) * parseInt(pageSize, 10),
         take: parseInt(pageSize, 10),

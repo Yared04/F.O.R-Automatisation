@@ -166,11 +166,10 @@ async function createBankTransaction(req, res) {
         payee: supplier ? supplier.name : null,
         foreignCurrency: parseFloat(foreignCurrency),
         balance: bankTransactions[0]
-          ? bankTransactions[0].balance ??
-            0 - parseFloat(payment) ??
-            0 + parseFloat(deposit) ??
-            0
-          : parseFloat(deposit) ?? 0 - parseFloat(payment) ?? 0,
+          ? parseFloat(Number(bankTransactions[0].balance)) -
+            parseFloat(Number(payment)) +
+            parseFloat(Number(deposit))
+          : parseFloat(Number(deposit)) - parseFloat(Number(payment)),
         payment: parseFloat(payment),
         deposit: parseFloat(deposit),
         type: type,
@@ -182,6 +181,7 @@ async function createBankTransaction(req, res) {
         exchangeRate: exchangeRate,
       },
     });
+
     res.json(createdBankTransaction);
   } catch (error) {
     console.error("Error creating bank transaction:", error);
