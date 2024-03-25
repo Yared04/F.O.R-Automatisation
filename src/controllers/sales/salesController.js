@@ -39,6 +39,11 @@ async function createSale(req, res) {
     const { invoiceNumber, invoiceDate, customerId, products } = req.body;
     let createdSale = null;
     let saleId = null;
+    let inventoryAsset;
+    let costOfSales;
+    let accountsReceivable;
+    let saleOfProductIncome;
+    let saleTotalAmount = 0;
 
     try {
       for (const product of products) {
@@ -47,6 +52,9 @@ async function createSale(req, res) {
           availableProducts = await prisma.productPurchase.findMany({
             where: {
               productId: product.productId,
+              NOT: {
+                purchaseId: null,
+              },
             },
             orderBy: {
               createdAt: "asc",
@@ -119,7 +127,6 @@ async function createSale(req, res) {
             throw new Error("Internal Server Error");
           }
           //if the product purchase quantity is greater than the remaining sale quantity, create a one sale Detail entry and make the remainig sale quantity 0
-
           if (productPurchase.purchaseQuantity >= remainingSaleQuantity) {
             try {
               sale = await prisma.saleDetail.create({
@@ -168,12 +175,13 @@ async function createSale(req, res) {
             productPurchase.purchaseQuantity !== 0
           ) {
             try {
+              const soldQuantity = productPurchase.purchaseQuantity
               sale = await prisma.saleDetail.create({
                 data: {
-                  saleQuantity: productPurchase.purchaseQuantity,
+                  saleQuantity: soldQuantity,
                   saleUnitPrice: parseFloat(product.saleUnitPrice),
                   totalSales:
-                    product.saleUnitPrice * productPurchase.purchaseQuantity,
+                    product.saleUnitPrice * soldQuantity,
                   unitCostOfGoods:
                     productPurchase.purchaseUnitCostOfGoods +
                     productDeclaration.unitIncomeTax,
@@ -206,15 +214,26 @@ async function createSale(req, res) {
             }
 
             remainingSaleQuantity -= productPurchase.purchaseQuantity;
-            productPurchaseIndex += 1;
           }
+          productPurchaseIndex += 1;
         }
         //check if the product has inventory
-        let inventoryEntries;
+        let inventoryEntries = [];
         try {
           inventoryEntries = await prisma.inventory.findMany({
             where: {
               productId: product.productId,
+              NOT: {
+                AND: [{ purchaseId: null }, { saleId: null }],
+              },
+            },
+            select: {
+              balanceQuantity: true,
+              purchaseId: true,
+              saleId: true,
+            },
+            orderBy: {
+              createdAt: "desc",
             },
           });
         } catch (error) {
@@ -226,7 +245,7 @@ async function createSale(req, res) {
         let isNewEntry = false;
         if (!inventoryEntries.length) {
           try {
-            await prisma.inventory.create({
+            const inventory = await prisma.inventory.create({
               data: {
                 sale: {
                   connect: {
@@ -247,6 +266,7 @@ async function createSale(req, res) {
               },
             });
             isNewEntry = true;
+            inventoryEntries.push(inventory);
           } catch (error) {
             console.error("Error creating inventory:", error);
             throw new Error("Internal Server Error");
@@ -254,24 +274,24 @@ async function createSale(req, res) {
         }
 
         //get the existing inventory entries to update the balance quantity
-        try {
-          inventoryEntries = await prisma.inventory.findMany({
-            where: {
-              productId: product.productId,
-            },
-            select: {
-              balanceQuantity: true,
-              purchaseId: true,
-              saleId: true,
-            },
-            orderBy: {
-              createdAt: "desc",
-            },
-          });
-        } catch (error) {
-          console.error("Error retrieving inventory:", error);
-          throw new Error("Internal Server Error");
-        }
+        // try {
+        //   inventoryEntries = await prisma.inventory.findMany({
+        //     where: {
+        //       productId: product.productId,
+        //     },
+        //     select: {
+        //       balanceQuantity: true,
+        //       purchaseId: true,
+        //       saleId: true,
+        //     },
+        //     orderBy: {
+        //       createdAt: "desc",
+        //     },
+        //   });
+        // } catch (error) {
+        //   console.error("Error retrieving inventory:", error);
+        //   throw new Error("Internal Server Error");
+        // }
 
         //get the purchase entry and sale entry
         let purchaseEntry = inventoryEntries.find((entry) => entry.purchaseId);
@@ -316,62 +336,116 @@ async function createSale(req, res) {
           throw new Error("Error fetching Chart of Accounts");
         }
 
-        const saleOfProductIncome = chartOfAccounts.find(
+        saleOfProductIncome = chartOfAccounts.find(
           (account) => account.name === "Sales of Product Income"
         );
 
-        const accountsReceivable = chartOfAccounts.find(
+        accountsReceivable = chartOfAccounts.find(
           (account) => account.name === "Accounts Receivable (A/R)"
         );
 
-        const costOfSales = chartOfAccounts.find(
+        costOfSales = chartOfAccounts.find(
           (account) => account.name === "Cost of sales"
         );
 
-        const inventoryAsset = chartOfAccounts.find(
+        inventoryAsset = chartOfAccounts.find(
           (account) => account.name === "Inventory Asset"
         );
 
-        //create the first two entries of the transaction
+        //create transaction entry for cost of sales
         try {
           await createTransaction(
             costOfSales.id,
-            inventoryAsset.id,
+            null,
             new Date(invoiceDate),
-            `sale`,
-            parseFloat(product.saleQuantity) * parseFloat(sale.unitCostOfGoods),
+            null,
+            `Invoice`,
+            parseFloat(sale.saleQuantity) * parseFloat(sale.saleUnitPrice),
             null,
             null,
             null,
             createdSale.id,
             product.id,
+            null,
+            customerId,
+            null,
             null
           );
 
-          // create the second two entries of the transaction
+          // create transaction for inventory assets
 
           await createTransaction(
-            saleOfProductIncome.id,
-            accountsReceivable.id,
-            new Date(invoiceDate),
-            `sale`,
+            inventoryAsset.id,
             null,
-            parseFloat(sale.totalSales),
+            new Date(invoiceDate),
+            null,
+            `Invoice`,
+            null,
+            parseFloat(sale.saleQuantity) * parseFloat(sale.saleUnitPrice),
             null,
             null,
             createdSale.id,
             product.id,
+            null,
+            customerId,
+            null,
             null
           );
         } catch (error) {
           console.error("Error creating transactions:", error);
           throw new Error("Internal Server Error");
         }
+        saleTotalAmount +=
+          parseFloat(sale.saleQuantity) * parseFloat(sale.saleUnitPrice);
       }
     } catch (error) {
       console.error(error.message);
       throw new Error(error);
     }
+
+    try {
+      //create transaction for accounts receivable
+      await createTransaction(
+        accountsReceivable.id,
+        null,
+        new Date(invoiceDate),
+        null,
+        `Invoice`,
+        null,
+        saleTotalAmount,
+        null,
+        null,
+        createdSale.id,
+        null,
+        null,
+        customerId,
+        null,
+        null
+      );
+
+      //create transaction for sales of product income
+      await createTransaction(
+        saleOfProductIncome.id,
+        null,
+        new Date(invoiceDate),
+        null,
+        `Invoice`,
+        saleTotalAmount,
+        null,
+        null,
+        null,
+        createdSale.id,
+        null,
+        null,
+        customerId,
+        null,
+        null
+      );
+    } catch (error) {
+      console.error("Error creating transactions:", error);
+      throw new Error("Internal Server Error");
+    }
+
     res.json(createdSale);
   } catch (error) {
     console.error("Error creating sale:", error);
@@ -491,18 +565,18 @@ async function deleteSaleById(req, res) {
 async function updateSale(req, res) {
   try {
     const { id } = req.params; // Extract the sale ID from request parameters
-    const { invoiceNumber, invoiceDate, customerId} = req.body; // Extract updated data from request body
+    const { invoiceNumber, invoiceDate, customerId } = req.body; // Extract updated data from request body
 
     const existingSale = await prisma.sale.findFirst({
-      where:{
-        invoiceNumber: parseInt(invoiceNumber)
-      }
-    })
+      where: {
+        invoiceNumber: parseInt(invoiceNumber),
+      },
+    });
 
-    if((existingSale) && existingSale.id !== id){
+    if (existingSale && existingSale.id !== id) {
       return res
-      .status(400)
-      .json({error: 'There is already a sale by this invoice number'});
+        .status(400)
+        .json({ error: "There is already a sale by this invoice number" });
     }
 
     // Update the Declaration
@@ -511,10 +585,11 @@ async function updateSale(req, res) {
       data: {
         invoiceNumber: parseInt(invoiceNumber),
         invoiceDate: new Date(invoiceDate),
-        customerId: customerId
-      }, include:{
-        customer: true
-      }
+        customerId: customerId,
+      },
+      include: {
+        customer: true,
+      },
     });
 
     res.json(updatedSale);

@@ -289,7 +289,7 @@ async function createPurchase(req, res) {
       }
 
       //check if the product has invetory entries
-      let inventoryEntries;
+      let inventoryEntries = [];
       try {
         inventoryEntries = await prisma.inventory.findMany({
           where: {
@@ -316,7 +316,7 @@ async function createPurchase(req, res) {
       let isNewEntry = false;
       if (!inventoryEntries.length) {
         try {
-          inventory = await prisma.inventory.create({
+          const inventory = await prisma.inventory.create({
             data: {
               purchase: {
                 connect: {
@@ -337,6 +337,7 @@ async function createPurchase(req, res) {
             },
           });
           isNewEntry = true;
+          inventoryEntries.push(inventory);
         } catch (error) {
           console.error("Error creating inventory:", error);
           throw new Error(error);
