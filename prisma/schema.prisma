@@ -156,6 +156,8 @@ model Transport {
   purchaseId              String          @map("purchase_id") @db.Uuid
   purchase                Purchase        @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
   paidAmount     Float?
+  createdAt               DateTime        @default(now()) @map("created_at")
+  updatedAt               DateTime        @updatedAt @map("updated_at")
 }
 
 model ESL {
@@ -168,6 +170,8 @@ model ESL {
   purchaseId              String          @map("purchase_id") @db.Uuid
   purchase                Purchase        @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
   paidAmount     Float?
+  createdAt               DateTime        @default(now()) @map("created_at")
+  updatedAt               DateTime        @updatedAt @map("updated_at")
 }
 
 model Transit {
@@ -180,6 +184,8 @@ model Transit {
   purchaseId              String         @map("purchase_id") @db.Uuid
   purchase                Purchase      @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
   paidAmount     Float?
+  createdAt               DateTime        @default(now()) @map("created_at")
+  updatedAt               DateTime        @updatedAt @map("updated_at")
 }
 
 model ProductPurchase {

@@ -101,6 +101,21 @@ async function seedPermissions() {
   return createdPermissions;
 }
 
+async function seedSuppliers() {
+  const createdSuppliers = [];
+  const suppliersFilePath = path.resolve(__dirname, 'suppliers.json');
+  const suppliersData = await fs.readFile(suppliersFilePath, 'utf-8');
+  const suppliers = JSON.parse(suppliersData);
+
+  for (const supplier of suppliers) {
+    const createdSupplier = await prisma.supplier.create({
+      data: supplier,
+    });
+    createdSuppliers.push(createdSupplier);
+  }
+  return createdSuppliers;
+}
+
 async function main() {
   try {
     await seedAccountTypes();
@@ -109,6 +124,7 @@ async function main() {
     const createdRoles = await seedRoles();
     await seedUser(createdRoles[0].id);
     await seedPermissions()
+    await seedSuppliers();
     console.log("Seeded successfully.");
   } catch (error) {
     console.error("Error while seeding:", error);

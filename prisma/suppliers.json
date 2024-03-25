@@ -1,0 +1,32 @@
+[
+  {
+    "id": "c334e0b2-3837-4a7d-a69c-27c8b31f4e44",
+    "name": "OSMA GROUP FZE",
+    "address": "Djbouti",
+    "currency": "USD"
+  },
+  {
+    "id": "f813e1e9-1c1b-483e-882a-7a26fe5e3c7b",
+    "name": "Transporters",
+    "address": "Ethiopia",
+    "currency": "ETB"
+  },
+  {
+    "id": "7e78815c-542b-4eaf-bfa5-38d42a1b98a9",
+    "name": "ESL Custom Cost",
+    "address": "Ethiopia",
+    "currency": "ETB"
+  },
+  {
+    "id": "a54a191d-d5e7-43e0-ba20-5a88468f44d0",
+    "name": "Transit Fees",
+    "address": "Ethiopia",
+    "currency": "ETB"
+  }, 
+  {
+    "id": "b2fdff13-9538-4e53-8696-7a86907d71c7",
+    "name": "CUSTOM INCOME TAX",
+    "address": "Ethiopia",
+    "currency": "ETB"
+  }
+]

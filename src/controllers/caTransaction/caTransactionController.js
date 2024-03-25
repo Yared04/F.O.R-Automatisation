@@ -21,7 +21,11 @@ async function getCaTransactions(req, res) {
             lastName: true,
           },
         },
-        productPurchase: true,
+        productPurchase: {
+          select: {
+            product: true,
+          }
+        },
         saleDetail: true,
         bankTransaction: {
           select: {
@@ -244,10 +248,12 @@ async function createTransaction(
 ) {
   try {
     let createdCaTransaction;
-    const bankTransactions = await prisma.bankTransaction.findMany({
-      where: { bankId: bankId },
-      orderBy: { createdAt: "desc" },
-    });
+    const bankTransactions =
+      bankId &&
+      (await prisma.bankTransaction.findMany({
+        where: { bankId: bankId },
+        orderBy: { createdAt: "desc" },
+      }));
     createdCaTransaction = await prisma.CATransaction.create({
       data: {
         chartofAccount: chartofAccountId
@@ -255,9 +261,10 @@ async function createTransaction(
               connect: { id: chartofAccountId },
             }
           : undefined,
-        bankTransaction: bankTransactions[0]
-          ? { connect: { id: bankTransactions[0].id } }
-          : undefined,
+        bankTransaction:
+          bankTransactions && bankTransactions[0]
+            ? { connect: { id: bankTransactions[0].id } }
+            : undefined,
         sale: saleId
           ? {
               connect: { id: saleId },

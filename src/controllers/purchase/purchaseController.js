@@ -95,10 +95,10 @@ async function createPurchase(req, res) {
     );
 
     const existingPurchase = await prisma.purchase.findFirst({
-      where:{
-        number: parseInt(number)
-      }
-    })
+      where: {
+        number: parseInt(number),
+      },
+    });
 
     if (existingPurchase) {
       return res
@@ -294,6 +294,17 @@ async function createPurchase(req, res) {
         inventoryEntries = await prisma.inventory.findMany({
           where: {
             productId: productPurchase.productId,
+            NOT: {
+              AND: [{ purchaseId: null }, { saleId: null }],
+            },
+          },
+          select: {
+            balanceQuantity: true,
+            purchaseId: true,
+            saleId: true,
+          },
+          orderBy: {
+            createdAt: "desc",
           },
         });
       } catch (error) {
@@ -305,7 +316,7 @@ async function createPurchase(req, res) {
       let isNewEntry = false;
       if (!inventoryEntries.length) {
         try {
-          await prisma.inventory.create({
+          inventory = await prisma.inventory.create({
             data: {
               purchase: {
                 connect: {
@@ -333,24 +344,24 @@ async function createPurchase(req, res) {
       }
 
       //get the existing inventory entries to update the balance quantity
-      try {
-        inventoryEntries = await prisma.inventory.findMany({
-          where: {
-            productId: productPurchase.productId,
-          },
-          select: {
-            balanceQuantity: true,
-            purchaseId: true,
-            saleId: true,
-          },
-          orderBy: {
-            createdAt: "desc",
-          },
-        });
-      } catch (error) {
-        console.error("Error retrieving inventory:", error);
-        throw new Error(error);
-      }
+      // try {
+      //   inventoryEntries = await prisma.inventory.findMany({
+      //     where: {
+      //       productId: productPurchase.productId,
+      //     },
+      //     select: {
+      //       balanceQuantity: true,
+      //       purchaseId: true,
+      //       saleId: true,
+      //     },
+      //     orderBy: {
+      //       createdAt: "desc",
+      //     },
+      //   });
+      // } catch (error) {
+      //   console.error("Error retrieving inventory:", error);
+      //   throw new Error(error);
+      // }
 
       //get the last purchase and sale entries
       let purchaseEntry = inventoryEntries.find((entry) => entry.purchaseId);
@@ -409,8 +420,9 @@ async function createPurchase(req, res) {
       try {
         await createTransaction(
           inventoryAsset.id,
+          null,
           new Date(date),
-          productPurchase.declarationId,
+          productPurchase.truckNumber,
           "Bill",
           productPurchase.purchaseTotalETB,
           null,
@@ -434,6 +446,7 @@ async function createPurchase(req, res) {
     try {
       await createTransaction(
         accountsPayable.id,
+        null,
         new Date(date),
         "Purchase",
         "Bill",
