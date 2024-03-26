@@ -62,6 +62,7 @@ async function createSale(req, res) {
             select: {
               id: true,
               purchaseQuantity: true,
+              remainingQuantity: true,
               declarationId: true,
               purchaseId: true,
               productId: true,
@@ -74,7 +75,7 @@ async function createSale(req, res) {
         }
         //calculate the total amount of products available for sale
         const totalPurchaseQuantity = availableProducts.reduce(
-          (acc, item) => acc + item.purchaseQuantity,
+          (acc, item) => acc + item.remainingQuantity,
           0
         );
 
@@ -127,7 +128,7 @@ async function createSale(req, res) {
             throw new Error("Internal Server Error");
           }
           //if the product purchase quantity is greater than the remaining sale quantity, create a one sale Detail entry and make the remainig sale quantity 0
-          if (productPurchase.purchaseQuantity >= remainingSaleQuantity) {
+          if (productPurchase.remainingQuantity >= remainingSaleQuantity) {
             try {
               sale = await prisma.saleDetail.create({
                 data: {
@@ -158,8 +159,8 @@ async function createSale(req, res) {
                   id: productPurchase.id,
                 },
                 data: {
-                  purchaseQuantity:
-                    productPurchase.purchaseQuantity - remainingSaleQuantity,
+                  remainingQuantity:
+                    productPurchase.remainingQuantity - remainingSaleQuantity,
                 },
               });
             } catch (error) {
@@ -171,11 +172,11 @@ async function createSale(req, res) {
           }
           //if the product purchase quantity is less than the remaining sale quantity, create a sale Detail entry and update the product purchase table
           else if (
-            remainingSaleQuantity > productPurchase.purchaseQuantity &&
-            productPurchase.purchaseQuantity !== 0
+            remainingSaleQuantity > productPurchase.remainingQuantity &&
+            productPurchase.remainingQuantity !== 0
           ) {
             try {
-              const soldQuantity = productPurchase.purchaseQuantity
+              const soldQuantity = productPurchase.remainingQuantity
               sale = await prisma.saleDetail.create({
                 data: {
                   saleQuantity: soldQuantity,
@@ -205,7 +206,7 @@ async function createSale(req, res) {
                   id: productPurchase.id,
                 },
                 data: {
-                  purchaseQuantity: 0,
+                  remainingQuantity: 0,
                 },
               });
             } catch (error) {
@@ -213,7 +214,7 @@ async function createSale(req, res) {
               throw new Error("Internal Server Error");
             }
 
-            remainingSaleQuantity -= productPurchase.purchaseQuantity;
+            remainingSaleQuantity -= productPurchase.remainingQuantity;
           }
           productPurchaseIndex += 1;
         }
