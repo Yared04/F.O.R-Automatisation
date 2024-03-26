@@ -19,10 +19,21 @@ router.post("/purchases", (req, res) => {
 router.post("/purchases/transport-payment", (req, res) => {
   req.requiredPermissions = ["CreateTransportPayment"];
   authenticate(req, res, () =>
-  transportController.createTransportPayment(req, res)
+    transportController.createTransportPayment(req, res)
   );
 });
 
+router.post("/purchases/transit-fee", (req, res) => {
+  req.requiredPermissions = ["CreateTransitFee"];
+  authenticate(req, res, () => transitController.createTransitFee(req, res));
+});
+
+router.post("/purchases/esl-custom", (req, res) => {
+  req.requiredPermissions = ["CreateEslCustom"];
+  authenticate(req, res, () =>
+    eslCustomController.createCustomTaxPayment(req, res)
+  );
+});
 router.get("/purchases/:id", (req, res) => {
   req.requiredPermissions = ["GetPurchaseById"];
   authenticate(req, res, () => purchaseController.getPurchaseById(req, res));

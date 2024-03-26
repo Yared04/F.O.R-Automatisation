@@ -26,6 +26,13 @@ router.post("/ca-transactions/supplier-payment", (req, res) => {
   );
 });
 
+router.post("ca-transactions/customer-payment", (req, res) => {
+  req.requiredPermissions = ["CreateCustomerPayment"];
+  authenticate(req, res, () =>
+    caTransactionController.createCustomerPayment(req, res)
+  );
+});
+
 router.post("/ca-transactions/bank-transaction", (req, res) => {
   req.requiredPermissions = ["CreateBankTransaction"];
   authenticate(req, res, () =>

@@ -229,6 +229,34 @@ async function createSupplierPayment(req, res) {
   }
 }
 
+async function createCustomerPayment(req, res) {
+  const { date, paidAmount, saleId, customerId } = req.body;
+  try {
+    const invoiceNumber = await prisma.sale.findUnique({
+      where: { id: saleId },
+    });
+
+    const createdCustomerPayment = await prisma.sale.create({
+      data: {
+        invoiceDate: new Date(date),
+        paidAmount: parseFloat(paidAmount),
+        customer: {
+          connect: {
+            id: customerId,
+          },
+        },
+        invoiceNumber: invoiceNumber.invoiceNumber,
+      },
+    });
+    res.json(createdCustomerPayment);
+  } catch (error) {
+    console.error("Error creating customer payment:", error);
+    res.status(500).send("Internal Server Error");
+  }
+}
+
+
+
 async function createTransaction(
   chartofAccountId,
   bankId,
@@ -443,4 +471,5 @@ module.exports = {
   createTransaction,
   createSupplierPayment,
   createBankTransaction,
+  createCustomerPayment,
 };
