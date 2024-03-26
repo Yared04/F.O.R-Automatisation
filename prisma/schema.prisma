@@ -197,6 +197,7 @@ model ProductPurchase {
   declarationId           String?          @map("declaration_id") @db.Uuid
   declaration             Declaration?     @relation(fields: [declarationId], references: [id])
   purchaseQuantity        Int
+  remainingQuantity       Int?
   purchaseUnitPriceETB    Float
   purchaseUnitPriceUSD    Float?
   purchaseTotalETB        Float?

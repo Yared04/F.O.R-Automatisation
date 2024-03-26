@@ -160,6 +160,7 @@ async function createPurchase(req, res) {
               },
             },
             purchaseQuantity: parseInt(purchaseProduct.purchaseQuantity),
+            remainingQuantity: parseInt(purchaseProduct.purchaseQuantity),
             purchaseUnitPriceETB: exchangeRate
               ? parseFloat(purchaseProduct.purchaseUnitPrice) *
                 parseFloat(exchangeRate)
