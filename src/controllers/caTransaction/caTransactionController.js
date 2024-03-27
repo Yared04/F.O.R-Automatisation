@@ -24,7 +24,7 @@ async function getCaTransactions(req, res) {
         productPurchase: {
           select: {
             product: true,
-          }
+          },
         },
         saleDetail: true,
         bankTransaction: {
@@ -177,11 +177,11 @@ async function createBankTransaction(req, res) {
         payment: parseFloat(payment),
         deposit: parseFloat(deposit),
         type: type,
-        chartofAccount: {
-          connect: {
-            id: chartofAccountId,
-          },
-        },
+        chartofAccount: chartofAccountId
+          ? {
+              connect: { id: chartofAccountId },
+            }
+          : undefined,
         exchangeRate: exchangeRate,
       },
     });
@@ -254,8 +254,6 @@ async function createCustomerPayment(req, res) {
     res.status(500).send("Internal Server Error");
   }
 }
-
-
 
 async function createTransaction(
   chartofAccountId,
@@ -463,6 +461,7 @@ async function getCaTransactionById(req, res) {
     res.status(500).send("Internal Server Error");
   }
 }
+
 
 module.exports = {
   getCaTransactions,

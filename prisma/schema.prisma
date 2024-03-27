@@ -71,6 +71,7 @@ model Driver {
   associationPhone String
   ownerName        String
   ownerPhone       String
+  driverId         String
   createdAt        DateTime @default(now()) @map("created_at")
   updatedAt        DateTime @updatedAt @map("updated_at")
 }
@@ -100,7 +101,7 @@ model ProductCategory{
 
 model Declaration {
   id        String               @id @default(uuid()) @db.Uuid
-  number    String               @unique
+  number    String              
   date      DateTime
   paidAmount   Float?
   products  ProductDeclaration[]
@@ -179,19 +180,28 @@ model Transit {
   date           DateTime
   cost           Float
   type           String
+  paymentStatus  String            @default("Incomplete")
   productPurchaseId       String?         @db.Uuid @unique
   productPurchase     ProductPurchase?    @relation(fields: [productPurchaseId], references: [id])
   purchaseId              String         @map("purchase_id") @db.Uuid
   purchase                Purchase      @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  transitPaymentId        String?         @map("transit_payment_id") @db.Uuid
+  transitPayment          TransitPayment?      @relation(fields: [transitPaymentId], references: [id], onDelete: Cascade)
   paidAmount     Float?
   createdAt               DateTime        @default(now()) @map("created_at")
   updatedAt               DateTime        @updatedAt @map("updated_at")
 }
 
+model TransitPayment {
+  id             String            @id @default(uuid()) @db.Uuid
+  amount         Float
+  transits       Transit[]
+}
+
 model ProductPurchase {
   id                      String          @id @default(uuid()) @db.Uuid
   productId               String          @map("product_id") @db.Uuid
-  product                 Product         @relation(fields: [productId], references: [id])
+  product                 Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
   purchaseId              String?          @map("purchase_id") @db.Uuid
   purchase                Purchase?        @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
   declarationId           String?          @map("declaration_id") @db.Uuid
@@ -301,13 +311,13 @@ model Inventory {
   purchaseId        String?          @map("purchase_id") @db.Uuid
   purchase          Purchase?        @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
   productPurchaseId String?          @map("product_purchase_id") @db.Uuid
-  productPurchase   ProductPurchase? @relation(fields: [productPurchaseId], references: [id])
+  productPurchase   ProductPurchase? @relation(fields: [productPurchaseId], references: [id], onDelete: Cascade)
   saleDetailId      String?          @map("sale_detail_id") @db.Uuid
   saleDetail        SaleDetail?      @relation(fields: [saleDetailId], references: [id])
   saleId            String?          @map("sale_id") @db.Uuid
   sale              Sale?            @relation(fields: [saleId], references: [id], onDelete: Cascade)
   productId         String           @map("product_id") @db.Uuid
-  product           Product          @relation(fields: [productId], references: [id])
+  product           Product          @relation(fields: [productId], references: [id], onDelete: Cascade)
   createdAt         DateTime         @default(now()) @map("created_at")
   updatedAt         DateTime         @updatedAt @map("updated_at")
   balanceQuantity   Float

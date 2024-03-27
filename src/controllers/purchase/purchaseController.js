@@ -26,6 +26,9 @@ async function getPurchases(req, res) {
         esls: true,
         transits: true,
       },
+      orderBy: {
+        createdAt: "desc",
+      },
       skip: (page - 1) * parseInt(pageSize, 10),
       take: parseInt(pageSize, 10),
     });
