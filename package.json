@@ -17,6 +17,7 @@
     "fs": "^0.0.1-security",
     "jsonwebtoken": "^9.0.2",
     "path": "^0.12.7",
+    "pdfkit": "^0.15.0",
     "postgresql": "^0.0.1",
     "prisma": "^5.9.1",
     "swagger-jsdoc": "^6.2.8",
