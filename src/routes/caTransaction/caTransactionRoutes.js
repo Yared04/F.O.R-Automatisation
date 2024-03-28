@@ -34,7 +34,7 @@ router.post("/ca-transactions/transit-payment", (req, res) => {
   );
 });
 
-router.get("/ca-transactions/transit-payments", (req, res) => {
+router.get("/transit-payments", (req, res) => {
   req.requiredPermissions = ["GetTransitPayments"];
   authenticate(req, res, () => transitController.getTransitPayments(req, res));
 });

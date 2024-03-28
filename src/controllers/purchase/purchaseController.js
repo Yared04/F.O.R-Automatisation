@@ -864,7 +864,7 @@ async function getTransportCosts(req, res) {
           paidAmount: true,
         },
         orderBy: {
-          createdAt: "desc",
+          createdAt: "asc",
         },
         skip: (page - 1) * parseInt(pageSize, 10),
         take: parseInt(pageSize, 10),
@@ -922,9 +922,10 @@ async function getEslCosts(req, res) {
             },
           },
           paidAmount: true,
+          paymentStatus: true, 
         },
         orderBy: {
-          createdAt: "desc",
+          createdAt: "asc",
         },
         skip: (page - 1) * parseInt(pageSize, 10),
         take: parseInt(pageSize, 10),
@@ -982,9 +983,15 @@ async function getTransiFees(req, res) {
             },
           },
           paidAmount: true,
+          paymentStatus: true,
+          transitPayment: {
+            select: {
+              id: true,
+            },
+          },
         },
         orderBy: {
-          createdAt: "desc",
+          createdAt: "asc",
         },
         skip: (page - 1) * parseInt(pageSize, 10),
         take: parseInt(pageSize, 10),
