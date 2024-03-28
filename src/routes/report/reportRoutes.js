@@ -10,4 +10,9 @@ router.get('/customer-aging-report', (req, res) => {
   authenticate(req, res, () => reportController.generateCustomerAgingSummary(req, res));
 });
 
+router.get('/bank-transaction-report', (req, res) => {
+  req.requiredPermissions = ['GetSales'];
+  authenticate(req, res, () => reportController.generateBankTransactionSummary(req, res));
+});
+
 module.exports = router;
