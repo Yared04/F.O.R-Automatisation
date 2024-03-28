@@ -1,10 +1,10 @@
 const PDFDocument = require('pdfkit');
-const fs = require('fs');
+const { Readable } = require('stream');
 const prisma = require("../../database");
 
 async function generateCustomerAgingSummary(req, res) {
     try {
-        const { endDate } = req.body; // Assuming the end date is passed in the request body
+        const { endDate } = req.query; // Assuming the end date is passed in the request body
 
         // Use the provided end date or default to the current date
         const currentDate = endDate ? new Date(endDate) : new Date();
@@ -21,7 +21,7 @@ async function generateCustomerAgingSummary(req, res) {
         }
 
         // Find all transactions related to the Accounts Receivable (A/R) chart of account
-        const arTransactions = await prisma.caTransaction.findMany({
+        const arTransactions = await prisma.CATransaction.findMany({
             where: {
                 chartofAccountId: arChartOfAccount.id,
                 date: {
@@ -34,89 +34,169 @@ async function generateCustomerAgingSummary(req, res) {
         });
 
         // Categorize transactions into aging buckets
-        const agingBuckets = categorizeTransactions(arTransactions, currentDate);
+        const agingBuckets = categorizeARAgingTransactions(arTransactions, currentDate);
 
         // Calculate credit amounts for each aging bucket
-        const creditTotals = calculateCreditTotals(agingBuckets);
+        const creditTotals = calculateArAgingCreditTotals(agingBuckets);
 
-        // Calculate the overall total credit
-        const totalCredit = Object.values(creditTotals).reduce((total, credit) => total + credit, 0);
+        // Generate PDF content
+        const pdfContent = await generateARAgingPDFContent(agingBuckets, creditTotals, currentDate);
 
-        // Generate PDF report
-        const pdfPath = await generatePDF(agingBuckets, creditTotals, totalCredit);
-        
-        res.json({ url: `/reports/${pdfPath}` });
+        // Set response headers for PDF download
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', 'attachment; filename="customer-aging-summary.pdf"');
+
+        // Stream PDF content to the client
+        const stream = new Readable();
+        stream.push(pdfContent);
+        stream.push(null); // Indicates the end of the stream
+        stream.pipe(res);
     } catch (error) {
         console.error('Error generating PDF:', error);
         res.status(500).json({ error: 'Failed to generate PDF' });
     }
 }
 
-function categorizeTransactions(transactions, currentDate) {
-    const agingBuckets = {
-        current: [],
-        days1to30: [],
-        days31to60: [],
-        days61to90: [],
-        over90: []
-    };
+function categorizeARAgingTransactions(transactions, currentDate) {
+    const agingBuckets = {};
 
     transactions.forEach(transaction => {
-        const daysDifference = Math.ceil((currentDate - new Date(transaction.date)) / (1000 * 60 * 60 * 24));
-        if (daysDifference <= 30) {
-            agingBuckets.current.push(transaction);
-        } else if (daysDifference <= 60) {
-            agingBuckets.days1to30.push(transaction);
-        } else if (daysDifference <= 90) {
-            agingBuckets.days31to60.push(transaction);
-        } else if (daysDifference <= 90) {
-            agingBuckets.days61to90.push(transaction);
-        } else {
-            agingBuckets.over90.push(transaction);
+        const { customer, date, credit } = transaction;
+        const daysDifference = Math.ceil((currentDate - new Date(date)) / (1000 * 60 * 60 * 24));
+        const bucket = getBucket(daysDifference);
+        
+        const customerKey = `${customer.firstName} ${customer.lastName}`;
+        
+        if (!agingBuckets[customerKey]) {
+            agingBuckets[customerKey] = {
+                current: 0,
+                days1to30: 0,
+                days31to60: 0,
+                days61to90: 0,
+                over90: 0
+            };
         }
+
+        agingBuckets[customerKey][bucket] += credit || 0;
     });
 
     return agingBuckets;
 }
 
-function calculateCreditTotals(agingBuckets) {
-    const calculateTotalCredit = transactions => transactions.reduce((total, transaction) => total + (transaction.credit || 0), 0);
 
+function getBucket(daysDifference) {
+    if (daysDifference <= 30) {
+        return 'current';
+    } else if (daysDifference <= 60) {
+        return 'days1to30';
+    } else if (daysDifference <= 90) {
+        return 'days31to60';
+    } else if (daysDifference <= 90) {
+        return 'days61to90';
+    } else {
+        return 'over90';
+    }
+}
+
+function calculateArAgingCreditTotals(agingBuckets) {
     const creditTotals = {
-        current: calculateTotalCredit(agingBuckets.current),
-        days1to30: calculateTotalCredit(agingBuckets.days1to30),
-        days31to60: calculateTotalCredit(agingBuckets.days31to60),
-        days61to90: calculateTotalCredit(agingBuckets.days61to90),
-        over90: calculateTotalCredit(agingBuckets.over90)
+        current: 0,
+        days1to30: 0,
+        days31to60: 0,
+        days61to90: 0,
+        over90: 0
     };
+
+    Object.values(agingBuckets).forEach(customer => {
+        Object.keys(creditTotals).forEach(bucket => {
+            creditTotals[bucket] += customer[bucket];
+        });
+    });
 
     return creditTotals;
 }
 
-async function generatePDF(agingBuckets, creditTotals, totalCredit) {
-    const doc = new PDFDocument();
-    const pdfPath = `customer-aging-summary-${Date.now()}.pdf`;
-    const writeStream = fs.createWriteStream(`public/reports/${pdfPath}`);
+async function generateARAgingPDFContent(agingBuckets, creditTotals, currentDate) {
+    return new Promise((resolve, reject) => {
+        const doc = new PDFDocument(); 
+        const buffers = [];
+        
+        // Buffer PDF content
+        doc.on('data', buffer => buffers.push(buffer));
+        doc.on('end', () => resolve(Buffer.concat(buffers)));
+        doc.on('error', reject);
 
-    doc.pipe(writeStream);
+        // Add report title and date
+        doc.fontSize(15).text('A/R Ageing Summary', { align: 'center' }).moveDown();
+        doc.fontSize(9).text(`As of ${currentDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`, { align: 'center' }).moveDown();
 
-    // Add report title and date
-    doc.fontSize(20).text('A/R Ageing Summary', { align: 'center' }).moveDown();
-    doc.fontSize(12).text(`As of ${new Date().toLocaleDateString()}`, { align: 'center' }).moveDown();
+        // Add table headers
+        
+        let xOffset = 40;
+        doc.font('Helvetica-Bold').text('Customer', xOffset, 150);
+        xOffset += 100;
+        doc.text('Current', xOffset, 150);
+        xOffset += 80;
+        doc.text('1 - 30', xOffset, 150);
+        xOffset += 80;
+        doc.text('31 - 60', xOffset, 150);
+        xOffset += 80;
+        doc.text('61 - 90', xOffset, 150);
+        xOffset += 80;
+        doc.text('Over 90', xOffset, 150);
+        xOffset += 80;
+        doc.text('Total', xOffset, 150);
 
-    // Add aging buckets data
-    doc.fontSize(12).text('CURRENT:').text(creditTotals.current.toFixed(2)).moveDown();
-    doc.fontSize(12).text('1 - 30 DAYS:').text(creditTotals.days1to30.toFixed(2)).moveDown();
-    doc.fontSize(12).text('31 - 60 DAYS:').text(creditTotals.days31to60.toFixed(2)).moveDown();
-    doc.fontSize(12).text('61 - 90 DAYS:').text(creditTotals.days61to90.toFixed(2)).moveDown();
-    doc.fontSize(12).text('OVER 90 DAYS:').text(creditTotals.over90.toFixed(2)).moveDown();
-    doc.fontSize(12).text('TOTAL:').text(totalCredit.toFixed(2)).moveDown();
+        doc.lineWidth(0.5); // Set line weight to 2 (adjust as needed)
 
-    doc.end();
-    return pdfPath;
+        doc.moveTo(40, 145).lineTo(600, 145).stroke(); // Line above the first row
+        doc.moveTo(40, 165).lineTo(600, 165).stroke(); // Line above the first row
+        // Add data rows
+        let yOffset = 190;
+        let totalColumnSum = 0; // Total sum of the "Total" column
+        const totals = { // Object to store the totals for each column
+            current: 0,
+            days1to30: 0,
+            days31to60: 0,
+            days61to90: 0,
+            over90: 0
+        };
+
+        Object.keys(agingBuckets).forEach(customer => {
+            xOffset = 40;
+            doc.font('Helvetica').text(customer, xOffset, yOffset);
+            xOffset += 100;
+            let rowTotal = 0; // Total sum for the current row
+            Object.keys(agingBuckets[customer]).forEach(bucket => {
+                const value = agingBuckets[customer][bucket];
+                doc.text(typeof value === 'number' ? value.toFixed(2) : value, xOffset, yOffset);
+                xOffset += 80;
+                if (bucket !== 'Total') {
+                    rowTotal += value; // Accumulate the row total
+                    totals[bucket] += value; // Accumulate column totals
+                }
+            });
+            doc.text(rowTotal.toFixed(2), xOffset, yOffset); // Display row total
+            totalColumnSum += rowTotal; // Accumulate row total to total column sum
+            yOffset += 20; // Move to the next row
+        });
+
+
+        doc.moveTo(40, yOffset - 10).lineTo(600, yOffset - 10).stroke(); // Line above the last row
+        doc.lineWidth(1.5); // Set line weight to 2 (adjust as needed)
+        doc.moveTo(40, yOffset + 10).lineTo(600, yOffset + 10).stroke(); // Line below the last row
+        // Add totals row
+        xOffset = 40;
+        doc.font('Helvetica-Bold').text('Total', xOffset, yOffset);
+        xOffset += 100;
+        Object.keys(totals).forEach(bucket => {
+            doc.text(totals[bucket].toFixed(2), xOffset, yOffset);
+            xOffset += 80;
+        });
+        doc.text(totalColumnSum.toFixed(2), xOffset, yOffset); // Display total column sum
+
+        doc.end();
+    });
 }
 
-
-module.exports ={ 
-    generateCustomerAgingSummary
-}
+module.exports = { generateCustomerAgingSummary };
