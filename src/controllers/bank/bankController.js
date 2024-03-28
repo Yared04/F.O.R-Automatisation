@@ -2,7 +2,7 @@ const prisma = require("../../database");
 
 async function getBanks(req, res) {
   try {
-    const { page = 1, pageSize = 10 } = req.query;
+    const { page, pageSize } = req.query;
 
     let banks;
     let totalCount;
