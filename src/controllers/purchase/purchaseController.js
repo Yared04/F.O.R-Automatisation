@@ -15,6 +15,9 @@ async function getPurchases(req, res) {
         number: true,
         truckNumber: true,
         exchangeRate: true,
+        paymentStatus: true,
+        paidAmountETB: true,
+        paidAmountUSD: true,
         supplier: {
           select: {
             id: true,
@@ -25,6 +28,9 @@ async function getPurchases(req, res) {
         transports: true,
         esls: true,
         transits: true,
+      },
+      orderBy: {
+        createdAt: "desc",
       },
       skip: (page - 1) * parseInt(pageSize, 10),
       take: parseInt(pageSize, 10),
@@ -853,6 +859,7 @@ async function getTransportCosts(req, res) {
           cost: true,
           type: true,
           purchase: true,
+          paymentStatus: true,
           productPurchase: {
             select: {
               declaration: true,
@@ -861,7 +868,7 @@ async function getTransportCosts(req, res) {
           paidAmount: true,
         },
         orderBy: {
-          createdAt: "desc",
+          createdAt: "asc",
         },
         skip: (page - 1) * parseInt(pageSize, 10),
         take: parseInt(pageSize, 10),
@@ -874,6 +881,7 @@ async function getTransportCosts(req, res) {
           cost: true,
           type: true,
           purchase: true,
+          paymentStatus: true,
           productPurchase: {
             select: {
               declaration: true,
@@ -919,9 +927,10 @@ async function getEslCosts(req, res) {
             },
           },
           paidAmount: true,
+          paymentStatus: true,
         },
         orderBy: {
-          createdAt: "desc",
+          createdAt: "asc",
         },
         skip: (page - 1) * parseInt(pageSize, 10),
         take: parseInt(pageSize, 10),
@@ -979,9 +988,10 @@ async function getTransiFees(req, res) {
             },
           },
           paidAmount: true,
+          paymentStatus: true,
         },
         orderBy: {
-          createdAt: "desc",
+          createdAt: "asc",
         },
         skip: (page - 1) * parseInt(pageSize, 10),
         take: parseInt(pageSize, 10),

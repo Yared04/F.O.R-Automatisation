@@ -12,6 +12,7 @@ async function getDeclarations(req, res) {
           id: true,
           number: true,
           date: true,
+          paidAmount: true,
         },
         skip: (page - 1) * parseInt(pageSize, 10),
         take: parseInt(pageSize, 10),
@@ -58,6 +59,7 @@ async function getDeclarations(req, res) {
           id: true,
           number: true,
           date: true,
+          paidAmount: true,
         },
       });
 
@@ -100,22 +102,23 @@ async function getDeclarations(req, res) {
 
 async function createDeclaration(req, res) {
   try {
-    const { number, date, declarationProducts } = req.body;
-    const existingDeclaration = await prisma.declaration.findFirst({
-      where:{
-        number: number
-      }
-    })
+    const { number, date, paidAmount, declarationProducts } = req.body;
+    // const existingDeclaration = await prisma.declaration.findFirst({
+    //   where:{
+    //     number: number
+    //   }
+    // })
 
-    if(existingDeclaration){
-      return res
-      .status(400)
-      .json({error: 'There is already a declaration by this declaration number'});
-    }
+    // if(existingDeclaration){
+    //   return res
+    //   .status(400)
+    //   .json({error: 'There is already a declaration by this declaration number'});
+    // }
     const createdDeclaration = await prisma.declaration.create({
       data: {
         number,
         date: new Date(date),
+        paidAmount,
       },
     });
     const createdDeclarationProducts = await Promise.all(
@@ -158,18 +161,18 @@ async function createDeclaration(req, res) {
 async function updateDeclaration(req, res) {
   try {
     const { id } = req.params; // Extract the declaration ID from request parameters
-    const { number, date} = req.body; // Extract updated data from request body
+    const { number, date } = req.body; // Extract updated data from request body
 
     const existingDeclaration = await prisma.declaration.findFirst({
-      where:{
-        number: number
-      }
-    })
+      where: {
+        number: number,
+      },
+    });
 
-    if((existingDeclaration) && existingDeclaration.id !== id){
-      return res
-      .status(400)
-      .json({error: 'There is already a declaration by this declaration number'});
+    if (existingDeclaration && existingDeclaration.id !== id) {
+      return res.status(400).json({
+        error: "There is already a declaration by this declaration number",
+      });
     }
 
     // Update the Declaration
@@ -178,7 +181,7 @@ async function updateDeclaration(req, res) {
       data: {
         number,
         date: new Date(date),
-      }
+      },
     });
 
     res.json(updatedDeclaration);
@@ -201,7 +204,8 @@ async function deleteDeclaration(req, res) {
     if (hasAssociatedPurchases) {
       // Return a specific message indicating associated purchases exist
       return res.status(400).json({
-        error: "You cannot delete this declaration. Associated purchases exist.",
+        error:
+          "You cannot delete this declaration. Associated purchases exist.",
       });
     }
     // Delete the associated product declarations
@@ -224,7 +228,6 @@ async function deleteDeclaration(req, res) {
     res.status(500).send("Internal Server Error");
   }
 }
-
 
 async function getDeclarationById(req, res) {
   try {
@@ -277,16 +280,16 @@ async function getDeclarationById(req, res) {
   }
 }
 
-
 async function updateProductDeclaration(req, res) {
   try {
     const { id } = req.params; // Extract the productDeclaration ID from request parameters
     const { declarationQuantity, totalIncomeTax, productId } = req.body; // Extract updated data from request body
 
     // Fetch the existing product declaration
-    const existingProductDeclaration = await prisma.productDeclaration.findUnique({
-      where: { id: id },
-    });
+    const existingProductDeclaration =
+      await prisma.productDeclaration.findUnique({
+        where: { id: id },
+      });
 
     if (!existingProductDeclaration) {
       return res.status(404).json({ error: "Product declaration not found" });
@@ -294,11 +297,15 @@ async function updateProductDeclaration(req, res) {
 
     // Check if purchased quantity is 0
     if (existingProductDeclaration.purchasedQuantity !== 0) {
-      return res.status(400).json({ error: "Product declaration cannot be updated because purchased quantity is not 0" });
+      return res.status(400).json({
+        error:
+          "Product declaration cannot be updated because purchased quantity is not 0",
+      });
     }
 
     // Calculate unitIncomeTax based on totalIncomeTax and declarationQuantity
-    const unitIncomeTax = parseFloat(totalIncomeTax) / parseFloat(declarationQuantity);
+    const unitIncomeTax =
+      parseFloat(totalIncomeTax) / parseFloat(declarationQuantity);
 
     // Update the ProductDeclaration
     const updatedProductDeclaration = await prisma.productDeclaration.update({
@@ -308,9 +315,10 @@ async function updateProductDeclaration(req, res) {
         totalIncomeTax: parseInt(totalIncomeTax),
         unitIncomeTax: unitIncomeTax,
         product: { connect: { id: productId } }, // Assuming product object has an 'id' field
-      },include:{
-        product:true
-      }
+      },
+      include: {
+        product: true,
+      },
     });
 
     res.json(updatedProductDeclaration);
@@ -325,9 +333,10 @@ async function deleteProductDeclaration(req, res) {
     const { id } = req.params; // Extract the productDeclaration ID from request parameters
 
     // Fetch the existing product declaration
-    const existingProductDeclaration = await prisma.productDeclaration.findUnique({
-      where: { id: id },
-    });
+    const existingProductDeclaration =
+      await prisma.productDeclaration.findUnique({
+        where: { id: id },
+      });
 
     if (!existingProductDeclaration) {
       return res.status(404).json({ error: "Product declaration not found" });
@@ -335,15 +344,20 @@ async function deleteProductDeclaration(req, res) {
 
     // Check if purchased quantity is 0
     if (existingProductDeclaration.purchasedQuantity !== 0) {
-      return res.status(400).json({ error: "Product declaration cannot be deleted because purchased quantity is not 0" });
+      return res.status(400).json({
+        error:
+          "Product declaration cannot be deleted because purchased quantity is not 0",
+      });
     }
 
     const declarationProducts = await prisma.productDeclaration.findMany({
-      where:{declarationId: existingProductDeclaration.declarationId}
-    })
+      where: { declarationId: existingProductDeclaration.declarationId },
+    });
 
-    if(declarationProducts.length == 1){
-      return res.status(400).json({ error: "There should atleast be one product in a declaration." });
+    if (declarationProducts.length == 1) {
+      return res.status(400).json({
+        error: "There should atleast be one product in a declaration.",
+      });
     }
 
     // Delete the ProductDeclaration
@@ -358,13 +372,14 @@ async function deleteProductDeclaration(req, res) {
   }
 }
 
-
 async function createProductDeclaration(req, res) {
   try {
-    const { declarationQuantity, totalIncomeTax, productId, declarationId } = req.body; // Extract updated data from request body
+    const { declarationQuantity, totalIncomeTax, productId, declarationId } =
+      req.body; // Extract updated data from request body
 
     // Calculate unitIncomeTax based on totalIncomeTax and declarationQuantity
-    const unitIncomeTax = parseFloat(totalIncomeTax) / parseFloat(declarationQuantity);
+    const unitIncomeTax =
+      parseFloat(totalIncomeTax) / parseFloat(declarationQuantity);
 
     // Update the ProductDeclaration
     const productDeclaration = await prisma.productDeclaration.create({
@@ -375,9 +390,10 @@ async function createProductDeclaration(req, res) {
         purchasedQuantity: 0,
         product: { connect: { id: productId } },
         declaration: { connect: { id: declarationId } },
-      }, include:{
-        product: true
-      }
+      },
+      include: {
+        product: true,
+      },
     });
 
     res.json(productDeclaration);
@@ -395,5 +411,5 @@ module.exports = {
   deleteDeclaration,
   updateProductDeclaration,
   deleteProductDeclaration,
-  createProductDeclaration
+  createProductDeclaration,
 };

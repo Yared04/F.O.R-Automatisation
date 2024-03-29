@@ -1,25 +1,34 @@
-const { parse } = require("path");
 const prisma = require("../../database");
 
 async function createTransportPayment(req, res) {
   try {
-    const { date, cost, paidAmount, type, purchaseId } = req.body;
-
-    const transport = await prisma.transport.create({
-      data: {
-        date: new Date(date),
-        cost: parseFloat(cost),
-        paidAmount: parseFloat(paidAmount),
-        type: type,
-        purchase: {
-          connect: {
-            id: purchaseId,
+    const { date, transports } = req.body;
+    await Promise.all(
+      transports.map(async (transport) => {
+        await prisma.transport.create({
+          data: {
+            date: new Date(date),
+            paidAmount: parseFloat(transport.paidAmount),
+            type: "Payment",
+            paymentStatus: "",
+            purchase: {
+              connect: {
+                id: transport.purchase.id,
+              },
+            },
           },
-        },
-      },
-    });
+        });
+        await prisma.transport.update({
+          where: { id: transport.id },
+          data: {
+            paymentStatus: transport.paymentStatus,
+            paidAmount: transport.paidAmount,
+          },
+        });
+      })
+    );
 
-    res.json(transport);
+    res.json({ message: "Payment successful" });
   } catch (error) {
     console.error("Error creating transport:", error);
     res.status(500).send("Internal Server Error");

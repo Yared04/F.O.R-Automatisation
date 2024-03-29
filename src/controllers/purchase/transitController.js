@@ -24,6 +24,42 @@ async function createTransitFee(req, res) {
   }
 }
 
+async function createTransitPayment(req, res) {
+  const { date, transits } = req.body;
+  try {
+    await Promise.all(
+      transits.map(async (transit) => {
+        await prisma.transit.create({
+          data: {
+            date: new Date(date),
+            paidAmount: parseFloat(transit.paidAmount),
+            type: "Payment",
+            paymentStatus: "",
+            purchase: {
+              connect: {
+                id: transit.purchase.id,
+              },
+            },
+          },
+        });
+        await prisma.transit.update({
+          where: { id: transit.id },
+          data: {
+            paymentStatus: transit.paymentStatus,
+            paidAmount: transit.paidAmount,
+          },
+        });
+      })
+    );
+
+    res.json({ message: "Payment successful" });
+  } catch (error) {
+    console.error("Error creating transit payment:", error);
+    res.status(500).send("Internal Server Error");
+  }
+}
+
 module.exports = {
   createTransitFee,
+  createTransitPayment,
 };
