@@ -3,7 +3,7 @@ const prisma = require("../../database");
 async function createCustomTaxPayment(req, res) {
   try {
     const { date, cost, paidAmount, type, purchaseId } = req.body;
-    const customTax = await prisma.esl.create({
+    const customTax = await prisma.eSL.create({
       data: {
         date: new Date(date),
         cost: parseFloat(cost),
@@ -25,27 +25,26 @@ async function createCustomTaxPayment(req, res) {
 }
 
 async function createESLPayment(req, res) {
-  const { amount, date, customs } = req.body;
+  const { date, esls } = req.body;
   try {
-    const eslPayment = await prisma.ESLPayment.create({
-      data: {
-        date: new Date(date),
-        amount: parseFloat(amount),
-      },
-    });
-
-
-    
     await Promise.all(
-      customs.map(async (custom) => {
-        await prisma.esl.update({
-          where: { id: custom.id },
+      esls.map(async (custom) => {
+        await prisma.eSL.create({
           data: {
-            eslPayment: {
+            date: new Date(date),
+            paidAmount: parseFloat(custom.paidAmount),
+            type: "Payment",
+            paymentStatus: "",
+            purchase: {
               connect: {
-                id: eslPayment.id,
+                id: custom.purchase.id,
               },
             },
+          },
+        });
+        await prisma.eSL.update({
+          where: { id: custom.id },
+          data: {
             paymentStatus: custom.paymentStatus,
             paidAmount: custom.paidAmount,
           },
@@ -53,7 +52,7 @@ async function createESLPayment(req, res) {
       })
     );
 
-    res.json(eslPayment);
+    res.json({ message: "Payment successful" });
   } catch (error) {
     console.error("Error creating transit payment:", error);
     res.status(500).send("Internal Server Error");

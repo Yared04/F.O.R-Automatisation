@@ -856,6 +856,7 @@ async function getTransportCosts(req, res) {
           cost: true,
           type: true,
           purchase: true,
+          paymentStatus: true,
           productPurchase: {
             select: {
               declaration: true,
@@ -877,6 +878,7 @@ async function getTransportCosts(req, res) {
           cost: true,
           type: true,
           purchase: true,
+          paymentStatus: true,
           productPurchase: {
             select: {
               declaration: true,
@@ -922,7 +924,7 @@ async function getEslCosts(req, res) {
             },
           },
           paidAmount: true,
-          paymentStatus: true, 
+          paymentStatus: true,
         },
         orderBy: {
           createdAt: "asc",
@@ -984,11 +986,6 @@ async function getTransiFees(req, res) {
           },
           paidAmount: true,
           paymentStatus: true,
-          transitPayment: {
-            select: {
-              id: true,
-            },
-          },
         },
         orderBy: {
           createdAt: "asc",
