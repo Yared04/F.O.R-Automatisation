@@ -56,9 +56,10 @@ async function createSale(req, res) {
                 purchaseId: null,
               },
             },
-            orderBy: {
-              createdAt: "asc",
-            },
+            orderBy: [
+              { createdAt: 'asc' },
+              { purchaseQuantity: 'desc' }
+            ],
             select: {
               id: true,
               purchaseQuantity: true,
@@ -67,6 +68,9 @@ async function createSale(req, res) {
               purchaseId: true,
               productId: true,
               purchaseUnitCostOfGoods: true,
+              transit: true,
+              transport: true,
+              esl: true
             },
           });
         } catch (error) {
@@ -137,8 +141,12 @@ async function createSale(req, res) {
                   totalSales:
                     parseFloat(product.saleUnitPrice) * remainingSaleQuantity,
                   unitCostOfGoods:
-                    productPurchase.purchaseUnitCostOfGoods +
-                    productDeclaration.unitIncomeTax,
+                    productPurchase.purchaseUnitCostOfGoods + (
+                      productPurchase.transit.cost + 
+                      productPurchase.transport.cost + 
+                      productPurchase.esl.cost + 
+                      (remainingSaleQuantity * productDeclaration.unitIncomeTax)
+                      ) / remainingSaleQuantity,
                   purchase: { connect: { id: productPurchase.purchaseId } },
                   declaration: {
                     connect: { id: productPurchase.declarationId },
@@ -183,9 +191,13 @@ async function createSale(req, res) {
                   saleUnitPrice: parseFloat(product.saleUnitPrice),
                   totalSales:
                     product.saleUnitPrice * soldQuantity,
-                  unitCostOfGoods:
-                    productPurchase.purchaseUnitCostOfGoods +
-                    productDeclaration.unitIncomeTax,
+                  unitCostOfGoods: 
+                    productPurchase.purchaseUnitCostOfGoods + (
+                    productPurchase.transit.cost + 
+                    productPurchase.transport.cost + 
+                    productPurchase.esl.cost + 
+                    (remainingSaleQuantity * productDeclaration.unitIncomeTax)
+                    ) / remainingSaleQuantity,
                   purchase: { connect: { id: productPurchase.purchaseId } },
                   declaration: {
                     connect: { id: productPurchase.declarationId },
