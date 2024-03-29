@@ -195,34 +195,40 @@ async function createBankTransaction(req, res) {
 
 async function createSupplierPayment(req, res) {
   try {
-    const {
-      supplierId,
-      date,
-      exchangeRate,
-      number,
-      paidAmountETB,
-      paidAmountUSD,
-    } = req.body;
-    const purchaseNumber = await prisma.purchase.findUnique({
-      where: { id: number },
-    });
-    const createdSupplierPayment = await prisma.purchase.create({
-      data: {
-        supplier: {
-          connect: {
-            id: supplierId,
+    const { date, purchases } = req.body;
+    await Promise.all(
+      purchases.map(async (purchase) => {
+        await prisma.purchase.create({
+          data: {
+            supplier: {
+              connect: {
+                id: purchase.supplier.id,
+              },
+            },
+            date: new Date(date),
+            number: purchase.number,
+            exchangeRate: purchase.exchangeRate,
+            paymentStatus: "",
+            paidAmountUSD: purchase.paidAmountUSD,
+            paidAmountETB: purchase.paidAmountETB,
           },
-        },
-        date: new Date(date),
-        number: purchaseNumber.number,
-        exchangeRate: exchangeRate,
-        paidAmountUSD: exchangeRate ? paidAmountUSD : null,
-        paidAmountETB: exchangeRate
-          ? exchangeRate * paidAmountETB
-          : paidAmountUSD,
-      },
-    });
-    res.json(createdSupplierPayment);
+        });
+
+        await prisma.purchase.update({
+          where: { id: purchase.id },
+          data: {
+            paidAmountETB: {
+              increment: purchase.paidAmountETB, // Increment by the value of purchase.paidAmountETB
+            },
+            paidAmountUSD: {
+              increment: purchase.paidAmountUSD, // Increment by the value of purchase.paidAmountUSD
+            },
+            paymentStatus: purchase.paymentStatus,
+          },
+        });
+      })
+    );
+    res.json({ message: "Payment successful" });
   } catch (error) {
     console.error("Error creating supplier payment:", error);
     res.status(500).send("Internal Server Error");
@@ -230,25 +236,36 @@ async function createSupplierPayment(req, res) {
 }
 
 async function createCustomerPayment(req, res) {
-  const { date, paidAmount, saleId, customerId } = req.body;
   try {
-    const invoiceNumber = await prisma.sale.findUnique({
-      where: { id: saleId },
-    });
-
-    const createdCustomerPayment = await prisma.sale.create({
-      data: {
-        invoiceDate: new Date(date),
-        paidAmount: parseFloat(paidAmount),
-        customer: {
-          connect: {
-            id: customerId,
+    const { date, sales } = req.body;
+    await Promise.all(
+      sales.map(async (sale) => {
+        await prisma.sale.create({
+          data: {
+            customer: {
+              connect: {
+                id: sale.customer.id,
+              },
+            },
+            date: new Date(date),
+            invoiceNumber: sale.invoiceNumber,
+            paymentStatus: "",
+            paidAmount: sale.paidAmount,
           },
-        },
-        invoiceNumber: invoiceNumber.invoiceNumber,
-      },
-    });
-    res.json(createdCustomerPayment);
+        });
+
+        await prisma.sale.update({
+          where: { id: sale.id },
+          data: {
+            paidAmount: {
+              increment: sale.paidAmount, 
+            },
+            paymentStatus: sale.paymentStatus,
+          },
+        });
+      })
+    );
+    res.json({ message: "Payment successful" });
   } catch (error) {
     console.error("Error creating customer payment:", error);
     res.status(500).send("Internal Server Error");
@@ -461,7 +478,6 @@ async function getCaTransactionById(req, res) {
     res.status(500).send("Internal Server Error");
   }
 }
-
 
 module.exports = {
   getCaTransactions,

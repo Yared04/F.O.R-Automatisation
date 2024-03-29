@@ -15,6 +15,9 @@ async function getPurchases(req, res) {
         number: true,
         truckNumber: true,
         exchangeRate: true,
+        paymentStatus: true,
+        paidAmountETB: true,
+        paidAmountUSD: true,
         supplier: {
           select: {
             id: true,

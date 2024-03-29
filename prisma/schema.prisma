@@ -136,6 +136,7 @@ model Purchase {
   exchangeRate   Float?
   supplierId     String?           @map("supplier_id") @db.Uuid
   supplier       Supplier?         @relation(fields:[supplierId], references:[id])
+  paymentStatus  String            @default("Incomplete")
   products       ProductPurchase[]
   transports     Transport[]
   esls           ESL[]
@@ -241,6 +242,7 @@ model Sale {
   invoiceDate    DateTime
   customerId     String          @map("customer_id") @db.Uuid
   customer       Customer        @relation(fields: [customerId], references: [id])
+  paymentStatus  String            @default("Incomplete")
   inventories    Inventory[]
   sales          SaleDetail[]
   caTransactions CATransaction[]
