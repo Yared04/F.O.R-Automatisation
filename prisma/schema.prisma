@@ -152,6 +152,7 @@ model Transport {
   id             String            @id @default(uuid()) @db.Uuid
   date           DateTime
   cost           Float?
+  unitTransportCost Float?
   type           String
   paymentStatus  String            @default("Incomplete")
   productPurchaseId       String?         @db.Uuid @unique
@@ -167,6 +168,7 @@ model ESL {
   id             String            @id @default(uuid()) @db.Uuid
   date           DateTime
   cost           Float?
+  unitEslCost Float?
   type           String
   paymentStatus  String            @default("Incomplete")
   productPurchaseId       String?         @db.Uuid @unique
@@ -182,6 +184,7 @@ model Transit {
   id             String            @id @default(uuid()) @db.Uuid
   date           DateTime
   cost           Float?
+  unitTransitCost Float?
   type           String
   paymentStatus  String            @default("Incomplete")
   productPurchaseId       String?         @db.Uuid @unique
@@ -345,6 +348,7 @@ model CATransaction {
   debit             Float?
   exchangeRate      Float?
   USDAmount         Float?
+  accountPayableRecievableDetail   String?
   createdAt         DateTime         @default(now()) @map("created_at")
   updatedAt         DateTime         @updatedAt @map("updated_at")
 }

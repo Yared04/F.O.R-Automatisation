@@ -287,7 +287,8 @@ async function createTransaction(
   supplierId,
   customerId,
   exchangeRate,
-  USDAmount
+  USDAmount,
+  accountPayableRecievableDetail
 ) {
   try {
     let createdCaTransaction;
@@ -355,6 +356,7 @@ async function createTransaction(
         remark: remark,
         debit: parseFloat(debit),
         credit: parseFloat(credit),
+        accountPayableRecievableDetail: accountPayableRecievableDetail
       },
     });
 
@@ -383,6 +385,7 @@ async function createCaTransaction(req, res) {
       customerId,
       exchangeRate,
       USDAmount,
+      accountPayableRecievableDetail
     } = req.body;
     const transaction = await createTransaction(
       chartofAccountId,
@@ -399,7 +402,8 @@ async function createCaTransaction(req, res) {
       supplierId,
       customerId,
       exchangeRate,
-      USDAmount
+      USDAmount,
+      accountPayableRecievableDetail
     );
 
     res.json(transaction);

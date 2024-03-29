@@ -236,6 +236,7 @@ async function createPurchase(req, res) {
             },
             date: createdPurchase.date,
             cost: transportFee,
+            unitTransportCost: transportFee / productPurchase.purchaseQuantity,
             type: "Bill",
             productPurchase: {
               connect: {
@@ -254,6 +255,7 @@ async function createPurchase(req, res) {
             },
             date: createdPurchase.date,
             cost: eslCustomFee,
+            unitEslCost: eslCustomFee / productPurchase.purchaseQuantity,
             type: "Bill",
             productPurchase: {
               connect: {
@@ -272,6 +274,7 @@ async function createPurchase(req, res) {
             },
             date: createdPurchase.date,
             cost: transitFee,
+            unitTransitCost: transitFee / productPurchase.purchaseQuantity,
             type: "Bill",
             productPurchase: {
               connect: {
@@ -496,6 +499,7 @@ async function getPurchase(id) {
         number: true,
         date: true,
         truckNumber: true,
+        supplier: true,
       },
     });
 
@@ -866,6 +870,7 @@ async function getTransportCosts(req, res) {
             },
           },
           paidAmount: true,
+          unitTransportCost: true,
         },
         orderBy: {
           createdAt: "asc",
@@ -928,6 +933,7 @@ async function getEslCosts(req, res) {
           },
           paidAmount: true,
           paymentStatus: true,
+          unitEslCost: true,
         },
         orderBy: {
           createdAt: "asc",
@@ -989,6 +995,7 @@ async function getTransiFees(req, res) {
           },
           paidAmount: true,
           paymentStatus: true,
+          unitTransitCost: true,
         },
         orderBy: {
           createdAt: "asc",
