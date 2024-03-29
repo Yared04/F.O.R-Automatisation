@@ -8,12 +8,15 @@ async function getSales(req, res) {
     const { page = 1, pageSize = 10 } = req.query;
     const totalCount = await prisma.sale.count();
 
-    const sales = await prisma.Sale.findMany({
+    const sales = await prisma.sale.findMany({
       select: {
         id: true,
         invoiceNumber: true,
         invoiceDate: true,
         customer: true,
+        paymentStatus: true,
+        sales: true,
+        paidAmount: true,
       },
       skip: (page - 1) * parseInt(pageSize, 10),
       take: parseInt(pageSize, 10),
@@ -56,10 +59,7 @@ async function createSale(req, res) {
                 purchaseId: null,
               },
             },
-            orderBy: [
-              { createdAt: 'asc' },
-              { purchaseQuantity: 'desc' }
-            ],
+            orderBy: [{ createdAt: "asc" }, { purchaseQuantity: "desc" }],
             select: {
               id: true,
               purchaseQuantity: true,
@@ -70,7 +70,7 @@ async function createSale(req, res) {
               purchaseUnitCostOfGoods: true,
               transit: true,
               transport: true,
-              esl: true
+              esl: true,
             },
           });
         } catch (error) {
@@ -141,12 +141,13 @@ async function createSale(req, res) {
                   totalSales:
                     parseFloat(product.saleUnitPrice) * remainingSaleQuantity,
                   unitCostOfGoods:
-                    productPurchase.purchaseUnitCostOfGoods + (
-                      productPurchase.transit.cost + 
-                      productPurchase.transport.cost + 
-                      productPurchase.esl.cost + 
-                      (remainingSaleQuantity * productDeclaration.unitIncomeTax)
-                      ) / remainingSaleQuantity,
+                    productPurchase.purchaseUnitCostOfGoods +
+                    (productPurchase.transit.cost +
+                      productPurchase.transport.cost +
+                      productPurchase.esl.cost +
+                      remainingSaleQuantity *
+                        productDeclaration.unitIncomeTax) /
+                      remainingSaleQuantity,
                   purchase: { connect: { id: productPurchase.purchaseId } },
                   declaration: {
                     connect: { id: productPurchase.declarationId },
@@ -184,20 +185,20 @@ async function createSale(req, res) {
             productPurchase.remainingQuantity !== 0
           ) {
             try {
-              const soldQuantity = productPurchase.remainingQuantity
+              const soldQuantity = productPurchase.remainingQuantity;
               sale = await prisma.saleDetail.create({
                 data: {
                   saleQuantity: soldQuantity,
                   saleUnitPrice: parseFloat(product.saleUnitPrice),
-                  totalSales:
-                    product.saleUnitPrice * soldQuantity,
-                  unitCostOfGoods: 
-                    productPurchase.purchaseUnitCostOfGoods + (
-                    productPurchase.transit.cost + 
-                    productPurchase.transport.cost + 
-                    productPurchase.esl.cost + 
-                    (remainingSaleQuantity * productDeclaration.unitIncomeTax)
-                    ) / remainingSaleQuantity,
+                  totalSales: product.saleUnitPrice * soldQuantity,
+                  unitCostOfGoods:
+                    productPurchase.purchaseUnitCostOfGoods +
+                    (productPurchase.transit.cost +
+                      productPurchase.transport.cost +
+                      productPurchase.esl.cost +
+                      remainingSaleQuantity *
+                        productDeclaration.unitIncomeTax) /
+                      remainingSaleQuantity,
                   purchase: { connect: { id: productPurchase.purchaseId } },
                   declaration: {
                     connect: { id: productPurchase.declarationId },

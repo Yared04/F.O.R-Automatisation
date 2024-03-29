@@ -247,7 +247,7 @@ async function createCustomerPayment(req, res) {
                 id: sale.customer.id,
               },
             },
-            date: new Date(date),
+            invoiceDate: new Date(date),
             invoiceNumber: sale.invoiceNumber,
             paymentStatus: "",
             paidAmount: sale.paidAmount,
