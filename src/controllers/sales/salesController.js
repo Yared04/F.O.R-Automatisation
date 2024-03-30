@@ -48,73 +48,73 @@ async function createSale(req, res) {
     let saleOfProductIncome;
     let saleTotalAmount = 0;
 
-    try {
-      for (const product of products) {
-        let availableProducts = [];
+    for (const product of products) {
+      let availableProducts = [];
+      try {
+        availableProducts = await prisma.productPurchase.findMany({
+          where: {
+            productId: product.productId,
+            NOT: {
+              purchaseId: null,
+            },
+          },
+          orderBy: [{ createdAt: "asc" }, { purchaseQuantity: "desc" }],
+          select: {
+            id: true,
+            purchaseQuantity: true,
+            remainingQuantity: true,
+            declarationId: true,
+            purchaseId: true,
+            productId: true,
+            purchaseUnitCostOfGoods: true,
+            transit: true,
+            transport: true,
+            esl: true,
+          },
+        });
+      } catch (error) {
+        console.error("Error retrieving available products:", error);
+        throw new Error("Internal Server Error");
+      }
+      //calculate the total amount of products available for sale
+      const totalPurchaseQuantity = availableProducts.reduce(
+        (acc, item) => acc + item.remainingQuantity,
+        0
+      );
+
+      //Define how many products are to be sold
+      let remainingSaleQuantity = parseInt(product.saleQuantity);
+      let productPurchaseIndex = 0;
+
+      //if the total amount of products available for sale is less than the amount to be sold, return an error
+      if (remainingSaleQuantity > totalPurchaseQuantity) {
+        throw new Error("Not Engough Products for Sale!");
+      }
+      if (createdSale === null) {
         try {
-          availableProducts = await prisma.productPurchase.findMany({
-            where: {
-              productId: product.productId,
-              NOT: {
-                purchaseId: null,
+          createdSale = await prisma.sale.create({
+            data: {
+              invoiceNumber: parseInt(invoiceNumber),
+              invoiceDate: new Date(invoiceDate),
+              customer: {
+                connect: { id: customerId },
               },
             },
-            orderBy: [{ createdAt: "asc" }, { purchaseQuantity: "desc" }],
-            select: {
-              id: true,
-              purchaseQuantity: true,
-              remainingQuantity: true,
-              declarationId: true,
-              purchaseId: true,
-              productId: true,
-              purchaseUnitCostOfGoods: true,
-              transit: true,
-              transport: true,
-              esl: true,
+            include: {
+              customer: true,
             },
           });
         } catch (error) {
-          console.error("Error retrieving available products:", error);
+          console.error("Error creating sale:", error);
           throw new Error("Internal Server Error");
         }
-        //calculate the total amount of products available for sale
-        const totalPurchaseQuantity = availableProducts.reduce(
-          (acc, item) => acc + item.remainingQuantity,
-          0
-        );
-
-        //Define how many products are to be sold
-        let remainingSaleQuantity = parseInt(product.saleQuantity);
-        let productPurchaseIndex = 0;
-
-        //if the total amount of products available for sale is less than the amount to be sold, return an error
-        if (remainingSaleQuantity > totalPurchaseQuantity) {
-          throw new Error("Not Engough Products for Sale!");
-        }
-        if (createdSale === null) {
-          try {
-            createdSale = await prisma.sale.create({
-              data: {
-                invoiceNumber: parseInt(invoiceNumber),
-                invoiceDate: new Date(invoiceDate),
-                customer: {
-                  connect: { id: customerId },
-                },
-              },
-              include: {
-                customer: true,
-              },
-            });
-          } catch (error) {
-            console.error("Error creating sale:", error);
-            throw new Error("Internal Server Error");
-          }
-        }
-        saleId = createdSale.id;
-        let sale = null;
-        while (remainingSaleQuantity > 0) {
-          const productPurchase = availableProducts[productPurchaseIndex];
-          let productDeclaration;
+      }
+      saleId = createdSale.id;
+      let sale = null;
+      let productTotal = 0;
+      while (remainingSaleQuantity > 0) {
+        const productPurchase = availableProducts[productPurchaseIndex];
+        let productDeclaration;
 
           //Find the declaration with the which the product was declared on
           try {
@@ -162,21 +162,21 @@ async function createSale(req, res) {
               throw new Error("Internal Server Error");
             }
 
-            //update the productPurchase table
-            try {
-              await prisma.productPurchase.update({
-                where: {
-                  id: productPurchase.id,
-                },
-                data: {
-                  remainingQuantity:
-                    productPurchase.remainingQuantity - remainingSaleQuantity,
-                },
-              });
-            } catch (error) {
-              console.error("Error updating product purchase:", error);
-              throw new Error("Internal Server Error");
-            }
+          //update the productPurchase table
+          try {
+            await prisma.productPurchase.update({
+              where: {
+                id: productPurchase.id,
+              },
+              data: {
+                remainingQuantity:
+                  productPurchase.remainingQuantity - remainingSaleQuantity,
+              },
+            });
+          } catch (error) {
+            console.error("Error updating product purchase:", error);
+            throw new Error("Internal Server Error");
+          }
 
             remainingSaleQuantity = 0;
           }
@@ -214,25 +214,25 @@ async function createSale(req, res) {
               throw new Error("Internal Server Error");
             }
 
-            //update the productPurchase table
-            try {
-              await prisma.productPurchase.update({
-                where: {
-                  id: productPurchase.id,
-                },
-                data: {
-                  remainingQuantity: 0,
-                },
-              });
-            } catch (error) {
-              console.error("Error updating product purchase:", error);
-              throw new Error("Internal Server Error");
-            }
-
-            remainingSaleQuantity -= productPurchase.remainingQuantity;
+          //update the productPurchase table
+          try {
+            await prisma.productPurchase.update({
+              where: {
+                id: productPurchase.id,
+              },
+              data: {
+                remainingQuantity: 0,
+              },
+            });
+          } catch (error) {
+            console.error("Error updating product purchase:", error);
+            throw new Error("Internal Server Error");
           }
-          productPurchaseIndex += 1;
+
+          remainingSaleQuantity -= productPurchase.remainingQuantity;
         }
+        productPurchaseIndex += 1;
+
         //check if the product has inventory
         let inventoryEntries = [];
         try {
@@ -257,6 +257,7 @@ async function createSale(req, res) {
           throw new Error("Internal Server Error");
         }
 
+
         //if the product has no inventory, create a new inventory entry
         let isNewEntry = false;
         if (!inventoryEntries.length) {
@@ -278,7 +279,7 @@ async function createSale(req, res) {
                     id: product.productId,
                   },
                 },
-                balanceQuantity: product.saleQuantity,
+                balanceQuantity: inventoryBalance,
               },
             });
             isNewEntry = true;
@@ -288,26 +289,6 @@ async function createSale(req, res) {
             throw new Error("Internal Server Error");
           }
         }
-
-        //get the existing inventory entries to update the balance quantity
-        // try {
-        //   inventoryEntries = await prisma.inventory.findMany({
-        //     where: {
-        //       productId: product.productId,
-        //     },
-        //     select: {
-        //       balanceQuantity: true,
-        //       purchaseId: true,
-        //       saleId: true,
-        //     },
-        //     orderBy: {
-        //       createdAt: "desc",
-        //     },
-        //   });
-        // } catch (error) {
-        //   console.error("Error retrieving inventory:", error);
-        //   throw new Error("Internal Server Error");
-        // }
 
         //get the purchase entry and sale entry
         let purchaseEntry = inventoryEntries.find((entry) => entry.purchaseId);
@@ -334,10 +315,11 @@ async function createSale(req, res) {
                   },
                 },
                 balanceQuantity: saleEntry
-                  ? saleEntry.balanceQuantity - product.saleQuantity
-                  : purchaseEntry.balanceQuantity - product.saleQuantity,
+                  ? saleEntry.balanceQuantity - inventoryBalance
+                  : purchaseEntry.balanceQuantity - inventoryBalance,
               },
             });
+            console.log("existing inventory", saleEntry, purchaseEntry, saleEntry?.balanceQuantity, purchaseEntry?.balanceQuantity)
           } catch (error) {
             console.error("Error creating inventory:", error);
             throw new Error("Internal Server Error");
@@ -381,7 +363,7 @@ async function createSale(req, res) {
             null,
             null,
             createdSale.id,
-            product.id,
+            sale.id,
             null,
             customerId,
             null,
@@ -401,7 +383,7 @@ async function createSale(req, res) {
             null,
             null,
             createdSale.id,
-            product.id,
+            sale.id,
             null,
             customerId,
             null,
@@ -411,34 +393,9 @@ async function createSale(req, res) {
           console.error("Error creating transactions:", error);
           throw new Error("Internal Server Error");
         }
-        saleTotalAmount +=
+        productTotal +=
           parseFloat(sale.saleQuantity) * parseFloat(sale.saleUnitPrice);
       }
-    } catch (error) {
-      console.error(error.message);
-      throw new Error(error);
-    }
-
-    try {
-      //create transaction for accounts receivable
-      await createTransaction(
-        accountsReceivable.id,
-        null,
-        new Date(invoiceDate),
-        null,
-        `Invoice`,
-        null,
-        saleTotalAmount,
-        null,
-        null,
-        createdSale.id,
-        null,
-        null,
-        customerId,
-        null,
-        null
-      );
-
       //create transaction for sales of product income
       await createTransaction(
         saleOfProductIncome.id,
@@ -446,21 +403,38 @@ async function createSale(req, res) {
         new Date(invoiceDate),
         null,
         `Invoice`,
-        saleTotalAmount,
+        productTotal,
         null,
         null,
         null,
         createdSale.id,
-        null,
+        sale.id,
         null,
         customerId,
         null,
         null
       );
-    } catch (error) {
-      console.error("Error creating transactions:", error);
-      throw new Error("Internal Server Error");
+      saleTotalAmount += productTotal;
     }
+
+    //create transaction for accounts receivable
+    await createTransaction(
+      accountsReceivable.id,
+      null,
+      new Date(invoiceDate),
+      null,
+      `Invoice`,
+      null,
+      saleTotalAmount,
+      null,
+      null,
+      createdSale.id,
+      null,
+      null,
+      customerId,
+      null,
+      null
+    );
 
     res.json(createdSale);
   } catch (error) {
