@@ -296,12 +296,22 @@ async function createTransaction(
         accountPayableRecievableDetail: accountPayableRecievableDetail,
         number: parseFloat(number),
       },
+      include: {
+        chartofAccount: true,
+        supplier: true,
+        customer: true,
+        bankTransaction: true,
+        purchase: true,
+        sale: true,
+        productPurchase: true,
+        saleDetail: true
+      },
     });
 
     return createdCaTransaction;
   } catch (error) {
     console.error("Error creating CA Transaction:", error);
-    return error, "Internal Server Error";
+    throw new Error("Internal Server Error");
   }
 }
 
