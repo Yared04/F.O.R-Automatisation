@@ -154,6 +154,7 @@ async function createSale(req, res) {
                   },
                   product: { connect: { id: productPurchase.productId } },
                   sale: { connect: { id: saleId } },
+                  productPurchase: {connect: {id:productPurchase.id }} 
                 },
               });
             } catch (error) {
@@ -205,6 +206,7 @@ async function createSale(req, res) {
                   },
                   product: { connect: { id: productPurchase.productId } },
                   sale: { connect: { id: saleId } },
+                  productPurchase: {connect: {id:productPurchase.id }} 
                 },
               });
             } catch (error) {
@@ -564,11 +566,47 @@ async function deleteSaleById(req, res) {
   try {
     const { id } = req.params;
 
+    const saleDetails = await prisma.saleDetail.findMany({
+      where: {
+        saleId: id
+      }
+    });
+
+    for (const saleDetail of saleDetails) {
+      const productPurchase = await prisma.productPurchase.findFirst({
+        where: {
+          id: saleDetail.productPurchaseId,
+        }
+      });
+
+      // Calculate the new remaining quantity
+      const newRemainingQuantity = productPurchase.remainingQuantity + saleDetail.saleQuantity;
+
+      // Update the product purchase with the new remaining quantity
+      await prisma.productPurchase.update({
+        where: {
+          id: productPurchase.id,
+        },
+        data: {
+          remainingQuantity: newRemainingQuantity,
+        },
+      });
+
+      // Delete the sale detail
+      await prisma.saleDetail.delete({
+        where: {
+          id: saleDetail.id,
+        },
+      });
+    }
+
+    // After deleting all associated sale details, delete the sale itself
     const deletedSale = await prisma.sale.delete({
       where: {
         id: id,
       },
     });
+
     res.json(deletedSale);
   } catch (error) {
     console.error("Error deleting Sale:", error);

@@ -216,6 +216,7 @@ model ProductPurchase {
   transit                 Transit?
   transport               Transport?
   esl                     ESL?
+  sales                   SaleDetail[]
   createdAt               DateTime        @default(now()) @map("created_at")
   updatedAt               DateTime        @updatedAt @map("updated_at")
 }
@@ -264,6 +265,8 @@ model SaleDetail {
   sale            Sale            @relation(fields: [saleId], references: [id], onDelete: Cascade)
   productId       String          @map("product_id") @db.Uuid
   product         Product         @relation(fields: [productId], references: [id])
+  productPurchaseId       String          @map("product_purchase_id") @db.Uuid
+  productPurchase         ProductPurchase         @relation(fields: [productPurchaseId], references: [id])
   purchaseId      String          @map("purchase_id") @db.Uuid
   purchase        Purchase        @relation(fields: [purchaseId], references: [id])
   declarationId   String          @map("declaration_id") @db.Uuid
