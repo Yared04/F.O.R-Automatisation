@@ -116,52 +116,51 @@ async function createSale(req, res) {
         const productPurchase = availableProducts[productPurchaseIndex];
         let productDeclaration;
 
-        //Find the declaration with the which the product was declared on
-        try {
-          productDeclaration = await prisma.productDeclaration.findFirst({
-            where: {
-              productId: productPurchase.productId,
-              declarationId: productPurchase.declarationId,
-            },
-            select: {
-              unitIncomeTax: true,
-            },
-          });
-        } catch (error) {
-          console.error("Error retrieving product declaration:", error);
-          throw new Error("Internal Server Error");
-        }
-        let inventoryBalance = 0;
-        //if the product purchase quantity is greater than the remaining sale quantity, create a one sale Detail entry and make the remainig sale quantity 0
-        if (productPurchase.remainingQuantity >= remainingSaleQuantity) {
+          //Find the declaration with the which the product was declared on
           try {
-            sale = await prisma.saleDetail.create({
-              data: {
-                saleQuantity: remainingSaleQuantity,
-                saleUnitPrice: parseFloat(product.saleUnitPrice),
-                totalSales:
-                  parseFloat(product.saleUnitPrice) * remainingSaleQuantity,
-                unitCostOfGoods:
-                  productPurchase.purchaseUnitCostOfGoods +
-                  (productPurchase.transit.cost +
-                    productPurchase.transport.cost +
-                    productPurchase.esl.cost +
-                    remainingSaleQuantity * productDeclaration.unitIncomeTax) /
-                    remainingSaleQuantity,
-                purchase: { connect: { id: productPurchase.purchaseId } },
-                declaration: {
-                  connect: { id: productPurchase.declarationId },
-                },
-                product: { connect: { id: productPurchase.productId } },
-                sale: { connect: { id: saleId } },
+            productDeclaration = await prisma.productDeclaration.findFirst({
+              where: {
+                productId: productPurchase.productId,
+                declarationId: productPurchase.declarationId,
+              },
+              select: {
+                unitIncomeTax: true,
               },
             });
-
-            inventoryBalance = remainingSaleQuantity;
           } catch (error) {
-            console.error("Error creating sale:", error);
+            console.error("Error retrieving product declaration:", error);
             throw new Error("Internal Server Error");
           }
+          //if the product purchase quantity is greater than the remaining sale quantity, create a one sale Detail entry and make the remainig sale quantity 0
+          if (productPurchase.remainingQuantity >= remainingSaleQuantity) {
+            try {
+              sale = await prisma.saleDetail.create({
+                data: {
+                  saleQuantity: remainingSaleQuantity,
+                  saleUnitPrice: parseFloat(product.saleUnitPrice),
+                  totalSales:
+                    parseFloat(product.saleUnitPrice) * remainingSaleQuantity,
+                  unitCostOfGoods:
+                    productPurchase.purchaseUnitCostOfGoods +
+                    (productPurchase.transit.cost +
+                      productPurchase.transport.cost +
+                      productPurchase.esl.cost +
+                      remainingSaleQuantity *
+                        productDeclaration.unitIncomeTax) /
+                      remainingSaleQuantity,
+                  purchase: { connect: { id: productPurchase.purchaseId } },
+                  declaration: {
+                    connect: { id: productPurchase.declarationId },
+                  },
+                  product: { connect: { id: productPurchase.productId } },
+                  sale: { connect: { id: saleId } },
+                  productPurchase: {connect: {id:productPurchase.id }} 
+                },
+              });
+            } catch (error) {
+              console.error("Error creating sale:", error);
+              throw new Error("Internal Server Error");
+            }
 
           //update the productPurchase table
           try {
@@ -179,40 +178,41 @@ async function createSale(req, res) {
             throw new Error("Internal Server Error");
           }
 
-          remainingSaleQuantity = 0;
-        }
-        //if the product purchase quantity is less than the remaining sale quantity, create a sale Detail entry and update the product purchase table
-        else if (
-          remainingSaleQuantity > productPurchase.remainingQuantity &&
-          productPurchase.remainingQuantity !== 0
-        ) {
-          try {
-            const soldQuantity = productPurchase.remainingQuantity;
-            sale = await prisma.saleDetail.create({
-              data: {
-                saleQuantity: soldQuantity,
-                saleUnitPrice: parseFloat(product.saleUnitPrice),
-                totalSales: product.saleUnitPrice * soldQuantity,
-                unitCostOfGoods:
-                  productPurchase.purchaseUnitCostOfGoods +
-                  (productPurchase.transit.cost +
-                    productPurchase.transport.cost +
-                    productPurchase.esl.cost +
-                    soldQuantity * productDeclaration.unitIncomeTax) /
-                    soldQuantity,
-                purchase: { connect: { id: productPurchase.purchaseId } },
-                declaration: {
-                  connect: { id: productPurchase.declarationId },
-                },
-                product: { connect: { id: productPurchase.productId } },
-                sale: { connect: { id: saleId } },
-              },
-            });
-            inventoryBalance = soldQuantity;
-          } catch (error) {
-            console.error("Error creating sale:", error);
-            throw new Error("Internal Server Error");
+            remainingSaleQuantity = 0;
           }
+          //if the product purchase quantity is less than the remaining sale quantity, create a sale Detail entry and update the product purchase table
+          else if (
+            remainingSaleQuantity > productPurchase.remainingQuantity &&
+            productPurchase.remainingQuantity !== 0
+          ) {
+            try {
+              const soldQuantity = productPurchase.remainingQuantity;
+              sale = await prisma.saleDetail.create({
+                data: {
+                  saleQuantity: soldQuantity,
+                  saleUnitPrice: parseFloat(product.saleUnitPrice),
+                  totalSales: product.saleUnitPrice * soldQuantity,
+                  unitCostOfGoods:
+                    productPurchase.purchaseUnitCostOfGoods +
+                    (productPurchase.transit.cost +
+                      productPurchase.transport.cost +
+                      productPurchase.esl.cost +
+                      remainingSaleQuantity *
+                        productDeclaration.unitIncomeTax) /
+                      remainingSaleQuantity,
+                  purchase: { connect: { id: productPurchase.purchaseId } },
+                  declaration: {
+                    connect: { id: productPurchase.declarationId },
+                  },
+                  product: { connect: { id: productPurchase.productId } },
+                  sale: { connect: { id: saleId } },
+                  productPurchase: {connect: {id:productPurchase.id }} 
+                },
+              });
+            } catch (error) {
+              console.error("Error creating sale:", error);
+              throw new Error("Internal Server Error");
+            }
 
           //update the productPurchase table
           try {
@@ -540,11 +540,47 @@ async function deleteSaleById(req, res) {
   try {
     const { id } = req.params;
 
+    const saleDetails = await prisma.saleDetail.findMany({
+      where: {
+        saleId: id
+      }
+    });
+
+    for (const saleDetail of saleDetails) {
+      const productPurchase = await prisma.productPurchase.findFirst({
+        where: {
+          id: saleDetail.productPurchaseId,
+        }
+      });
+
+      // Calculate the new remaining quantity
+      const newRemainingQuantity = productPurchase.remainingQuantity + saleDetail.saleQuantity;
+
+      // Update the product purchase with the new remaining quantity
+      await prisma.productPurchase.update({
+        where: {
+          id: productPurchase.id,
+        },
+        data: {
+          remainingQuantity: newRemainingQuantity,
+        },
+      });
+
+      // Delete the sale detail
+      await prisma.saleDetail.delete({
+        where: {
+          id: saleDetail.id,
+        },
+      });
+    }
+
+    // After deleting all associated sale details, delete the sale itself
     const deletedSale = await prisma.sale.delete({
       where: {
         id: id,
       },
     });
+
     res.json(deletedSale);
   } catch (error) {
     console.error("Error deleting Sale:", error);
