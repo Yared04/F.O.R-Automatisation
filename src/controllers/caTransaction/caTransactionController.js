@@ -303,6 +303,8 @@ async function createTransaction(
         bankTransaction: true,
         purchase: true,
         sale: true,
+        productPurchase: true,
+        saleDetail: true
       },
     });
 
