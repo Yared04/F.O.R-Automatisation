@@ -59,74 +59,6 @@ async function getCaTransactions(req, res) {
       skip: (page - 1) * parseInt(pageSize, 10),
       take: parseInt(pageSize, 10),
     });
-    // let caTransactionsList = [];
-    // caTransactionsList = await Promise.all(
-    //   caTransactions.map(async (caTransaction) => {
-    //     const {
-    //       createdAt,
-    //       updatedAt,
-    //       purchaseId,
-    //       saleId,
-    //       chartofAccountId,
-    //       ...updatedCaTransaction
-    //     } = caTransaction;
-    //     let updatedCATransaction = updatedCaTransaction;
-
-    //     const chartofAccount = caTransaction.chartofAccountId
-    //       ? await prisma.chartOfAccount.findUnique({
-    //           where: { id: caTransaction.chartofAccountId },
-    //         })
-    //       : await prisma.bank.findUnique({
-    //           where: { id: caTransaction.bankId },
-    //         });
-    //     updatedCATransaction.chartofAccount = chartofAccount.name;
-
-    //     if (caTransaction.purchaseId) {
-    //       let declarationNumbers = [];
-    //       let purchaseNumber;
-    //       const currentPurchase = await prisma.purchase.findUnique({
-    //         where: { id: caTransaction.purchaseId },
-    //       });
-    //       const currentProductPurchases = await prisma.productPurchase.findMany(
-    //         {
-    //           where: { purchaseId: caTransaction.purchaseId },
-    //           include: { declaration: true },
-    //         }
-    //       );
-    //       if (currentProductPurchases) {
-    //         purchaseNumber = currentPurchase.number;
-    //         declarationNumbers = [
-    //           ...new Set(
-    //             currentProductPurchases.map(
-    //               (productPurchase) => productPurchase.declaration.number
-    //             )
-    //           ),
-    //         ];
-    //         updatedCATransaction = {
-    //           ...updatedCATransaction,
-    //           purchaseNumber,
-    //           declarationNumbers,
-    //         };
-    //       }
-    //     }
-
-    //     if (caTransaction.saleId) {
-    //       let saleNum;
-    //       const sale = await prisma.sale.findUnique({
-    //         where: { id: caTransaction.saleId },
-    //       });
-    //       if (sale) {
-    //         saleNum = sale.invoiceNumber;
-    //         updatedCATransaction = {
-    //           ...updatedCATransaction,
-    //           invoiceNumber: saleNum,
-    //         };
-    //       }
-    //     }
-
-    //     return updatedCATransaction;
-    //   })
-    // );
 
     const totalPages = Math.ceil(totalCount / parseInt(pageSize, 10));
     res.json({
@@ -292,7 +224,8 @@ async function createTransaction(
   customerId,
   exchangeRate,
   USDAmount,
-  accountPayableRecievableDetail
+  accountPayableRecievableDetail,
+  number
 ) {
   try {
     let createdCaTransaction;
@@ -302,7 +235,7 @@ async function createTransaction(
         where: { bankId: bankId },
         orderBy: { createdAt: "desc" },
       }));
-    createdCaTransaction = await prisma.CATransaction.create({
+    createdCaTransaction = await prisma.cATransaction.create({
       data: {
         chartofAccount: chartofAccountId
           ? {
@@ -361,6 +294,7 @@ async function createTransaction(
         debit: parseFloat(debit),
         credit: parseFloat(credit),
         accountPayableRecievableDetail: accountPayableRecievableDetail,
+        number: parseFloat(number),
       },
       include: {
         chartofAccount: true,
@@ -398,6 +332,7 @@ async function createCaTransaction(req, res) {
       exchangeRate,
       USDAmount,
       accountPayableRecievableDetail,
+      number,
     } = req.body;
     const transaction = await createTransaction(
       chartofAccountId,
@@ -415,7 +350,8 @@ async function createCaTransaction(req, res) {
       customerId,
       exchangeRate,
       USDAmount,
-      accountPayableRecievableDetail
+      accountPayableRecievableDetail,
+      number
     );
 
     res.json(transaction);

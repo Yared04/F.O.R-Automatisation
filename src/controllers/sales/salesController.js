@@ -18,6 +18,10 @@ async function getSales(req, res) {
         sales: true,
         paidAmount: true,
       },
+      orderBy: {
+        createdAt: "desc",
+      },
+
       skip: (page - 1) * parseInt(pageSize, 10),
       take: parseInt(pageSize, 10),
     });
@@ -257,7 +261,6 @@ async function createSale(req, res) {
           throw new Error("Internal Server Error");
         }
 
-
         //if the product has no inventory, create a new inventory entry
         let isNewEntry = false;
         if (!inventoryEntries.length) {
@@ -319,7 +322,13 @@ async function createSale(req, res) {
                   : purchaseEntry.balanceQuantity - inventoryBalance,
               },
             });
-            console.log("existing inventory", saleEntry, purchaseEntry, saleEntry?.balanceQuantity, purchaseEntry?.balanceQuantity)
+            console.log(
+              "existing inventory",
+              saleEntry,
+              purchaseEntry,
+              saleEntry?.balanceQuantity,
+              purchaseEntry?.balanceQuantity
+            );
           } catch (error) {
             console.error("Error creating inventory:", error);
             throw new Error("Internal Server Error");
