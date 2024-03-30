@@ -873,7 +873,7 @@ async function getTransportCosts(req, res) {
           unitTransportCost: true,
         },
         orderBy: {
-          createdAt: "asc",
+          createdAt: "desc",
         },
         skip: (page - 1) * parseInt(pageSize, 10),
         take: parseInt(pageSize, 10),
@@ -936,7 +936,7 @@ async function getEslCosts(req, res) {
           unitEslCost: true,
         },
         orderBy: {
-          createdAt: "asc",
+          createdAt: "desc",
         },
         skip: (page - 1) * parseInt(pageSize, 10),
         take: parseInt(pageSize, 10),
@@ -998,7 +998,7 @@ async function getTransiFees(req, res) {
           unitTransitCost: true,
         },
         orderBy: {
-          createdAt: "asc",
+          createdAt: "desc",
         },
         skip: (page - 1) * parseInt(pageSize, 10),
         take: parseInt(pageSize, 10),

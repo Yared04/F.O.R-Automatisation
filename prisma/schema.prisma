@@ -103,7 +103,7 @@ model Declaration {
   id        String               @id @default(uuid()) @db.Uuid
   number    String              
   date      DateTime
-  paidAmount   Float?
+  paidAmount   Float?            @default(0)
   products  ProductDeclaration[]
   purchases ProductPurchase[]
   sales     SaleDetail[]
@@ -131,8 +131,8 @@ model Purchase {
   date           DateTime?
   number         Int?
   truckNumber    String?
-  paidAmountETB  Float?
-  paidAmountUSD  Float?
+  paidAmountETB  Float?           @default(0)
+  paidAmountUSD  Float?           @default(0)
   exchangeRate   Float?
   supplierId     String?           @map("supplier_id") @db.Uuid
   supplier       Supplier?         @relation(fields:[supplierId], references:[id])
@@ -159,7 +159,7 @@ model Transport {
   productPurchase     ProductPurchase?    @relation(fields: [productPurchaseId], references: [id])
   purchaseId              String          @map("purchase_id") @db.Uuid
   purchase                Purchase        @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
-  paidAmount     Float?
+  paidAmount     Float?                   @default(0)
   createdAt               DateTime        @default(now()) @map("created_at")
   updatedAt               DateTime        @updatedAt @map("updated_at")
 }
@@ -175,7 +175,7 @@ model ESL {
   productPurchase     ProductPurchase?    @relation(fields: [productPurchaseId], references: [id])
   purchaseId              String          @map("purchase_id") @db.Uuid
   purchase                Purchase        @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
-  paidAmount     Float?
+  paidAmount     Float?                   @default(0)
   createdAt               DateTime        @default(now()) @map("created_at")
   updatedAt               DateTime        @updatedAt @map("updated_at")
 }
@@ -191,7 +191,7 @@ model Transit {
   productPurchase     ProductPurchase?    @relation(fields: [productPurchaseId], references: [id])
   purchaseId              String         @map("purchase_id") @db.Uuid
   purchase                Purchase      @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
-  paidAmount     Float?
+  paidAmount     Float?                 @default(0)
   createdAt               DateTime        @default(now()) @map("created_at")
   updatedAt               DateTime        @updatedAt @map("updated_at")
 }
@@ -250,7 +250,7 @@ model Sale {
   inventories    Inventory[]
   sales          SaleDetail[]
   caTransactions CATransaction[]
-  paidAmount     Float?
+  paidAmount     Float?          @default(0)
   createdAt      DateTime        @default(now()) @map("created_at")
   updatedAt      DateTime        @updatedAt @map("updated_at")
 }
@@ -351,6 +351,7 @@ model CATransaction {
   debit             Float?
   exchangeRate      Float?
   USDAmount         Float?
+  number            Float?
   accountPayableRecievableDetail   String?
   createdAt         DateTime         @default(now()) @map("created_at")
   updatedAt         DateTime         @updatedAt @map("updated_at")
