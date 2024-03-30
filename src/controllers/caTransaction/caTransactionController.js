@@ -26,7 +26,11 @@ async function getCaTransactions(req, res) {
             product: true,
           },
         },
-        saleDetail: true,
+        saleDetail: {
+          select: {
+            product: true,
+          },
+        },
         bankTransaction: {
           select: {
             bank: {
@@ -258,7 +262,7 @@ async function createCustomerPayment(req, res) {
           where: { id: sale.id },
           data: {
             paidAmount: {
-              increment: sale.paidAmount, 
+              increment: sale.paidAmount,
             },
             paymentStatus: sale.paymentStatus,
           },
@@ -356,7 +360,7 @@ async function createTransaction(
         remark: remark,
         debit: parseFloat(debit),
         credit: parseFloat(credit),
-        accountPayableRecievableDetail: accountPayableRecievableDetail
+        accountPayableRecievableDetail: accountPayableRecievableDetail,
       },
     });
 
@@ -385,7 +389,7 @@ async function createCaTransaction(req, res) {
       customerId,
       exchangeRate,
       USDAmount,
-      accountPayableRecievableDetail
+      accountPayableRecievableDetail,
     } = req.body;
     const transaction = await createTransaction(
       chartofAccountId,
