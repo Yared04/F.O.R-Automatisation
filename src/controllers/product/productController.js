@@ -15,7 +15,7 @@ async function getProducts(req, res) {
           unitOfMeasurement: true,
           startingQuantity: true,
           startingQuantityUnitPrice: true,
-          startingQuantityDate: true
+          startingQuantityDate: true,
         },
         skip: (page - 1) * parseInt(pageSize, 10),
         take: parseInt(pageSize, 10),
@@ -29,7 +29,7 @@ async function getProducts(req, res) {
           unitOfMeasurement: true,
           startingQuantity: true,
           startingQuantityUnitPrice: true,
-          startingQuantityDate: true
+          startingQuantityDate: true,
         },
       });
     }
@@ -68,48 +68,57 @@ async function getProductById(req, res) {
 
 async function createProduct(req, res) {
   try {
-    const { name,unitOfMeasurement,startingQuantity, startingQuantityUnitPrice,category,startingQuantityDate} = req.body;
+    const {
+      name,
+      unitOfMeasurement,
+      startingQuantity,
+      startingQuantityUnitPrice,
+      category,
+      startingQuantityDate,
+    } = req.body;
     const createdProduct = await prisma.product.create({
       data: {
-        name:name,
-        productCategoryId:category.id,
-        unitOfMeasurement:unitOfMeasurement,
+        name: name,
+        productCategoryId: category.id,
+        unitOfMeasurement: unitOfMeasurement,
         startingQuantity: parseInt(startingQuantity),
         startingQuantityUnitPrice: parseFloat(startingQuantityUnitPrice),
-        startingQuantityDate: new Date(startingQuantityDate)
-      },include:{
-        category: true
-      }
+        startingQuantityDate: new Date(startingQuantityDate),
+      },
+      include: {
+        category: true,
+      },
     });
 
     const createdProductPurchase = await prisma.productPurchase.create({
-      data:{
+      data: {
         product: {
           connect: {
-            id: createdProduct.id
-          }
+            id: createdProduct.id,
+          },
         },
+        date: new Date(startingQuantityDate),
         purchaseQuantity: parseInt(startingQuantity),
         purchaseUnitPriceETB: parseFloat(startingQuantityUnitPrice),
-      }
-    })
+      },
+    });
 
     const inventory = await prisma.inventory.create({
-      data:{
+      data: {
         product: {
           connect: {
-            id: createdProduct.id
-          }
+            id: createdProduct.id,
+          },
         },
-        productPurchase:{
+        productPurchase: {
           connect: {
-            id: createdProductPurchase.id
-          }
+            id: createdProductPurchase.id,
+          },
         },
         balanceQuantity: parseInt(startingQuantity),
-        createdAt: startingQuantityDate
-      }
-    })
+        createdAt: startingQuantityDate,
+      },
+    });
 
     res.json(createdProduct);
   } catch (error) {
@@ -121,22 +130,30 @@ async function createProduct(req, res) {
 async function updateProduct(req, res) {
   try {
     const { id } = req.params;
-    const { name,unitOfMeasurement,startingQuantity, startingQuantityUnitPrice,category,startingQuantityDate} = req.body;
+    const {
+      name,
+      unitOfMeasurement,
+      startingQuantity,
+      startingQuantityUnitPrice,
+      category,
+      startingQuantityDate,
+    } = req.body;
 
     const updatedProduct = await prisma.product.update({
       where: {
         id: id,
       },
       data: {
-        name:name,
-        productCategoryId:category.id,
-        unitOfMeasurement:unitOfMeasurement,
+        name: name,
+        productCategoryId: category.id,
+        unitOfMeasurement: unitOfMeasurement,
         startingQuantity: parseInt(startingQuantity),
         startingQuantityUnitPrice: parseFloat(startingQuantityUnitPrice),
-        startingQuantityDate: new Date(startingQuantityDate)
-      },include:{
-        category: true
-      }
+        startingQuantityDate: new Date(startingQuantityDate),
+      },
+      include: {
+        category: true,
+      },
     });
 
     res.json(updatedProduct);
@@ -152,14 +169,12 @@ async function deleteProduct(req, res) {
 
     const declaration = await prisma.productDeclaration.findFirst({
       where: {
-        productId: id
-      }
-    })
+        productId: id,
+      },
+    });
 
-    if(declaration){
-      return res
-      .status(400)
-      .json({
+    if (declaration) {
+      return res.status(400).json({
         error: "Can not delete product, There are related declarations.",
       });
     }
