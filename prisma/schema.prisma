@@ -216,6 +216,7 @@ model ProductPurchase {
   transit                 Transit?
   transport               Transport?
   esl                     ESL?
+  date           DateTime
   sales                   SaleDetail[]
   createdAt               DateTime        @default(now()) @map("created_at")
   updatedAt               DateTime        @updatedAt @map("updated_at")

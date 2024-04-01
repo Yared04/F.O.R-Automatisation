@@ -165,6 +165,7 @@ async function createPurchase(req, res) {
                 id: purchaseProduct.productId,
               },
             },
+            date: new Date(date),
             purchaseQuantity: parseInt(purchaseProduct.purchaseQuantity),
             remainingQuantity: parseInt(purchaseProduct.purchaseQuantity),
             purchaseUnitPriceETB: exchangeRate
