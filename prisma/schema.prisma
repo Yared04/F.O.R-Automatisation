@@ -274,6 +274,7 @@ model SaleDetail {
   declaration     Declaration     @relation(fields: [declarationId], references: [id])
   inventories     Inventory[]
   caTransactions  CATransaction[]
+  provisions      Provision[]
   createdAt       DateTime        @default(now()) @map("created_at")
   updatedAt       DateTime        @updatedAt @map("updated_at")
 }
@@ -383,6 +384,15 @@ model BankTransaction {
   chartofAccount   ChartOfAccount? @relation(fields: [chartofAccountId], references: [id])
   exchangeRate     Float?
   caTransactions  CATransaction[]
+  createdAt        DateTime        @default(now()) @map("created_at")
+  updatedAt        DateTime        @updatedAt @map("updated_at")
+}
+
+model Provision {
+  id               String          @id @default(uuid()) @db.Uuid
+  date             DateTime
+  saleDetailId     String?      @map("sale_detail_id") @db.Uuid
+  saleDetail       SaleDetail?     @relation(fields: [saleDetailId], references: [id])
   createdAt        DateTime        @default(now()) @map("created_at")
   updatedAt        DateTime        @updatedAt @map("updated_at")
 }
