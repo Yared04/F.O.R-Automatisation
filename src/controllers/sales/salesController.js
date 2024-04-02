@@ -146,12 +146,12 @@ async function createSale(req, res) {
                 totalSales:
                   parseFloat(product.saleUnitPrice) * remainingSaleQuantity,
                 unitCostOfGoods:
-                  productPurchase.purchaseUnitCostOfGoods +
-                  (productPurchase.transit.cost +
-                    productPurchase.transport.cost +
-                    productPurchase.esl.cost +
-                    remainingSaleQuantity * productDeclaration.unitIncomeTax) /
-                    remainingSaleQuantity,
+                ((parseFloat(productPurchase.transit.cost) +
+                parseFloat(productPurchase.transport.cost) +
+                parseFloat(productPurchase.esl.cost) +
+                remainingSaleQuantity *
+                parseFloat(productDeclaration.unitIncomeTax)) /
+                  remainingSaleQuantity) + parseFloat(productPurchase.purchaseUnitCostOfGoods),
                 purchase: { connect: { id: productPurchase.purchaseId } },
                 declaration: {
                   connect: { id: productPurchase.declarationId },
@@ -162,6 +162,13 @@ async function createSale(req, res) {
               },
             });
             inventoryBalance = remainingSaleQuantity;
+
+            provision = await prisma.provision.create({
+              data: {
+              saleDetail: {connect: {id: sale.id}},
+              date: new Date(invoiceDate)
+              }
+            })
           } catch (error) {
             console.error("Error creating sale:", error);
             throw new Error("Internal Server Error");
@@ -198,12 +205,12 @@ async function createSale(req, res) {
                 saleUnitPrice: parseFloat(product.saleUnitPrice),
                 totalSales: product.saleUnitPrice * soldQuantity,
                 unitCostOfGoods:
-                  productPurchase.purchaseUnitCostOfGoods +
-                  (productPurchase.transit.cost +
-                    productPurchase.transport.cost +
-                    productPurchase.esl.cost +
-                    remainingSaleQuantity * productDeclaration.unitIncomeTax) /
-                    remainingSaleQuantity,
+                ((parseFloat(productPurchase.transit.cost) +
+                parseFloat(productPurchase.transport.cost) +
+                parseFloat(productPurchase.esl.cost) +
+                remainingSaleQuantity *
+                parseFloat(productDeclaration.unitIncomeTax)) /
+                  remainingSaleQuantity) + parseFloat(productPurchase.purchaseUnitCostOfGoods),
                 purchase: { connect: { id: productPurchase.purchaseId } },
                 declaration: {
                   connect: { id: productPurchase.declarationId },
@@ -214,6 +221,12 @@ async function createSale(req, res) {
               },
             });
             inventoryBalance = soldQuantity;
+            provision = await prisma.provision.create({
+              data: {
+              saleDetail: {connect: {id: sale.id}},
+              date: new Date(invoiceDate)
+              }
+            })
           } catch (error) {
             console.error("Error creating sale:", error);
             throw new Error("Internal Server Error");
