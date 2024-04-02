@@ -590,6 +590,11 @@ async function deleteSaleById(req, res) {
         },
       });
 
+      await prisma.provision.delete({
+        where: {
+          saleDetailId: saleDetail.id
+        }
+      })
       // Delete the sale detail
       await prisma.saleDetail.delete({
         where: {
