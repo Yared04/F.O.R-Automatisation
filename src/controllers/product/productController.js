@@ -76,6 +76,18 @@ async function createProduct(req, res) {
       category,
       startingQuantityDate,
     } = req.body;
+
+    const existingProduct = await prisma.product.findFirst({
+      where:{
+        name: name
+      }
+    })
+
+    if(existingProduct){
+      return res
+      .status(400)
+      .json({error: 'This product is already exists.'});
+    }
     const createdProduct = await prisma.product.create({
       data: {
         name: name,
@@ -139,6 +151,17 @@ async function updateProduct(req, res) {
       startingQuantityDate,
     } = req.body;
 
+    const existingProduct = await prisma.product.findFirst({
+      where:{
+        name: name
+      }
+    })
+
+    if(existingProduct && existingProduct.id !== id){
+      return res
+      .status(400)
+      .json({error: 'There is already a product by this name.'});
+    }
     const updatedProduct = await prisma.product.update({
       where: {
         id: id,
