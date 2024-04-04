@@ -118,6 +118,7 @@ model ProductDeclaration {
   unitIncomeTax       Float
   declarationBalance  Float?
   purchasedQuantity   Int
+  caTransactions CATransaction[]
   productId           String      @map("product_id") @db.Uuid
   product             Product     @relation(fields: [productId], references: [id])
   declarationId       String      @map("declaration_id") @db.Uuid
@@ -343,9 +344,11 @@ model CATransaction {
   saleDetailId      String?          @map("sale_detail_id") @db.Uuid
   saleDetail        SaleDetail?      @relation(fields: [saleDetailId], references: [id], onDelete: Cascade)
   supplierId        String?          @map("supplier_id") @db.Uuid
-  supplier          Supplier?         @relation(fields: [supplierId], references: [id])
+  supplier          Supplier?         @relation(fields: [supplierId], references: [id], onDelete: Cascade)
   customerId        String?          @map("customer_id") @db.Uuid
-  customer          Customer?         @relation(fields: [customerId], references: [id])
+  customer          Customer?         @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  productDeclarationId        String?          @map("product_declaration_id") @db.Uuid
+  productDeclaration          ProductDeclaration?         @relation(fields: [productDeclarationId], references: [id], onDelete: Cascade)
   date              DateTime
   type              String
   remark            String?

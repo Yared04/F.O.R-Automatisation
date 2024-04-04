@@ -1,4 +1,7 @@
 const prisma = require("../../database");
+const {
+  createTransaction,
+} = require("../caTransaction/caTransactionController");
 
 async function getDeclarations(req, res) {
   try {
@@ -103,17 +106,6 @@ async function getDeclarations(req, res) {
 async function createDeclaration(req, res) {
   try {
     const { number, date, paidAmount, declarationProducts } = req.body;
-    // const existingDeclaration = await prisma.declaration.findFirst({
-    //   where:{
-    //     number: number
-    //   }
-    // })
-
-    // if(existingDeclaration){
-    //   return res
-    //   .status(400)
-    //   .json({error: 'There is already a declaration by this declaration number'});
-    // }
     const createdDeclaration = await prisma.declaration.create({
       data: {
         number,
@@ -121,6 +113,34 @@ async function createDeclaration(req, res) {
         paidAmount,
       },
     });
+
+    let chartOfAccounts = [];
+    let suppliers = [];
+    try {
+      chartOfAccounts = await prisma.chartOfAccount.findMany({
+        select: { id: true, name: true },
+      });
+
+      suppliers = await prisma.supplier.findMany({
+        select: { id: true, name: true },
+      });
+    } catch {
+      throw new Error("Error fetching Chart of Accounts");
+    }
+
+    const supplier = suppliers.find(
+      (supplier) => supplier.name === "CUSTOM INCOME TAX"
+    );
+
+    const accountsPayable = chartOfAccounts.find(
+      (account) => account.name === "Accounts Payable (A/P) - ETB"
+    );
+
+    const incomeTaxExpense = chartOfAccounts.find(
+      (account) => account.name === "Income tax expense"
+    );
+
+    let totalAmount = 0;
     const createdDeclarationProducts = await Promise.all(
       declarationProducts.map(async (dp) => {
         let createdDeclarationProduct = await prisma.productDeclaration.create({
@@ -133,6 +153,30 @@ async function createDeclaration(req, res) {
             declaration: { connect: { id: createdDeclaration.id } },
           },
         });
+
+        totalAmount += createdDeclarationProduct.totalIncomeTax;
+
+        await createTransaction(
+          incomeTaxExpense.id,
+          null,
+          new Date(date),
+          "",
+          "Bill",
+          dp.totalIncomeTax,
+          null,
+          null,
+          null,
+          null,
+          null,
+          supplier.id,
+          null,
+          null,
+          null,
+          null,
+          null,
+          createdDeclarationProduct.id,
+        );
+
         return {
           productId: dp.productId,
           declarationQuantity: createdDeclarationProduct.declarationQuantity,
@@ -142,6 +186,27 @@ async function createDeclaration(req, res) {
           unitIncomeTax: createdDeclarationProduct.unitIncomeTax,
         };
       })
+    );
+
+    await createTransaction(
+      accountsPayable.id,
+      null,
+      new Date(date),
+      number,
+      "Bill",
+      null,
+      totalAmount,
+      null,
+      null,
+      null,
+      null,
+      supplier.id,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
     );
 
     const declarationData = {

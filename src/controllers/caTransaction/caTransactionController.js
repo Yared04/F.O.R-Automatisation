@@ -55,6 +55,11 @@ async function getCaTransactions(req, res) {
             name: true,
           },
         },
+        productDeclaration: {
+          select: {
+            product: true,
+          },
+        },
       },
       skip: (page - 1) * parseInt(pageSize, 10),
       take: parseInt(pageSize, 10),
@@ -225,7 +230,8 @@ async function createTransaction(
   exchangeRate,
   USDAmount,
   accountPayableRecievableDetail,
-  number
+  number,
+  productDeclarationId
 ) {
   try {
     let createdCaTransaction;
@@ -262,6 +268,13 @@ async function createTransaction(
           ? {
               connect: {
                 id: productPurchaseId,
+              },
+            }
+          : undefined,
+        productDeclaration: productDeclarationId
+          ? {
+              connect: {
+                id: productDeclarationId,
               },
             }
           : undefined,
@@ -304,7 +317,7 @@ async function createTransaction(
         purchase: true,
         sale: true,
         productPurchase: true,
-        saleDetail: true
+        saleDetail: true,
       },
     });
 
@@ -335,6 +348,7 @@ async function createCaTransaction(req, res) {
       USDAmount,
       accountPayableRecievableDetail,
       number,
+      productDeclarationId
     } = req.body;
     const transaction = await createTransaction(
       chartofAccountId,
@@ -353,7 +367,8 @@ async function createCaTransaction(req, res) {
       exchangeRate,
       USDAmount,
       accountPayableRecievableDetail,
-      number
+      number,
+      productDeclarationId
     );
 
     res.json(transaction);
