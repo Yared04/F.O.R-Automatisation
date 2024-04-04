@@ -1,4 +1,7 @@
 const prisma = require("../../database");
+const {
+  createTransaction,
+} = require("../caTransaction/caTransactionController");
 
 async function getProducts(req, res) {
   try {
@@ -131,6 +134,63 @@ async function createProduct(req, res) {
         createdAt: startingQuantityDate,
       },
     });
+
+    let chartOfAccounts = [];
+    try {
+      chartOfAccounts = await prisma.chartOfAccount.findMany({
+        select: { id: true, name: true },
+      });
+    } catch {
+      throw new Error("Error fetching Chart of Accounts");
+    }
+
+    const openingBalance = chartOfAccounts.find(
+      (account) => account.name === "Opening Balance"
+    );
+
+    const inventoryAsset = chartOfAccounts.find(
+      (account) => account.name === "Inventory Asset"
+    );
+
+    await createTransaction(
+      inventoryAsset.id,
+      null,
+      new Date(startingQuantityDate),
+      `${createdProduct.name} - opening inv.`,
+      "Inventory Starting Value",
+      0,
+      null,
+      null,
+      createdProductPurchase.id,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      0
+    );
+
+    await createTransaction(
+      openingBalance.id,
+      null,
+      new Date(startingQuantityDate),
+      `${createdProduct.name} - opening inv.`,
+      "Inventory Starting Value",
+      0,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      0
+    );
 
     res.json(createdProduct);
   } catch (error) {
