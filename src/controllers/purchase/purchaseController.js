@@ -653,6 +653,7 @@ async function getProductPurchaseById(id) {
         purchaseUnitPriceUSD: true,
         purchaseTotalETB: true,
         purchaseUnitCostOfGoods: true,
+        date: true,
         product: {
           select: {
             id: true,
