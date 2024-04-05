@@ -255,7 +255,7 @@ async function createPurchase(req, res) {
     );
 
     const eslCustomSupplier = suppliers.find(
-      (supplier) => supplier.name === "ESL Warehouse"
+      (supplier) => supplier.name === "ESL Custom Cost"
     );
 
     let purchaseTotalAmount = 0;
