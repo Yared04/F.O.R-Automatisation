@@ -179,6 +179,18 @@ async function updateProduct(req, res) {
       },
     });
 
+    const productPurchases = await prisma.productPurchase.updateMany({
+      where: {
+        productId: id, 
+        purchaseId: null,
+      },
+      data: {
+        date: new Date(startingQuantityDate),
+        purchaseQuantity: parseInt(startingQuantity),
+        purchaseUnitPriceETB: parseFloat(startingQuantityUnitPrice),
+      },
+    });
+    
     res.json(updatedProduct);
   } catch (error) {
     console.error("Error updating product:", error);
@@ -201,6 +213,14 @@ async function deleteProduct(req, res) {
         error: "Can not delete product, There are related declarations.",
       });
     }
+
+    const productPurchase = await prisma.productPurchase.deleteMany({
+      where: {
+        purchaseId: null,
+        productId: id,
+      }
+    });
+    
     const deletedProduct = await prisma.product.delete({
       where: {
         id: id,
