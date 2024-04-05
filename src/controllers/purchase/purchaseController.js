@@ -91,9 +91,6 @@ async function createPurchase(req, res) {
     } = req.body;
 
     let createdPurchase = null;
-    let purchaseTotalAmount = 0;
-    let accountsPayable;
-    let inventoryAsset;
     const totalPurchaseQuantity = purchaseProducts.reduce(
       (total, productPurchase) =>
         total + parseInt(productPurchase.purchaseQuantity),
@@ -183,6 +180,9 @@ async function createPurchase(req, res) {
                 parseFloat(purchaseProduct.purchaseUnitPrice),
             purchaseUnitCostOfGoods: 0,
           },
+          include: {
+            declaration: true,
+          },
         });
 
         const currentDeclaration = await prisma.productDeclaration.findFirst({
@@ -212,6 +212,56 @@ async function createPurchase(req, res) {
         return createdProductPurchase;
       })
     );
+
+    let chartOfAccounts = [];
+    let suppliers = [];
+    try {
+      chartOfAccounts = await prisma.chartOfAccount.findMany({
+        select: { id: true, name: true },
+      });
+      suppliers = await prisma.supplier.findMany({
+        select: { id: true, name: true },
+      });
+    } catch {
+      throw new Error("Error fetching Chart of Accounts");
+    }
+
+    const accountsPayable = chartOfAccounts.find(
+      (account) => account.name === "Accounts Payable (A/P) - USD"
+    );
+
+    const inventoryAsset = chartOfAccounts.find(
+      (account) => account.name === "Inventory Asset"
+    );
+
+    const transitCostCA = chartOfAccounts.find(
+      (account) => account.name === "Transit Cost"
+    );
+
+    const transportCostCA = chartOfAccounts.find(
+      (account) => account.name === "Import Transport Cost"
+    );
+
+    const eslCostCA = chartOfAccounts.find(
+      (account) => account.name === "ESL Cost"
+    );
+
+    const transitSupplier = suppliers.find(
+      (supplier) => supplier.name === "Transit Fees"
+    );
+
+    const transportSupplier = suppliers.find(
+      (supplier) => supplier.name === "Transporters"
+    );
+
+    const eslCustomSupplier = suppliers.find(
+      (supplier) => supplier.name === "ESL Warehouse"
+    );
+
+    let purchaseTotalAmount = 0;
+    let transportCostTotal = 0;
+    let eslCustomCostTotal = 0;
+    let transitFeesTotal = 0;
 
     for (const productPurchase of createdProductPurchases) {
       try {
@@ -247,7 +297,27 @@ async function createPurchase(req, res) {
           },
         });
 
-        const eslCustom = await prisma.ESL.create({
+        await createTransaction(
+          transportCostCA.id,
+          null,
+          new Date(date),
+          productPurchase.declaration.number,
+          "Bill",
+          transportFee,
+          null,
+          productPurchase.purchaseId,
+          productPurchase.id,
+          null,
+          null,
+          transportSupplier.id,
+          null,
+          null,
+          null
+        );
+
+        transportCostTotal += transportFee;
+
+        const eslCustom = await prisma.eSL.create({
           data: {
             purchase: {
               connect: {
@@ -265,6 +335,26 @@ async function createPurchase(req, res) {
             },
           },
         });
+
+        await createTransaction(
+          eslCostCA.id,
+          null,
+          new Date(date),
+          productPurchase.declaration.number,
+          "Bill",
+          eslCustomFee,
+          null,
+          productPurchase.purchaseId,
+          productPurchase.id,
+          null,
+          null,
+          eslCustomSupplier.id,
+          null,
+          null,
+          null
+        );
+
+        eslCustomCostTotal += eslCustomFee;
 
         const transit = await prisma.transit.create({
           data: {
@@ -284,6 +374,26 @@ async function createPurchase(req, res) {
             },
           },
         });
+
+        await createTransaction(
+          transitCostCA.id,
+          null,
+          new Date(date),
+          productPurchase.declaration.number,
+          "Bill",
+          transitFee,
+          null,
+          productPurchase.purchaseId,
+          productPurchase.id,
+          null,
+          null,
+          transitSupplier.id,
+          null,
+          null,
+          null
+        );
+
+        transitFeesTotal += transitFee;
 
         const updatedProductPurchase = await prisma.productPurchase.update({
           where: { id: productPurchase.id },
@@ -355,26 +465,6 @@ async function createPurchase(req, res) {
         }
       }
 
-      //get the existing inventory entries to update the balance quantity
-      // try {
-      //   inventoryEntries = await prisma.inventory.findMany({
-      //     where: {
-      //       productId: productPurchase.productId,
-      //     },
-      //     select: {
-      //       balanceQuantity: true,
-      //       purchaseId: true,
-      //       saleId: true,
-      //     },
-      //     orderBy: {
-      //       createdAt: "desc",
-      //     },
-      //   });
-      // } catch (error) {
-      //   console.error("Error retrieving inventory:", error);
-      //   throw new Error(error);
-      // }
-
       //get the last purchase and sale entries
       let purchaseEntry = inventoryEntries.find((entry) => entry.purchaseId);
       let saleEntry = inventoryEntries.find((entry) => entry.saleId);
@@ -411,47 +501,25 @@ async function createPurchase(req, res) {
         }
       }
 
-      let chartOfAccounts = [];
-      try {
-        chartOfAccounts = await prisma.chartOfAccount.findMany({
-          select: { id: true, name: true },
-        });
-      } catch {
-        throw new Error("Error fetching Chart of Accounts");
-      }
-
-      accountsPayable = chartOfAccounts.find(
-        (account) => account.name === "Accounts Payable (A/P) - USD"
-      );
-
-      inventoryAsset = chartOfAccounts.find(
-        (account) => account.name === "Inventory Asset"
-      );
-
       //create a transaction entry for the debit
-      try {
-        await createTransaction(
-          inventoryAsset.id,
-          null,
-          new Date(date),
-          productPurchase.truckNumber,
-          "Bill",
-          productPurchase.purchaseTotalETB,
-          null,
-          productPurchase.purchaseId,
-          productPurchase.id,
-          null,
-          null,
-          supplierId,
-          null,
-          null,
-          null
-        );
-        purchaseTotalAmount += productPurchase.purchaseTotalETB;
-      } catch (error) {
-        console.error("Error creating transaction:", error);
-        throw new Error(error);
-      }
+      await createTransaction(
+        inventoryAsset.id,
+        null,
+        new Date(date),
+        productPurchase.declaration.number,
+        "Bill",
+        productPurchase.purchaseTotalETB,
+        null,
+        productPurchase.purchaseId,
+        productPurchase.id,
+        null,
+        null,
+        supplierId,
+        null,
+        null,
+        null
+      );
+      purchaseTotalAmount += productPurchase.purchaseTotalETB;
     }
 
     //create a transaction entry for the credit
@@ -460,7 +528,7 @@ async function createPurchase(req, res) {
         accountsPayable.id,
         null,
         new Date(date),
-        "Purchase",
+        truckNumber,
         "Bill",
         null,
         purchaseTotalAmount,
@@ -472,6 +540,63 @@ async function createPurchase(req, res) {
         null,
         parseFloat(exchangeRate),
         purchaseTotalAmount / parseFloat(exchangeRate)
+      );
+
+      //create a transaction entry for the credit of transport cost
+      await createTransaction(
+        transportCostCA.id,
+        null,
+        new Date(date),
+        truckNumber,
+        "Bill",
+        null,
+        transportCostTotal,
+        createdPurchase.id,
+        null,
+        null,
+        null,
+        transportSupplier.id,
+        null,
+        null,
+        null
+      );
+
+      //create a transaction entry for the credit of esl cost
+      await createTransaction(
+        eslCostCA.id,
+        null,
+        new Date(date),
+        truckNumber,
+        "Bill",
+        null,
+        eslCustomCostTotal,
+        createdPurchase.id,
+        null,
+        null,
+        null,
+        eslCustomSupplier.id,
+        null,
+        null,
+        null
+      );
+
+      //create a transaction entry for the credit of transit fees
+      await createTransaction(
+        transitCostCA.id,
+        null,
+        new Date(date),
+        truckNumber,
+        "Bill",
+        null,
+        transitFeesTotal,
+        createdPurchase.id,
+        null,
+        null,
+        null,
+        transitSupplier.id,
+        null,
+        null,
+        null
       );
     } catch (error) {
       console.error("Error creating transaction:", error);
@@ -813,11 +938,14 @@ async function deletePurchase(req, res) {
         },
       });
 
-      await prisma.inventory.deleteMany({
-        where: {
-          id: inventoryEntry[0].id,
-        },
-      });
+      console.log(inventoryEntry);
+
+      inventoryEntry.length > 0 &&
+        (await prisma.inventory.deleteMany({
+          where: {
+            id: inventoryEntry[0].id,
+          },
+        }));
 
       const caTransactions = await prisma.CATransaction.findMany({
         where: {
