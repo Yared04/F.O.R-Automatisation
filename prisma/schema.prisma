@@ -123,6 +123,7 @@ model ProductDeclaration {
   product             Product     @relation(fields: [productId], references: [id])
   declarationId       String      @map("declaration_id") @db.Uuid
   declaration         Declaration @relation(fields: [declarationId], references: [id])
+  provisions          Provision[]
   createdAt           DateTime    @default(now()) @map("created_at")
   updatedAt           DateTime    @updatedAt @map("updated_at")
 }
@@ -396,6 +397,8 @@ model Provision {
   date             DateTime
   saleDetailId     String      @map("sale_detail_id") @db.Uuid
   saleDetail       SaleDetail    @relation(fields: [saleDetailId], references: [id], onDelete: Cascade)
+  productDeclarationId     String      @map("product_declaration_id") @db.Uuid
+  productDeclaration       ProductDeclaration    @relation(fields: [productDeclarationId], references: [id], onDelete: Cascade)
   createdAt        DateTime        @default(now()) @map("created_at")
   updatedAt        DateTime        @updatedAt @map("updated_at")
 }

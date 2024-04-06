@@ -11,6 +11,7 @@ async function getProvisions(req, res) {
         select: {
           id: true,
           date: true,
+          productDeclaration: true,
           saleDetail: {
             select: {
                 product: true,
@@ -37,6 +38,7 @@ async function getProvisions(req, res) {
         select: {
           id: true,          
           date: true,
+          productDeclaration: true,
           saleDetail: {
             select: {
                 product: true,

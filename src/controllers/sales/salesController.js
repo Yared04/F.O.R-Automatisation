@@ -129,6 +129,7 @@ async function createSale(req, res) {
               declarationId: productPurchase.declarationId,
             },
             select: {
+              id: true,
               unitIncomeTax: true,
             },
           });
@@ -166,7 +167,8 @@ async function createSale(req, res) {
             provision = await prisma.provision.create({
               data: {
               saleDetail: {connect: {id: sale.id}},
-              date: new Date(invoiceDate)
+              date: new Date(invoiceDate),
+              productDeclaration: {connect: {id: productDeclaration.id}}
               }
             })
           } catch (error) {
@@ -224,7 +226,8 @@ async function createSale(req, res) {
             provision = await prisma.provision.create({
               data: {
               saleDetail: {connect: {id: sale.id}},
-              date: new Date(invoiceDate)
+              date: new Date(invoiceDate),
+              productDeclaration: {connect: {id: productDeclaration.id}}
               }
             })
           } catch (error) {
