@@ -6,9 +6,14 @@ async function getCaTransactions(req, res) {
     const { page = 1, pageSize = 10 } = req.query;
     const totalCount = await prisma.CATransaction.count();
     const caTransactions = await prisma.CATransaction.findMany({
-      orderBy: {
-        createdAt: "desc",
-      },
+      orderBy: [
+        {
+          date: "desc",
+        },
+        {
+          createdAt: "desc",
+        },
+      ],
       include: {
         supplier: {
           select: {
@@ -231,7 +236,8 @@ async function createTransaction(
   USDAmount,
   accountPayableRecievableDetail,
   number,
-  productDeclarationId
+  productDeclarationId,
+  declarationId
 ) {
   try {
     let createdCaTransaction;
@@ -299,6 +305,13 @@ async function createTransaction(
               },
             }
           : undefined,
+        declaration: declarationId
+          ? {
+              connect: {
+                id: declarationId,
+              },
+            }
+          : undefined,
         exchangeRate: exchangeRate,
         USDAmount: USDAmount,
         type: type,
@@ -348,7 +361,8 @@ async function createCaTransaction(req, res) {
       USDAmount,
       accountPayableRecievableDetail,
       number,
-      productDeclarationId
+      productDeclarationId,
+      declarationId,
     } = req.body;
     const transaction = await createTransaction(
       chartofAccountId,
@@ -368,7 +382,8 @@ async function createCaTransaction(req, res) {
       USDAmount,
       accountPayableRecievableDetail,
       number,
-      productDeclarationId
+      productDeclarationId,
+      declarationId
     );
 
     res.json(transaction);
