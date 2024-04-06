@@ -207,6 +207,7 @@ async function createDeclaration(req, res) {
       null,
       null,
       null,
+      createdDeclaration.id,
     );
 
     const declarationData = {
