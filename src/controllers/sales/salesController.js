@@ -46,11 +46,31 @@ async function createSale(req, res) {
     const { invoiceNumber, invoiceDate, customerId, products } = req.body;
     let createdSale = null;
     let saleId = null;
-    let inventoryAsset;
-    let costOfSales;
-    let accountsReceivable;
-    let saleOfProductIncome;
     let saleTotalAmount = 0;
+    let chartOfAccounts = [];
+    try {
+      chartOfAccounts = await prisma.chartOfAccount.findMany({
+        select: { id: true, name: true },
+      });
+    } catch {
+      throw new Error("Error fetching Chart of Accounts");
+    }
+
+    const saleOfProductIncome = chartOfAccounts.find(
+      (account) => account.name === "Sales of Product Income"
+    );
+
+    const accountsReceivable = chartOfAccounts.find(
+      (account) => account.name === "Accounts Receivable (A/R)"
+    );
+
+    const costOfSales = chartOfAccounts.find(
+      (account) => account.name === "Cost of sales"
+    );
+
+    const inventoryAsset = chartOfAccounts.find(
+      (account) => account.name === "Inventory Asset"
+    );
 
     for (const product of products) {
       let availableProducts = [];
@@ -74,6 +94,7 @@ async function createSale(req, res) {
             transit: true,
             transport: true,
             esl: true,
+            purchaseUnitPriceETB: true,
           },
         });
       } catch (error) {
@@ -147,12 +168,13 @@ async function createSale(req, res) {
                 totalSales:
                   parseFloat(product.saleUnitPrice) * remainingSaleQuantity,
                 unitCostOfGoods:
-                ((parseFloat(productPurchase.transit.cost) +
-                parseFloat(productPurchase.transport.cost) +
-                parseFloat(productPurchase.esl.cost) +
-                remainingSaleQuantity *
-                parseFloat(productDeclaration.unitIncomeTax)) /
-                  remainingSaleQuantity) + parseFloat(productPurchase.purchaseUnitCostOfGoods),
+                  (parseFloat(productPurchase.transit.cost) +
+                    parseFloat(productPurchase.transport.cost) +
+                    parseFloat(productPurchase.esl.cost) +
+                    remainingSaleQuantity *
+                      parseFloat(productDeclaration.unitIncomeTax)) /
+                    remainingSaleQuantity +
+                  parseFloat(productPurchase.purchaseUnitCostOfGoods),
                 purchase: { connect: { id: productPurchase.purchaseId } },
                 declaration: {
                   connect: { id: productPurchase.declarationId },
@@ -166,11 +188,11 @@ async function createSale(req, res) {
 
             provision = await prisma.provision.create({
               data: {
-              saleDetail: {connect: {id: sale.id}},
-              date: new Date(invoiceDate),
-              productDeclaration: {connect: {id: productDeclaration.id}}
-              }
-            })
+                saleDetail: { connect: { id: sale.id } },
+                date: new Date(invoiceDate),
+                productDeclaration: { connect: { id: productDeclaration.id } },
+              },
+            });
           } catch (error) {
             console.error("Error creating sale:", error);
             throw new Error("Internal Server Error");
@@ -207,12 +229,13 @@ async function createSale(req, res) {
                 saleUnitPrice: parseFloat(product.saleUnitPrice),
                 totalSales: product.saleUnitPrice * soldQuantity,
                 unitCostOfGoods:
-                ((parseFloat(productPurchase.transit.cost) +
-                parseFloat(productPurchase.transport.cost) +
-                parseFloat(productPurchase.esl.cost) +
-                remainingSaleQuantity *
-                parseFloat(productDeclaration.unitIncomeTax)) /
-                  remainingSaleQuantity) + parseFloat(productPurchase.purchaseUnitCostOfGoods),
+                  (parseFloat(productPurchase.transit.cost) +
+                    parseFloat(productPurchase.transport.cost) +
+                    parseFloat(productPurchase.esl.cost) +
+                    soldQuantity *
+                      parseFloat(productDeclaration.unitIncomeTax)) /
+                    soldQuantity +
+                  parseFloat(productPurchase.purchaseUnitCostOfGoods),
                 purchase: { connect: { id: productPurchase.purchaseId } },
                 declaration: {
                   connect: { id: productPurchase.declarationId },
@@ -225,11 +248,11 @@ async function createSale(req, res) {
             inventoryBalance = soldQuantity;
             provision = await prisma.provision.create({
               data: {
-              saleDetail: {connect: {id: sale.id}},
-              date: new Date(invoiceDate),
-              productDeclaration: {connect: {id: productDeclaration.id}}
-              }
-            })
+                saleDetail: { connect: { id: sale.id } },
+                date: new Date(invoiceDate),
+                productDeclaration: { connect: { id: productDeclaration.id } },
+              },
+            });
           } catch (error) {
             console.error("Error creating sale:", error);
             throw new Error("Internal Server Error");
@@ -339,42 +362,11 @@ async function createSale(req, res) {
                   : purchaseEntry.balanceQuantity - inventoryBalance,
               },
             });
-            console.log(
-              "existing inventory",
-              saleEntry,
-              purchaseEntry,
-              saleEntry?.balanceQuantity,
-              purchaseEntry?.balanceQuantity
-            );
           } catch (error) {
             console.error("Error creating inventory:", error);
             throw new Error("Internal Server Error");
           }
         }
-        let chartOfAccounts = [];
-        try {
-          chartOfAccounts = await prisma.chartOfAccount.findMany({
-            select: { id: true, name: true },
-          });
-        } catch {
-          throw new Error("Error fetching Chart of Accounts");
-        }
-
-        saleOfProductIncome = chartOfAccounts.find(
-          (account) => account.name === "Sales of Product Income"
-        );
-
-        accountsReceivable = chartOfAccounts.find(
-          (account) => account.name === "Accounts Receivable (A/R)"
-        );
-
-        costOfSales = chartOfAccounts.find(
-          (account) => account.name === "Cost of sales"
-        );
-
-        inventoryAsset = chartOfAccounts.find(
-          (account) => account.name === "Inventory Asset"
-        );
 
         //create transaction entry for cost of sales
         try {
@@ -384,7 +376,8 @@ async function createSale(req, res) {
             new Date(invoiceDate),
             null,
             `Invoice`,
-            parseFloat(sale.saleQuantity) * parseFloat(sale.saleUnitPrice),
+            parseFloat(sale.saleQuantity) *
+              parseFloat(productPurchase.purchaseUnitPriceETB),
             null,
             null,
             null,
@@ -405,7 +398,8 @@ async function createSale(req, res) {
             null,
             `Invoice`,
             null,
-            parseFloat(sale.saleQuantity) * parseFloat(sale.saleUnitPrice),
+            parseFloat(sale.saleQuantity) *
+              parseFloat(productPurchase.purchaseUnitPriceETB),
             null,
             null,
             createdSale.id,
@@ -592,7 +586,6 @@ async function deleteSaleById(req, res) {
           remainingQuantity: newRemainingQuantity,
         },
       });
-
     }
 
     // After deleting all associated sale details, delete the sale itself
