@@ -18,6 +18,14 @@ async function getProvisions(req, res) {
                 declaration: true,
                 unitCostOfGoods: true,
                 saleQuantity: true,
+                productPurchase: {
+                  select:{
+                    transit: true,
+                    transport: true,
+                    esl: true,
+                    purchaseUnitCostOfGoods: true,
+                  }
+                },
             }
           },
         },
@@ -36,6 +44,14 @@ async function getProvisions(req, res) {
                 declaration: true,
                 unitCostOfGoods: true,
                 saleQuantity: true,
+                productPurchase: {
+                  select:{
+                    transit: true,
+                    transport: true,
+                    esl: true,
+                    purchaseUnitCostOfGoods: true,
+                  }
+                },
             }
         }
         },
