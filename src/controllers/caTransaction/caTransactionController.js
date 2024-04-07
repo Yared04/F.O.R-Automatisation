@@ -11,6 +11,12 @@ async function getCaTransactions(req, res) {
           date: "desc",
         },
         {
+          supplier: {
+            name: "asc",
+          },
+        },
+
+        {
           createdAt: "desc",
         },
       ],
