@@ -57,7 +57,7 @@ async function generateCustomerAgingSummary(req, res) {
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader(
       "Content-Disposition",
-      'attachment; filename="customer-aging-summary.pdf"'
+      'attachment; filename="A/R-aging-summary.pdf"'
     );
 
     // Stream PDF content to the client
@@ -148,7 +148,7 @@ async function generateARAgingPDFContent(
     // Add report title and date
     doc.fontSize(15).text("A/R Ageing Summary", { align: "center" }).moveDown();
     doc
-      .fontSize(9)
+      .fontSize(11)
       .text(
         `As of ${currentDate.toLocaleDateString("en-US", {
           month: "long",
@@ -160,10 +160,10 @@ async function generateARAgingPDFContent(
       .moveDown();
 
     // Add table headers
+    doc.fontSize(7)
 
-    let xOffset = 40;
-    doc.font("Helvetica-Bold").text("Customer", xOffset, 150);
-    xOffset += 90;
+    let xOffset = 30;
+    xOffset += 80;
     doc.text("Current", xOffset, 150);
     xOffset += 80;
     doc.text("1 - 30", xOffset, 150);
@@ -178,8 +178,8 @@ async function generateARAgingPDFContent(
 
     doc.lineWidth(0.5); // Set line weight to 2 (adjust as needed)
 
-    doc.moveTo(40, 145).lineTo(600, 145).stroke(); // Line above the first row
-    doc.moveTo(40, 165).lineTo(600, 165).stroke(); // Line above the first row
+    doc.moveTo(30, 145).lineTo(600, 145).stroke(); // Line above the first row
+    doc.moveTo(30, 165).lineTo(600, 165).stroke(); // Line above the first row
     // Add data rows
     let yOffset = 190;
     let totalColumnSum = 0; // Total sum of the "Total" column
@@ -193,9 +193,9 @@ async function generateARAgingPDFContent(
     };
 
     Object.keys(agingBuckets).forEach((customer) => {
-      xOffset = 40;
+      xOffset = 30;
       doc.font("Helvetica").text(customer, xOffset, yOffset);
-      xOffset += 100;
+      xOffset += 80;
       let rowTotal = 0; // Total sum for the current row
       Object.keys(agingBuckets[customer]).forEach((bucket) => {
         const value = agingBuckets[customer][bucket];
@@ -216,18 +216,18 @@ async function generateARAgingPDFContent(
     });
 
     doc
-      .moveTo(40, yOffset - 10)
+      .moveTo(30, yOffset - 10)
       .lineTo(600, yOffset - 10)
       .stroke(); // Line above the last row
     doc.lineWidth(1.5); // Set line weight to 2 (adjust as needed)
     doc
-      .moveTo(40, yOffset + 10)
+      .moveTo(30, yOffset + 10)
       .lineTo(600, yOffset + 10)
       .stroke(); // Line below the last row
     // Add totals row
-    xOffset = 40;
+    xOffset = 30;
     doc.font("Helvetica-Bold").text("Total", xOffset, yOffset);
-    xOffset += 100;
+    xOffset += 80;
     Object.keys(totals).forEach((bucket) => {
       doc.text(totals[bucket].toFixed(2), xOffset, yOffset);
       xOffset += 80;
