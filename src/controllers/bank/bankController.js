@@ -68,12 +68,6 @@ async function getBankById(req, res) {
         address: true,
         startingValue: true,
         startingValueDate: true,
-        bankTransactions: {
-          include: {
-            chartofAccount: true,
-          },
-          orderBy: { createdAt: "desc" },
-        },
       },
     });
     res.json(bank);
@@ -83,6 +77,55 @@ async function getBankById(req, res) {
   }
 }
 
+async function getBankTransactions(req, res){
+  try {
+    const id = req.params.id;
+    const { page, pageSize } = req.query;
+
+    let bankTransactions;
+    let totalCount;
+
+    if (page && pageSize) {
+      totalCount = await prisma.bank.count();
+      bankTransactions = await prisma.bankTransaction.findMany({
+        where:{
+          bankId: id
+        },
+        include: {
+            chartofAccount: true,
+        },
+        skip: (page - 1) * parseInt(pageSize, 10),
+        take: parseInt(pageSize, 10),
+        orderBy: { createdAt: "desc" },
+      });
+    } else {
+      bankTransactions = await prisma.bankTransaction.findMany({
+        where:{
+          bankId: id
+        },
+        include: {
+          chartofAccount: true,
+        },
+        orderBy: { createdAt: "desc" },
+      });
+
+      totalCount = banks.length;
+    }
+
+    const totalPages = Math.ceil(totalCount / parseInt(pageSize, 10));
+
+    res.json({
+      items: bankTransactions,
+      totalCount: totalCount,
+      pageSize: parseInt(pageSize, 10),
+      currentPage: parseInt(page, 10),
+      totalPages: totalPages,
+    });
+  } catch (error) {
+    console.error("Error getting banks:", error);
+    res.status(500).send("Internal Server Error");
+  }
+}
 async function createBank(req, res) {
   const { name, address, startingValue, startingValueDate } = req.body;
   try {
@@ -165,4 +208,5 @@ module.exports = {
   updateBank,
   deleteBank,
   getBankById,
+  getBankTransactions
 };
