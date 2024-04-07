@@ -6,12 +6,12 @@ const router = express.Router();
 router.use(authenticate);
 
 router.get('/customer-aging-report', (req, res) => {
-  req.requiredPermissions = ['GetSales'];
+  req.requiredPermissions = ['GenerateCustomerAgingReport'];
   authenticate(req, res, () => reportController.generateCustomerAgingSummary(req, res));
 });
 
 router.get('/bank-transaction-report', (req, res) => {
-  req.requiredPermissions = ['GetSales'];
+  req.requiredPermissions = ['GenerateBankTransactionReport'];
   authenticate(req, res, () => reportController.generateBankTransactionSummary(req, res));
 });
 

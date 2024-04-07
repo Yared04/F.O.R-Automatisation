@@ -6,7 +6,7 @@ const router = express.Router();
 router.use(authenticate);
 
 router.get('/provisions', (req, res) => {
-  req.requiredPermissions = ['GetSales'];
+  req.requiredPermissions = ['GetProvisions'];
   authenticate(req, res, () => provisionController.getProvisions(req, res));
 });
 
