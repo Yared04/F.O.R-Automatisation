@@ -172,11 +172,12 @@ async function createSale(req, res) {
                 totalSales:
                   parseFloat(product.saleUnitPrice) * remainingSaleQuantity,
                 unitCostOfGoods:
-                  (parseFloat(productPurchase.transit.cost) +
-                    parseFloat(productPurchase.transport.cost) +
-                    parseFloat(productPurchase.esl.cost) +
-                    remainingSaleQuantity *
-                      parseFloat(productDeclaration.unitIncomeTax)) /
+                  (productPurchase.transit.unitTransitCost *
+                    remainingSaleQuantity +
+                    productPurchase.transport.unitTransportCost *
+                      remainingSaleQuantity +
+                    productPurchase.esl.unitEslCost * remainingSaleQuantity +
+                    remainingSaleQuantity * productDeclaration.unitIncomeTax) /
                     remainingSaleQuantity +
                   parseFloat(productPurchase.purchaseUnitCostOfGoods),
                 purchase: { connect: { id: productPurchase.purchaseId } },
@@ -233,11 +234,10 @@ async function createSale(req, res) {
                 saleUnitPrice: parseFloat(product.saleUnitPrice),
                 totalSales: product.saleUnitPrice * soldQuantity,
                 unitCostOfGoods:
-                  (parseFloat(productPurchase.transit.cost) +
-                    parseFloat(productPurchase.transport.cost) +
-                    parseFloat(productPurchase.esl.cost) +
-                    soldQuantity *
-                      parseFloat(productDeclaration.unitIncomeTax)) /
+                  (productPurchase.transit.unitTransitCost * soldQuantity +
+                    productPurchase.transport.unitTransportCost * soldQuantity +
+                    productPurchase.esl.unitEslCost * soldQuantity +
+                    soldQuantity * productDeclaration.unitIncomeTax) /
                     soldQuantity +
                   parseFloat(productPurchase.purchaseUnitCostOfGoods),
                 purchase: { connect: { id: productPurchase.purchaseId } },
