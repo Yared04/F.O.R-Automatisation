@@ -30,4 +30,9 @@ router.get("/banks/:id", (req, res) => {
   authenticate(req, res, () => bankController.getBankById(req, res));
 });
 
+router.get("/bank-transactions/:id", (req, res) => {
+  req.requiredPermissions = ["GetBankById"];
+  authenticate(req, res, () => bankController.getBankTransactions(req, res));
+});
+
 module.exports = router;
