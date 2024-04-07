@@ -140,8 +140,12 @@ async function createSale(req, res) {
       let inventoryBalance = 0;
       while (remainingSaleQuantity > 0) {
         const productPurchase = availableProducts[productPurchaseIndex];
-        let productDeclaration;
+        if (productPurchase.remainingQuantity === 0) {
+          productPurchaseIndex += 1;
+          continue;
+        }
 
+        let productDeclaration;
         //Find the declaration with the which the product was declared on
         try {
           productDeclaration = await prisma.productDeclaration.findFirst({
