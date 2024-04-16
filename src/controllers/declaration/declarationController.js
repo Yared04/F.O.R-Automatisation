@@ -274,6 +274,19 @@ async function deleteDeclaration(req, res) {
           "You cannot delete this declaration. Associated purchases exist.",
       });
     }
+
+    const productDeclarations = await prisma.productDeclaration.findMany({
+      where: {
+        declarationId: id,
+      }
+    })
+
+    productDeclarations.forEach(async element => {
+      await prisma.cATransaction.deleteMany({
+        where: {productDeclarationId: element.id}
+      })
+    });
+
     // Delete the associated product declarations
     await prisma.productDeclaration.deleteMany({
       where: {
@@ -387,6 +400,75 @@ async function updateProductDeclaration(req, res) {
       },
     });
 
+
+    let chartOfAccounts = [];
+    let suppliers = [];
+    try {
+      chartOfAccounts = await prisma.chartOfAccount.findMany({
+        select: { id: true, name: true },
+      });
+
+      suppliers = await prisma.supplier.findMany({
+        select: { id: true, name: true },
+      });
+    } catch {
+      throw new Error("Error fetching Chart of Accounts");
+    }
+
+    const accountsPayable = chartOfAccounts.find(
+      (account) => account.name === "Accounts Payable (A/P) - ETB"
+    );
+
+    const incomeTaxExpense = chartOfAccounts.find(
+      (account) => account.name === "Income tax expense"
+    );
+
+    const productDeclarations = await prisma.productDeclaration.findMany({
+      where: {declarationId: updatedProductDeclaration.declarationId}
+    })
+
+    const totalTax = productDeclarations.reduce((total, declaration) => {
+      return total + declaration.totalIncomeTax;
+    }, 0); 
+
+
+    const existingDebitTransaction = await prisma.cATransaction.findFirst({
+      where: {
+        AND: [
+          { productDeclarationId: updatedProductDeclaration.id },
+          { chartofAccountId: incomeTaxExpense.id }
+        ]
+      }
+    });
+
+    // If a matching record is found, update it
+    if (existingDebitTransaction) {
+      await prisma.cATransaction.update({
+        where: { id: existingDebitTransaction.id }, // Specify the ID of the found record
+        data: {
+          debit: updatedProductDeclaration.totalIncomeTax,
+        }
+      });
+    }
+
+   const existingTransaction = await prisma.cATransaction.findFirst({
+      where:{
+        AND: [
+       { declarationId: updatedProductDeclaration.declarationId},
+        {chartofAccountId: accountsPayable.id},]
+      }
+    })
+
+    if(existingTransaction){
+      await prisma.cATransaction.update({
+        where: {
+          id: existingTransaction.id
+        }, data:{
+          credit: totalTax,
+        }
+      })
+    }
+
     res.json(updatedProductDeclaration);
   } catch (error) {
     console.error("Error updating product declaration:", error);
@@ -426,6 +508,46 @@ async function deleteProductDeclaration(req, res) {
       });
     }
 
+    let chartOfAccounts = [];
+    let suppliers = [];
+    try {
+      chartOfAccounts = await prisma.chartOfAccount.findMany({
+        select: { id: true, name: true },
+      });
+
+      suppliers = await prisma.supplier.findMany({
+        select: { id: true, name: true },
+      });
+    } catch {
+      throw new Error("Error fetching Chart of Accounts");
+    }
+
+    const accountsPayable = chartOfAccounts.find(
+      (account) => account.name === "Accounts Payable (A/P) - ETB"
+    );
+
+
+   const existingTransaction = await prisma.cATransaction.findFirst({
+      where:{
+        AND: [
+       { declarationId: existingProductDeclaration.declarationId},
+        {chartofAccountId: accountsPayable.id},]
+      }
+    })
+
+    if(existingTransaction){
+      await prisma.cATransaction.update({
+        where: {
+          id: existingTransaction.id
+        }, data:{
+          credit: (existingTransaction.credit - existingProductDeclaration.totalIncomeTax),
+        }
+      })
+    }
+
+    await prisma.cATransaction.deleteMany({
+      where: {productDeclarationId: id}
+    })
     // Delete the ProductDeclaration
     const deletedProductDeclaration = await prisma.productDeclaration.delete({
       where: { id: id },
@@ -459,8 +581,84 @@ async function createProductDeclaration(req, res) {
       },
       include: {
         product: true,
+        declaration: true
       },
     });
+
+    let chartOfAccounts = [];
+    let suppliers = [];
+    try {
+      chartOfAccounts = await prisma.chartOfAccount.findMany({
+        select: { id: true, name: true },
+      });
+
+      suppliers = await prisma.supplier.findMany({
+        select: { id: true, name: true },
+      });
+    } catch {
+      throw new Error("Error fetching Chart of Accounts");
+    }
+
+    const supplier = suppliers.find(
+      (supplier) => supplier.name === "CUSTOM INCOME TAX"
+    );
+
+    const accountsPayable = chartOfAccounts.find(
+      (account) => account.name === "Accounts Payable (A/P) - ETB"
+    );
+
+    const incomeTaxExpense = chartOfAccounts.find(
+      (account) => account.name === "Income tax expense"
+    );
+
+    const productDeclarations = await prisma.productDeclaration.findMany({
+      where: {declarationId: declarationId}
+    })
+
+    const totalTax = productDeclarations.reduce((total, declaration) => {
+      return total + declaration.totalIncomeTax;
+    }, 0); 
+
+    await createTransaction(
+      incomeTaxExpense.id,
+      null,
+      new Date(productDeclaration.declaration.date),
+      "",
+      "Bill",
+      productDeclaration.totalIncomeTax,
+      null,
+      null,
+      null,
+      null,
+      null,
+      supplier.id,
+      null,
+      null,
+      null,
+      null,
+      null,
+      productDeclaration.id,
+    );
+
+
+    const existingTransaction = await prisma.cATransaction.findFirst({
+      where: {
+        AND: [
+          { declarationId: productDeclaration.declarationId},
+          { chartofAccountId: accountsPayable.id}
+        ]
+      }
+    })
+
+    if(existingTransaction){
+      await prisma.cATransaction.update({
+        where:{
+          id: existingTransaction.id
+        }, data:{
+          credit: totalTax,
+        }
+      })
+    }
 
     res.json(productDeclaration);
   } catch (error) {
