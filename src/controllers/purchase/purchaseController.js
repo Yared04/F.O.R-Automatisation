@@ -193,8 +193,8 @@ async function createPurchase(req, res) {
             ],
           },
         });
-
-        await prisma.productDeclaration.update({
+console.log(currentDeclaration.purchasedQuantity,'iiiiiiiiiiiiii')
+        const p=await prisma.productDeclaration.update({
           where: {
             id: currentDeclaration.id,
           },
@@ -208,6 +208,7 @@ async function createPurchase(req, res) {
                 parseInt(purchaseProduct.purchaseQuantity)),
           },
         });
+        console.log(p.purchasedQuantity,'jjjjjjjjjjjjjjjjjjj')
 
         return createdProductPurchase;
       })
@@ -938,7 +939,7 @@ async function deletePurchase(req, res) {
         },
       });
 
-      console.log(inventoryEntry);
+      // console.log(inventoryEntry);
 
       inventoryEntry.length > 0 &&
         (await prisma.inventory.deleteMany({

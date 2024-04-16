@@ -10,7 +10,7 @@ async function generateApAgingSummary(req, res) {
     const currentDate = endDate ? new Date(endDate) : new Date();
     console.log(endDate)
 
-    // Find the Chart of Account for Accounts Receivable (A/R)
+    // Find the Chart of Account for Accounts Receivable (A/P)
     const arChartOfAccount = await prisma.chartOfAccount.findFirst({
       where: {
         name: "Accounts Payable (A/P) - ETB",
@@ -25,7 +25,7 @@ async function generateApAgingSummary(req, res) {
         });
     }
 
-    // Find all transactions related to the Accounts Receivable (A/R) chart of account
+    // Find all transactions related to the Accounts Receivable (A/P) chart of account
     const arTransactions = await prisma.CATransaction.findMany({
       where: {
         chartofAccountId: arChartOfAccount.id,
@@ -147,7 +147,7 @@ async function generateApAgingPDFContent(
     doc.on("error", reject);
 
     // Add report title and date
-    doc.fontSize(15).text("A/R Ageing Summary", { align: "center" }).moveDown();
+    doc.fontSize(15).text("A/P Ageing Summary", { align: "center" }).moveDown();
     doc
       .fontSize(11)
       .text(
