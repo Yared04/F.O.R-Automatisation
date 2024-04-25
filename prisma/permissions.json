@@ -87,6 +87,7 @@
   { "name": "GetTransitPayments" },
   { "name": "CreateSupplierPayment" },
   { "name": "CreateCustomerPayment" },
+  {"name":"GenerateTransactionWithSplitSummary"},
   { "name": "CreateBankTransaction" },
   { "name": "GetProvisions" },
   { "name": "CreateTransitFee" },

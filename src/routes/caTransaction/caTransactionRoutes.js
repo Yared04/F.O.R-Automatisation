@@ -35,6 +35,11 @@ router.post("/ca-transactions/customer-payment", (req, res) => {
   );
 });
 
+router.get('/transaction-with-split-report', (req, res) => {
+  req.requiredPermissions = ['generateCaTransactionSummary'];
+  authenticate(req, res, () => caTransactionController.generateCaTransactionSummary(req, res));
+});
+
 router.post("/ca-transactions/transit-payment", (req, res) => {
   req.requiredPermissions = ["CreateTransitPayment"];
   authenticate(req, res, () =>
