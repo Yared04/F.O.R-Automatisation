@@ -77,7 +77,7 @@ async function getBankById(req, res) {
   }
 }
 
-async function getBankTransactions(req, res){
+async function getBankTransactions(req, res) {
   try {
     const id = req.params.id;
     const { page, pageSize } = req.query;
@@ -88,11 +88,11 @@ async function getBankTransactions(req, res){
     if (page && pageSize) {
       totalCount = await prisma.bank.count();
       bankTransactions = await prisma.bankTransaction.findMany({
-        where:{
-          bankId: id
+        where: {
+          bankId: id,
         },
         include: {
-            chartofAccount: true,
+          chartofAccount: true,
         },
         skip: (page - 1) * parseInt(pageSize, 10),
         take: parseInt(pageSize, 10),
@@ -100,8 +100,8 @@ async function getBankTransactions(req, res){
       });
     } else {
       bankTransactions = await prisma.bankTransaction.findMany({
-        where:{
-          bankId: id
+        where: {
+          bankId: id,
         },
         include: {
           chartofAccount: true,
@@ -145,6 +145,7 @@ async function createBank(req, res) {
             id: createdBank.id,
           },
         },
+        date: new Date(startingValueDate), // Starting date
         balance: parseFloat(startingValue), // Starting value
       },
     });
@@ -208,5 +209,5 @@ module.exports = {
   updateBank,
   deleteBank,
   getBankById,
-  getBankTransactions
+  getBankTransactions,
 };

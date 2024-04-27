@@ -100,6 +100,7 @@ async function createBankTransaction(req, res) {
     type,
     chartofAccountId,
     exchangeRate,
+    date,
   } = req.body;
   try {
     const bankTransactions = await prisma.bankTransaction.findMany({
@@ -135,6 +136,7 @@ async function createBankTransaction(req, res) {
             }
           : undefined,
         exchangeRate: exchangeRate,
+        date: new Date(date),
       },
     });
 
