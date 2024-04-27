@@ -129,7 +129,7 @@ async function createDeclaration(req, res) {
     }
 
     const supplier = suppliers.find(
-      (supplier) => supplier.name === "CUSTOM INCOME TAX"
+      (supplier) => supplier.name === "Custom Taxes"
     );
 
     const accountsPayable = chartOfAccounts.find(
@@ -174,7 +174,7 @@ async function createDeclaration(req, res) {
           null,
           null,
           null,
-          createdDeclarationProduct.id,
+          createdDeclarationProduct.id
         );
 
         return {
@@ -187,29 +187,29 @@ async function createDeclaration(req, res) {
         };
       })
     );
-
-    await createTransaction(
-      accountsPayable.id,
-      null,
-      new Date(date),
-      number,
-      "Bill",
-      null,
-      totalAmount,
-      null,
-      null,
-      null,
-      null,
-      supplier.id,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      createdDeclaration.id,
-    );
-
+    if (declarationProducts.length > 0) {
+      await createTransaction(
+        accountsPayable.id,
+        null,
+        new Date(date),
+        number,
+        "Bill",
+        null,
+        totalAmount,
+        null,
+        null,
+        null,
+        null,
+        supplier.id,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        createdDeclaration.id
+      );
+    }
     const declarationData = {
       id: createdDeclaration.id.toString(),
       number,
