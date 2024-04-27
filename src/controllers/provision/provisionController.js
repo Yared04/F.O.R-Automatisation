@@ -48,6 +48,7 @@ async function getProvisions(req, res) {
               purchase: true,
               declaration: true,
               unitCostOfGoods: true,
+              sale: true,
               saleQuantity: true,
               productPurchase: {
                 select: {
