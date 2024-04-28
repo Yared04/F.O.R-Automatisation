@@ -642,7 +642,6 @@ async function generateCaTransactionPDFContent(
       caTransactions.forEach((transaction) => 
       {
         if(yOffset > 680){
-          console.log("new page added")
           addHeaders();
         }
         doc.font("Helvetica").text(formatDateUTCtoMMDDYYYY(new Date(transaction.date)), xOffset, yOffset);

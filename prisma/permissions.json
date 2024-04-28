@@ -97,5 +97,6 @@
   { "name": "CreateCustomTaxPayment" },
   { "name": "CreateEslPayment" },
   { "name": "GenerateAPAgingReport" },
-  { "name": "GenerateTrialBalanceReport" }
+  { "name": "GenerateTrialBalanceReport" },
+  { "name": "GenerateInventoryValuationReport" }
 ]
