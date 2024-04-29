@@ -262,6 +262,12 @@ async function deleteProduct(req, res) {
   try {
     const { id } = req.params;
 
+    const product = await prisma.product.findUnique({ 
+      where: {
+        id: id,
+      },
+    });
+
     const declaration = await prisma.productDeclaration.findFirst({
       where: {
         productId: id,
@@ -281,16 +287,32 @@ async function deleteProduct(req, res) {
       }
     });
 
-     // delete caTransactions that might be created using this product
-     const deletedTransactions = await prisma.caTransaction.deleteMany({
+    const caTransactions = await prisma.cATransaction.deleteMany({
       where: {
-        productPurchase: {
-          some: {
-            productId: productId
+        OR:[
+          {
+            productPurchase: {
+              product:{
+                id:id
+              }
+            },
+          },
+          {
+            saleDetail: {
+             product:{
+              id: id
+              }
+             }
+            },
+            {
+            remark:{
+              equals:`${product.name} - opening inv.`
+            }
           }
-        }
+        ]
       }
     });
+
     
     const deletedProduct = await prisma.product.delete({
       where: {
