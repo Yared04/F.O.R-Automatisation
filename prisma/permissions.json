@@ -98,5 +98,9 @@
   { "name": "CreateEslPayment" },
   { "name": "GenerateAPAgingReport" },
   { "name": "GenerateTrialBalanceReport" },
-  { "name": "GenerateInventoryValuationReport" }
+  { "name": "GenerateInventoryValuationReport" },
+  { "name": "GetUnitOfMeasurements" },
+  { "name": "CreateUnitOfMeasurement" },
+  { "name": "UpdateUnitOfMeasurement" },
+  { "name": "DeleteUnitOfMeasurement" }
 ]

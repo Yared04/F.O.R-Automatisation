@@ -1,6 +1,7 @@
 const express = require('express');
 const productController = require('../../controllers/product/productController');
 const productCategoryController = require('../../controllers/product/productCategoryController');
+const unitOfMeasurementController = require('../../controllers/product/unitOfMeasurementController');
 const authenticate = require('../../middlewares/authenticate');
 
 const router = express.Router();
@@ -49,6 +50,26 @@ router.put('/product-categories/:id', (req, res) => {
 router.delete('/product-categories/:id', (req, res) => {
   req.requiredPermissions = ['DeleteProductCategory'];
   authenticate(req, res, () => productCategoryController.deleteProductCategory(req, res));
+});
+
+router.get('/unit-of-measurements', (req, res) => {
+  req.requiredPermissions = ['GetUnitOfMeasurements'];
+  authenticate(req, res, () => unitOfMeasurementController.getUnitOfMeasurements(req, res));
+});
+
+router.post('/unit-of-measurements', (req, res) => {
+  req.requiredPermissions = ['CreateUnitOfMeasurement'];
+  authenticate(req, res, () => unitOfMeasurementController.createUnitOfMeasurement(req, res));
+});
+
+router.put('/unit-of-measurements/:id', (req, res) => {
+  req.requiredPermissions = ['UpdateUnitOfMeasurement'];
+  authenticate(req, res, () => unitOfMeasurementController.updateUnitOfMeasurement(req, res));
+});
+
+router.delete('/unit-of-measurements/:id', (req, res) => {
+  req.requiredPermissions = ['DeleteUnitOfMeasurement'];
+  authenticate(req, res, () => unitOfMeasurementController.deleteUnitOfMeasurement(req, res));
 });
 
 module.exports = router;

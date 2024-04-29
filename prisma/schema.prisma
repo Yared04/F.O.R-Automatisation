@@ -81,7 +81,8 @@ model Product {
   name              String   @unique
   productCategoryId String   @map("productCategory_id") @db.Uuid
   category          ProductCategory  @relation(fields: [productCategoryId], references: [id])
-  unitOfMeasurement String
+  unitOfMeasurementId String   @map("unitOfMeasurement_id") @db.Uuid
+  unitOfMeasurement          UnitOfMeasurement  @relation(fields: [unitOfMeasurementId], references: [id])
   startingQuantity  Int
   startingQuantityUnitPrice  Float
   startingQuantityDate   DateTime
@@ -94,6 +95,11 @@ model Product {
 }
 
 model ProductCategory{
+  id                String   @id @default(uuid()) @db.Uuid
+  name              String   @unique
+  products    Product[]
+}
+model UnitOfMeasurement{
   id                String   @id @default(uuid()) @db.Uuid
   name              String   @unique
   products    Product[]
