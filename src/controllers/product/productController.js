@@ -95,13 +95,14 @@ async function createProduct(req, res) {
       data: {
         name: name,
         productCategoryId: category.id,
-        unitOfMeasurement: unitOfMeasurement,
+        unitOfMeasurementId: unitOfMeasurement.id,
         startingQuantity: parseInt(startingQuantity),
         startingQuantityUnitPrice: parseFloat(startingQuantityUnitPrice),
         startingQuantityDate: new Date(startingQuantityDate),
       },
       include: {
         category: true,
+        unitOfMeasurement: true,
       },
     });
 
@@ -229,13 +230,14 @@ async function updateProduct(req, res) {
       data: {
         name: name,
         productCategoryId: category.id,
-        unitOfMeasurement: unitOfMeasurement,
+        unitOfMeasurementId: unitOfMeasurement.id,
         startingQuantity: parseInt(startingQuantity),
         startingQuantityUnitPrice: parseFloat(startingQuantityUnitPrice),
         startingQuantityDate: new Date(startingQuantityDate),
       },
       include: {
         category: true,
+        unitOfMeasurement: true
       },
     });
 
