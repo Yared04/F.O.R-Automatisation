@@ -116,6 +116,24 @@ async function seedSuppliers() {
   return createdSuppliers;
 }
 
+async function seedRolePermissions(roleId, permissions) {
+  const createdPermissions = [];
+  // const permissionsFilePath = path.resolve(__dirname, 'permissions.json');
+  // const permissionsData = await fs.readFile(permissionsFilePath, 'utf-8');
+  // const permissions = JSON.parse(permissionsData);
+
+  for (const permission of permissions) {
+    const createdPermission = await prisma.rolePermission.create({
+      data: {
+        roleId: roleId,
+        permissionId: permission.id
+      },
+    });
+    createdPermissions.push(createdPermission);
+  }
+  return createdPermissions;
+}
+
 async function main() {
   try {
     await seedAccountTypes();
@@ -123,7 +141,8 @@ async function main() {
     await seedChartOfAccounts();
     const createdRoles = await seedRoles();
     await seedUser(createdRoles[0].id);
-    await seedPermissions()
+    const createdPermissions = await seedPermissions()
+    await seedRolePermissions(createdRoles[0].id, createdPermissions)
     await seedSuppliers();
     console.log("Seeded successfully.");
   } catch (error) {
