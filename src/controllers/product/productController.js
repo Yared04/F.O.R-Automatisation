@@ -280,6 +280,17 @@ async function deleteProduct(req, res) {
         productId: id,
       }
     });
+
+     // delete caTransactions that might be created using this product
+     const deletedTransactions = await prisma.caTransaction.deleteMany({
+      where: {
+        productPurchase: {
+          some: {
+            productId: productId
+          }
+        }
+      }
+    });
     
     const deletedProduct = await prisma.product.delete({
       where: {
