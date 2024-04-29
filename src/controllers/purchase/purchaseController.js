@@ -236,7 +236,7 @@ console.log(currentDeclaration.purchasedQuantity,'iiiiiiiiiiiiii')
     );
 
     const transitCostCA = chartOfAccounts.find(
-      (account) => account.name === "Transit Cost"
+      (account) => account.name === "Transit fees"
     );
 
     const transportCostCA = chartOfAccounts.find(

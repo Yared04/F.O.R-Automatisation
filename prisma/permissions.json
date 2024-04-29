@@ -87,6 +87,7 @@
   { "name": "GetTransitPayments" },
   { "name": "CreateSupplierPayment" },
   { "name": "CreateCustomerPayment" },
+  {"name":"GenerateTransactionWithSplitSummary"},
   { "name": "CreateBankTransaction" },
   { "name": "GetProvisions" },
   { "name": "CreateTransitFee" },
@@ -95,5 +96,7 @@
   { "name": "GenerateBankTransactionReport" },
   { "name": "CreateCustomTaxPayment" },
   { "name": "CreateEslPayment" },
-  { "name": "GenerateAPAgingReport" }
+  { "name": "GenerateAPAgingReport" },
+  { "name": "GenerateTrialBalanceReport" },
+  { "name": "GenerateInventoryValuationReport" }
 ]

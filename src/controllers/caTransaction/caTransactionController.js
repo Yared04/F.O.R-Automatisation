@@ -1,4 +1,6 @@
 const { parse } = require("path");
+const PDFDocument = require("pdfkit");
+const { Readable } = require("stream");
 const prisma = require("../../database");
 
 async function getCaTransactions(req, res) {
@@ -100,6 +102,7 @@ async function createBankTransaction(req, res) {
     type,
     chartofAccountId,
     exchangeRate,
+    date,
   } = req.body;
   try {
     const bankTransactions = await prisma.bankTransaction.findMany({
@@ -135,6 +138,7 @@ async function createBankTransaction(req, res) {
             }
           : undefined,
         exchangeRate: exchangeRate,
+        date: new Date(date),
       },
     });
 
@@ -469,6 +473,228 @@ async function getCaTransactionById(req, res) {
   }
 }
 
+async function generateCaTransactionSummary(req, res) {
+  try {
+    const {startDate, endDate } = req.query;
+    let transactionFilter = {};
+
+    if (startDate && endDate) {
+      transactionFilter.createdAt = {
+        gte: new Date(startDate),
+        lte: new Date(endDate),
+      };
+    }
+    const caTransactions = await prisma.CATransaction.findMany({
+        where: transactionFilter,
+        orderBy: [
+          {
+            date: "desc",
+          },
+          {
+            supplier: {
+              name: "asc",
+            },
+          },
+  
+          {
+            createdAt: "desc",
+          },
+        ],
+        include: {
+          supplier: {
+            select: {
+              name: true,
+            },
+          },
+          customer: {
+            select: {
+              firstName: true,
+              lastName: true,
+            },
+          },
+          productPurchase: {
+            select: {
+              product: true,
+            },
+          },
+          saleDetail: {
+            select: {
+              product: true,
+            },
+          },
+          bankTransaction: {
+            select: {
+              bank: {
+                select: {
+                  name: true,
+                },
+              },
+            },
+          },
+          purchase: {
+            select: {
+              number: true,
+            },
+          },
+          sale: {
+            select: {
+              invoiceNumber: true,
+            },
+          },
+          chartofAccount: {
+            select: {
+              name: true,
+            },
+          },
+          productDeclaration: {
+            select: {
+              product: true,
+            },
+          },
+        },
+    });
+
+    
+   // send pdf
+
+   const pdfContent = await generateCaTransactionPDFContent(
+    caTransactions, startDate, endDate
+  );
+
+  // Set response headers for PDF download
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader(
+    "Content-Disposition",
+    'attachment; filename="transaction-with-splits.pdf"'
+  );
+
+  // Stream PDF content to the client
+  const stream = new Readable();
+  stream.push(pdfContent);
+  stream.push(null); // Indicates the end of the stream
+  stream.pipe(res);
+  } catch (error) {
+    console.error("Error generating CA Transaction summary:", error);
+    res.status(500).send("Internal Server Error");
+  }
+}
+
+async function generateCaTransactionPDFContent(
+  caTransactions, startDate, endDate
+) {
+  return new Promise((resolve, reject) => {
+    const doc = new PDFDocument();
+    const buffers = [];
+
+    // Buffer PDF content
+    doc.on("data", (buffer) => buffers.push(buffer));
+    doc.on("end", () => resolve(Buffer.concat(buffers)));
+    doc.on("error", reject);
+
+    let pageCount = 0; 
+    const handleTimeSpan = () => {
+      if (startDate && endDate) {
+        return `Transactions from ${formatDateUTCtoMMDDYYYY(new Date(startDate))} to ${formatDateUTCtoMMDDYYYY(new Date(endDate))}`;
+      }
+      return "All Dates";
+    }
+    // add table headers
+    let xOffset = 10;
+    let yOffset = 190;
+    const addHeaders = ()=>{
+      ++pageCount;
+      if(pageCount > 1){
+      doc.addPage();
+      }
+      xOffset = 10;
+      yOffset = 190;
+      doc.fontSize(10).text("Transactions with split", { align: "center" }).moveDown();
+      doc
+        .fontSize(8)
+        .text(
+         handleTimeSpan(),
+          { align: "center" }
+        )
+        .moveDown();
+      doc.fontSize(5)
+      columnTitlesWithOffset.forEach((title) => {
+        doc.text(title[0], xOffset, 150);
+        xOffset += title[1];
+      });
+      doc.lineWidth(0.5); // Set line weight to 2 (adjust as needed)
+      doc.moveTo(10, 145).lineTo(600, 145).stroke(); // Line above the first row
+      doc.moveTo(10, 165).lineTo(600, 165).stroke(); // Line above the first row
+      xOffset = 10;
+    }
+      const columnTitlesWithOffset = [
+        ["DATE", 40],
+        ["TRANSACTION TYPE", 65],
+        ["NO.",15],
+        ["POSTING", 30],
+        ["NAME", 60],
+        ["MEMO/DESCRIPTION", 70],
+        ["DEBIT",40],
+        ["CREDIT", 40],
+        ["PRODUCT/SERVICE", 70],
+        ["CUSTOMER", 60],
+        ["SUPPLIER", 40],
+        ["ACCOUNT", 50],
+      ];
+      addHeaders();
+      caTransactions.forEach((transaction) => 
+      {
+        if(yOffset > 680){
+          addHeaders();
+        }
+        doc.font("Helvetica").text(formatDateUTCtoMMDDYYYY(new Date(transaction.date)), xOffset, yOffset);
+        xOffset += columnTitlesWithOffset[0][1];
+        doc.text(transaction.type, xOffset, yOffset);
+        xOffset += columnTitlesWithOffset[1][1];
+        doc.text(transaction.number, xOffset, yOffset);
+        xOffset += columnTitlesWithOffset[2][1];
+        doc.text(transaction.posting, xOffset, yOffset);
+        xOffset += columnTitlesWithOffset[3][1];
+        doc.text(transaction.name, xOffset, yOffset);
+        xOffset += columnTitlesWithOffset[4][1];
+        doc.text(transaction.remark, xOffset, yOffset);
+        xOffset += columnTitlesWithOffset[5][1];
+        doc.text(transaction.debit, xOffset, yOffset);
+        xOffset += columnTitlesWithOffset[6][1];
+        doc.text(transaction.credit, xOffset, yOffset);
+        xOffset += columnTitlesWithOffset[7][1];
+        doc.text(transaction.productPurchase?.product.name, xOffset, yOffset);
+        xOffset += columnTitlesWithOffset[8][1];
+        doc.text(transaction.customer ? transaction.customer.firstName + " " + transaction.customer.lastName : "", xOffset, yOffset);
+        xOffset += columnTitlesWithOffset[9][1];
+        doc.text(transaction.supplier ? transaction.supplier.name : "", xOffset, yOffset);
+        xOffset += columnTitlesWithOffset[10][1];
+        doc.text(transaction.chartofAccount.name, xOffset, yOffset);
+        xOffset = 10;
+        yOffset += 20;
+      }
+    );  
+  
+    doc
+      .moveTo(10, yOffset + 10)
+      .lineTo(600, yOffset + 10)
+      .stroke(); // Line below the last row
+
+    doc.end();
+  });
+}
+
+function formatDateUTCtoMMDDYYYY(utcDate) {
+  const date = new Date(utcDate);
+  const mm = date.getUTCMonth() + 1; // getMonth() is zero-based
+  const dd = date.getUTCDate();
+  const yyyy = date.getUTCFullYear();
+
+  return `${mm.toString().padStart(2, '0')}/${dd.toString().padStart(2, '0')}/${yyyy}`;
+}
+
+
+
+
 module.exports = {
   getCaTransactions,
   createCaTransaction,
@@ -477,4 +703,5 @@ module.exports = {
   createSupplierPayment,
   createBankTransaction,
   createCustomerPayment,
+  generateCaTransactionSummary
 };
