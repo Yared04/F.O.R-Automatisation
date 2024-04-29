@@ -14,21 +14,24 @@ async function getProvisions(req, res) {
           productDeclaration: true,
           saleDetail: {
             select: {
-                product: true,
-                purchase: true,
-                declaration: true,
-                unitCostOfGoods: true,
-                saleQuantity: true,
-                productPurchase: {
-                  select:{
-                    transit: true,
-                    transport: true,
-                    esl: true,
-                    purchaseUnitCostOfGoods: true,
-                  }
+              product: true,
+              purchase: true,
+              declaration: true,
+              unitCostOfGoods: true,
+              saleQuantity: true,
+              productPurchase: {
+                select: {
+                  transit: true,
+                  transport: true,
+                  esl: true,
+                  purchaseUnitCostOfGoods: true,
                 },
-            }
+              },
+            },
           },
+        },
+        orderBy: {
+          createdAt: "desc",
         },
         skip: (page - 1) * parseInt(pageSize, 10),
         take: parseInt(pageSize, 10),
@@ -36,26 +39,30 @@ async function getProvisions(req, res) {
     } else {
       provisions = await prisma.provision.findMany({
         select: {
-          id: true,          
+          id: true,
           date: true,
           productDeclaration: true,
           saleDetail: {
             select: {
-                product: true,
-                purchase: true,
-                declaration: true,
-                unitCostOfGoods: true,
-                saleQuantity: true,
-                productPurchase: {
-                  select:{
-                    transit: true,
-                    transport: true,
-                    esl: true,
-                    purchaseUnitCostOfGoods: true,
-                  }
+              product: true,
+              purchase: true,
+              declaration: true,
+              unitCostOfGoods: true,
+              sale: true,
+              saleQuantity: true,
+              productPurchase: {
+                select: {
+                  transit: true,
+                  transport: true,
+                  esl: true,
+                  purchaseUnitCostOfGoods: true,
                 },
-            }
-        }
+              },
+            },
+          },
+        },
+        orderBy: {
+          createdAt: "desc",
         },
       });
     }

@@ -22,10 +22,10 @@
     "name": "Transit Fees",
     "address": "Ethiopia",
     "currency": "ETB"
-  }, 
+  },
   {
     "id": "b2fdff13-9538-4e53-8696-7a86907d71c7",
-    "name": "CUSTOM INCOME TAX",
+    "name": "Custom Taxes",
     "address": "Ethiopia",
     "currency": "ETB"
   }
