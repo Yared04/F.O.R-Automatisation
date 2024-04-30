@@ -194,5 +194,10 @@
       "name": "Travel expenses - general and admin expenses",
       "id": "be6e62b5-2649-4b8d-8988-802d202af9d4",
       "accountTypeId": "5a71d6d4-cc3b-4780-a3d7-5fc1fbdd8565"
+    },
+    {
+      "name": "Current",
+      "id": "be6e62b5-2649-4b8d-8988-802d202af9d0",
+      "accountTypeId": "b9bceaa1-06d5-4eeb-83a8-3e8c07d01e98"
     }
   ]
