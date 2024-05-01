@@ -692,8 +692,249 @@ function formatDateUTCtoMMDDYYYY(utcDate) {
   return `${mm.toString().padStart(2, '0')}/${dd.toString().padStart(2, '0')}/${yyyy}`;
 }
 
+async function createJournalEntry(req, res) {
+  try {
+    const { bankId, chartofAccountId, date, debit, credit, remark, type, accountPayableRecievableDetail, payment, deposit } = req.body;
 
 
+    const bankTransactions = await prisma.bankTransaction.findMany({
+      where: { bankId: bankId },
+      orderBy: { createdAt: "desc" },
+    });
+
+    const bankTransaction = await prisma.bankTransaction.create({
+      data:{
+        bankId:bankId,
+        payment: parseFloat(payment),
+        deposit: parseFloat(deposit),
+        type: type,
+        chartofAccountId: chartofAccountId,
+        date: new Date(date),
+        balance: bankTransactions[0]
+        ? parseFloat(Number(bankTransactions[0].balance)) -
+          parseFloat(Number(payment)) +
+          parseFloat(Number(deposit))
+        : parseFloat(Number(deposit)) - parseFloat(Number(payment)),
+      }
+    }
+    );
+
+    const highest = await prisma.cATransaction.findFirst({
+      where: {
+        type: 'Journal Entry'
+      },
+      orderBy: {
+        number: 'desc' // Order by CA transaction number in descending order
+      },
+      take: 1 // Take only the first result
+    });
+
+    const journalNumber = highest ? highest.number + 1 : 1;
+
+
+    const firstTransaction = await prisma.cATransaction.create({
+      data:{
+      bankTransactionId: bankTransaction.id,
+      date: new Date(date),
+      remark: remark,
+      type: type,
+      credit: parseFloat(credit),
+      accountPayableRecievableDetail: accountPayableRecievableDetail,
+      number: journalNumber
+      },include: {
+        supplier: {
+          select: {
+            name: true,
+          },
+        },
+        customer: {
+          select: {
+            firstName: true,
+            lastName: true,
+          },
+        },
+        productPurchase: {
+          select: {
+            product: true,
+          },
+        },
+        saleDetail: {
+          select: {
+            product: true,
+          },
+        },
+        bankTransaction: {
+          select: {
+            bank: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
+        purchase: {
+          select: {
+            number: true,
+          },
+        },
+        sale: {
+          select: {
+            invoiceNumber: true,
+          },
+        },
+        chartofAccount: {
+          select: {
+            name: true,
+          },
+        },
+        productDeclaration: {
+          select: {
+            product: true,
+          },
+        },
+      },
+    })
+    
+    const secondTransaction = await prisma.cATransaction.create({
+      data:{
+      chartofAccountId: chartofAccountId,
+      date: new Date(date),
+      remark: remark,
+      type: type,
+      debit: parseFloat(debit),
+      accountPayableRecievableDetail: accountPayableRecievableDetail,
+      number: journalNumber
+      },include: {
+        supplier: {
+          select: {
+            name: true,
+          },
+        },
+        customer: {
+          select: {
+            firstName: true,
+            lastName: true,
+          },
+        },
+        productPurchase: {
+          select: {
+            product: true,
+          },
+        },
+        saleDetail: {
+          select: {
+            product: true,
+          },
+        },
+        bankTransaction: {
+          select: {
+            bank: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
+        purchase: {
+          select: {
+            number: true,
+          },
+        },
+        sale: {
+          select: {
+            invoiceNumber: true,
+          },
+        },
+        chartofAccount: {
+          select: {
+            name: true,
+          },
+        },
+        productDeclaration: {
+          select: {
+            product: true,
+          },
+        },
+      },
+    })
+
+    return res.status(200).json({firstTransaction, secondTransaction});
+  } catch (error) {
+    console.error("Error creating journal entry:", error);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+}
+
+async function deleteJournalEntry(req, res){
+  try{
+
+    const id = req.params.id;
+
+    const journalEntry = await prisma.cATransaction.findUnique({
+      where:{
+        id: id
+      }
+    })
+
+    const journalWithBankTransaction = await prisma.cATransaction.findFirst({
+      where: {
+        number: journalEntry.number,
+        type: 'Journal Entry',
+        bankTransactionId: {not: null}
+      }
+    })
+
+    const bankTransaction = await prisma.bankTransaction.findUnique({
+      where:{
+        id: journalWithBankTransaction.bankTransactionId
+      }
+    })
+
+    const latestBankTransaction = await prisma.bankTransaction.findFirst({
+      where: {
+        bankId: bankTransaction.bankId,
+        type: 'Journal Entry'
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+
+    // Calculate new balance
+    const newBalance = latestBankTransaction.balance - bankTransaction.deposit + bankTransaction.payment;
+
+    // Update latest bank transaction balance
+    await prisma.bankTransaction.update({
+      where: { id: latestBankTransaction.id },
+      data: { balance: newBalance }
+    });
+
+    const deletedEntries = await prisma.cATransaction.findMany({
+      where: {
+        number: journalEntry.number,
+        type: 'Journal Entry'
+      }
+    });
+
+    // Delete journal entries and associated bank transaction
+    await prisma.cATransaction.deleteMany({
+      where: {
+        number: journalEntry.number,
+        type: 'Journal Entry'
+      }
+    });
+
+    await prisma.bankTransaction.delete({
+      where: {
+        id: bankTransaction.id
+      }
+    })
+    res.json(deletedEntries)
+  } catch (error) {
+    console.error("Error deleting journal entry:", error);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+}
 
 module.exports = {
   getCaTransactions,
@@ -703,5 +944,7 @@ module.exports = {
   createSupplierPayment,
   createBankTransaction,
   createCustomerPayment,
-  generateCaTransactionSummary
+  generateCaTransactionSummary,
+  createJournalEntry,
+  deleteJournalEntry
 };
