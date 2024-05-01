@@ -66,6 +66,20 @@ router.post("/ca-transactions/bank-transaction", (req, res) => {
   );
 });
 
+router.post("/ca-transactions/journal-entry", (req, res) => {
+  req.requiredPermissions = ["CreateJournalEntry"];
+  authenticate(req, res, () =>
+    caTransactionController.createJournalEntry(req, res)
+  );
+});
+
+router.delete("/ca-transactions/journal-entry/:id", (req, res) => {
+  req.requiredPermissions = ["DeleteJournalEntry"];
+  authenticate(req, res, () =>
+    caTransactionController.deleteJournalEntry(req, res)
+  );
+});
+
 router.get("/ca-transactions/:id", (req, res) => {
   req.requiredPermissions = ["GetCaTransactionById"];
   authenticate(req, res, () =>

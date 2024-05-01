@@ -102,5 +102,7 @@
   { "name": "GetUnitOfMeasurements" },
   { "name": "CreateUnitOfMeasurement" },
   { "name": "UpdateUnitOfMeasurement" },
-  { "name": "DeleteUnitOfMeasurement" }
+  { "name": "DeleteUnitOfMeasurement" },
+  { "name": "CreateJournalEntry" },
+  { "name": "DeleteJournalEntry" }
 ]
