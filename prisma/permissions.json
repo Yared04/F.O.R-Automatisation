@@ -87,7 +87,7 @@
   { "name": "GetTransitPayments" },
   { "name": "CreateSupplierPayment" },
   { "name": "CreateCustomerPayment" },
-  {"name":"GenerateTransactionWithSplitSummary"},
+  { "name": "GenerateTransactionWithSplitSummary" },
   { "name": "CreateBankTransaction" },
   { "name": "GetProvisions" },
   { "name": "CreateTransitFee" },
@@ -104,5 +104,7 @@
   { "name": "UpdateUnitOfMeasurement" },
   { "name": "DeleteUnitOfMeasurement" },
   { "name": "CreateJournalEntry" },
-  { "name": "DeleteJournalEntry" }
+  { "name": "DeleteJournalEntry" },
+  { "name": "GenerateProfitAndLossReport" },
+  { "name": "GenerateBalanceSheetReport" }
 ]
