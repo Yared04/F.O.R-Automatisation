@@ -104,5 +104,6 @@
   { "name": "UpdateUnitOfMeasurement" },
   { "name": "DeleteUnitOfMeasurement" },
   { "name": "CreateJournalEntry" },
-  { "name": "DeleteJournalEntry" }
+  { "name": "DeleteJournalEntry" },
+  { "name": "GenerateProfitAndLossReport" }
 ]
