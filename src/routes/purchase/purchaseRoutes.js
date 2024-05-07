@@ -1,6 +1,7 @@
 const express = require("express");
 const purchaseController = require("../../controllers/purchase/purchaseController");
 const transportController = require("../../controllers/purchase/transportController");
+const transitController = require("../../controllers/purchase/transitController");
 const authenticate = require("../../middlewares/authenticate");
 
 const router = express.Router();
@@ -62,6 +63,18 @@ router.get("/esl", (req, res) => {
 router.get("/transit-fees", (req, res) => {
   req.requiredPermissions = ["GetTransiFees"];
   authenticate(req, res, () => purchaseController.getTransiFees(req, res));
+});
+
+router.delete("/purchases/transport-payment/:paymentId", (req, res) => {
+  req.requiredPermissions = ["DeleteTransportPayment"];
+  authenticate(req, res, () =>
+    transportController.deleteTransportPayment(req, res)
+  );
+});
+
+router.delete("/purchases/transit-payment/:paymentId", (req, res) => {
+  req.requiredPermissions = ["DeleteTransitPayment"];
+  authenticate(req, res, () => transitController.deleteTransitPayment(req, res));
 });
 
 module.exports = router;
