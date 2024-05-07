@@ -114,6 +114,7 @@ model Declaration {
   purchases ProductPurchase[]
   sales     SaleDetail[]
   caTransactions  CATransaction[]
+  paymentLogs  CustomTaxPaymentLog[]
   createdAt DateTime             @default(now()) @map("created_at")
   updatedAt DateTime             @updatedAt @map("updated_at")
 }
@@ -155,6 +156,10 @@ model Purchase {
   caTransactions CATransaction[]
   createdAt      DateTime          @default(now()) @map("created_at")
   updatedAt      DateTime          @updatedAt @map("updated_at")
+
+  costExpenses         SupplierPaymentDetail[] @relation("SupplierPaymentExpense")
+  paymentExpenses         SupplierPaymentDetail[] @relation("PaymentPaymentExpense")
+  supplierPaymentLogs        SupplierPaymentLog[] 
 }
 model Transport {
   id                     String            @id @default(uuid()) @db.Uuid
@@ -387,6 +392,10 @@ model CATransaction {
   transitCredit      TransitPaymentLog[] @relation("Transaction2")
   eslDebit       EslPaymentLog[] @relation("Transaction1")
   eslCredit      EslPaymentLog[] @relation("Transaction2")
+  supplierDebit       SupplierPaymentLog[] @relation("Transaction1")
+  supplierCredit      SupplierPaymentLog[] @relation("Transaction2")
+  customTaxPaymentDebit       CustomTaxPaymentLog[] @relation("Transaction1")
+  customTaxPaymentCredit      CustomTaxPaymentLog[] @relation("Transaction2")
   createdAt         DateTime         @default(now()) @map("created_at")
   updatedAt         DateTime         @updatedAt @map("updated_at")
 }
@@ -419,7 +428,9 @@ model BankTransaction {
   caTransactions  CATransaction[]
   transportPaymentLogs  TransportPaymentLog[]
   transitPaymentLogs  TransitPaymentLog[]
-  eslPaymentLogs  EslPaymentLog[]
+  eslPaymentLogs      EslPaymentLog[]
+  supplierPaymentLogs  SupplierPaymentLog[]
+  customTaxPaymentLogs  CustomTaxPaymentLog[]
   createdAt        DateTime        @default(now()) @map("created_at")
   updatedAt        DateTime        @updatedAt @map("updated_at")
 }
@@ -447,13 +458,13 @@ model TransportPaymentDetail {
 model TransportPaymentLog {
   id                   String          @id @default(uuid()) @db.Uuid
   paymentId            String          @map("payment_id") @db.Uuid
-  payment              Transport       @relation(fields: [paymentId], references: [id])
+  payment              Transport       @relation(fields: [paymentId], references: [id], onDelete: Cascade)
   caTransactionId1     String          @map("ca_transaction_id_1") @db.Uuid
-  caTransaction1       CATransaction  @relation(name: "Transaction1", fields: [caTransactionId1], references: [id])
+  caTransaction1       CATransaction  @relation(name: "Transaction1", fields: [caTransactionId1], references: [id],onDelete: Cascade)
   caTransactionId2     String          @map("ca_transaction_id_2") @db.Uuid
-  caTransaction2       CATransaction  @relation(name: "Transaction2", fields: [caTransactionId2], references: [id])
+  caTransaction2       CATransaction  @relation(name: "Transaction2", fields: [caTransactionId2], references: [id],onDelete: Cascade)
   bankTransactionId    String          @map("bank_transaction_id") @db.Uuid
-  bankTransaction      BankTransaction @relation(fields: [bankTransactionId], references: [id])
+  bankTransaction      BankTransaction @relation(fields: [bankTransactionId], references: [id],onDelete: Cascade)
 }
 
 model TransitPaymentDetail {
@@ -468,13 +479,13 @@ model TransitPaymentDetail {
 model TransitPaymentLog {
   id                   String          @id @default(uuid()) @db.Uuid
   paymentId            String          @map("payment_id") @db.Uuid
-  payment              Transit       @relation(fields: [paymentId], references: [id])
+  payment              Transit       @relation(fields: [paymentId], references: [id],onDelete: Cascade)
   caTransactionId1     String          @map("ca_transaction_id_1") @db.Uuid
-  caTransaction1       CATransaction  @relation(name: "Transaction1", fields: [caTransactionId1], references: [id])
+  caTransaction1       CATransaction  @relation(name: "Transaction1", fields: [caTransactionId1], references: [id],onDelete: Cascade)
   caTransactionId2     String          @map("ca_transaction_id_2") @db.Uuid
-  caTransaction2       CATransaction  @relation(name: "Transaction2", fields: [caTransactionId2], references: [id])
+  caTransaction2       CATransaction  @relation(name: "Transaction2", fields: [caTransactionId2], references: [id],onDelete: Cascade)
   bankTransactionId    String          @map("bank_transaction_id") @db.Uuid
-  bankTransaction      BankTransaction @relation(fields: [bankTransactionId], references: [id])
+  bankTransaction      BankTransaction @relation(fields: [bankTransactionId], references: [id],onDelete: Cascade)
 }
 model EslPaymentDetail {
   id                     String            @id @default(uuid()) @db.Uuid
@@ -488,11 +499,43 @@ model EslPaymentDetail {
 model EslPaymentLog {
   id                   String          @id @default(uuid()) @db.Uuid
   paymentId            String          @map("payment_id") @db.Uuid
-  payment              ESL       @relation(fields: [paymentId], references: [id])
+  payment              ESL       @relation(fields: [paymentId], references: [id],onDelete: Cascade)
   caTransactionId1     String          @map("ca_transaction_id_1") @db.Uuid
-  caTransaction1       CATransaction  @relation(name: "Transaction1", fields: [caTransactionId1], references: [id])
+  caTransaction1       CATransaction  @relation(name: "Transaction1", fields: [caTransactionId1], references: [id],onDelete: Cascade)
   caTransactionId2     String          @map("ca_transaction_id_2") @db.Uuid
-  caTransaction2       CATransaction  @relation(name: "Transaction2", fields: [caTransactionId2], references: [id])
+  caTransaction2       CATransaction  @relation(name: "Transaction2", fields: [caTransactionId2], references: [id],onDelete: Cascade)
   bankTransactionId    String          @map("bank_transaction_id") @db.Uuid
-  bankTransaction      BankTransaction @relation(fields: [bankTransactionId], references: [id])
+  bankTransaction      BankTransaction @relation(fields: [bankTransactionId], references: [id],onDelete: Cascade)
+}
+model SupplierPaymentDetail {
+  id                     String            @id @default(uuid()) @db.Uuid
+  purchaseId            String            @map("purchase_id") @db.Uuid
+  purchase              Purchase         @relation(name: "SupplierPaymentExpense", fields: [purchaseId], references: [id],onDelete: Cascade)
+  paymentId              String            @map("payment_id") @db.Uuid
+  payment                Purchase         @relation(name: "PaymentPaymentExpense", fields: [paymentId], references: [id],onDelete: Cascade)
+  amountPaidUSD           Float?
+  amountPaidETB           Float?
+}
+
+model SupplierPaymentLog {
+  id                   String          @id @default(uuid()) @db.Uuid
+  paymentId            String          @map("payment_id") @db.Uuid
+  payment              Purchase       @relation(fields: [paymentId], references: [id],onDelete: Cascade)
+  caTransactionId1     String          @map("ca_transaction_id_1") @db.Uuid
+  caTransaction1       CATransaction  @relation(name: "Transaction1", fields: [caTransactionId1], references: [id],onDelete: Cascade)
+  caTransactionId2     String          @map("ca_transaction_id_2") @db.Uuid
+  caTransaction2       CATransaction  @relation(name: "Transaction2", fields: [caTransactionId2], references: [id],onDelete: Cascade)
+  bankTransactionId    String          @map("bank_transaction_id") @db.Uuid
+  bankTransaction      BankTransaction @relation(fields: [bankTransactionId], references: [id],onDelete: Cascade)
+}
+model CustomTaxPaymentLog {
+  id                   String          @id @default(uuid()) @db.Uuid
+  paymentId            String          @map("payment_id") @db.Uuid
+  payment              Declaration       @relation(fields: [paymentId], references: [id],onDelete: Cascade)
+  caTransactionId1     String          @map("ca_transaction_id_1") @db.Uuid
+  caTransaction1       CATransaction  @relation(name: "Transaction1", fields: [caTransactionId1], references: [id],onDelete: Cascade)
+  caTransactionId2     String          @map("ca_transaction_id_2") @db.Uuid
+  caTransaction2       CATransaction  @relation(name: "Transaction2", fields: [caTransactionId2], references: [id],onDelete: Cascade)
+  bankTransactionId    String          @map("bank_transaction_id") @db.Uuid
+  bankTransaction      BankTransaction @relation(fields: [bankTransactionId], references: [id],onDelete: Cascade)
 }

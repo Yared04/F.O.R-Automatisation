@@ -229,10 +229,23 @@ async function updateDeclaration(req, res) {
     const { id } = req.params; // Extract the declaration ID from request parameters
     const { number, date } = req.body; // Extract updated data from request body
 
+    const payment = await prisma.declaration.findUnique({
+      where:{
+        id: id
+      }
+    })
+
+    if (payment.paidAmount !== 0 ) {
+      return res.status(400).json({
+        error: "You can not update declaration number and date of custom tax payment.",
+      });
+    }
+
     const existingDeclaration = await prisma.declaration.findFirst({
       where: {
         number: number,
-      },
+        paidAmount: 0
+      }
     });
 
     if (existingDeclaration && existingDeclaration.id !== id) {
@@ -295,11 +308,57 @@ async function deleteDeclaration(req, res) {
     });
 
     // Delete the declaration
-    const deletedDeclaration = await prisma.declaration.delete({
-      where: {
-        id: id,
-      },
+    // const deletedDeclaration = await prisma.declaration.delete({
+    //   where: {
+    //     id: id,
+    //   },
+    // });
+
+    
+    const paymentDetails = await prisma.customTaxPaymentLog.findFirst({
+      where: { paymentId: id },
+      include: {
+        caTransaction1: true,
+        caTransaction2: true,
+        bankTransaction: true,
+      }
     });
+    if(paymentDetails){
+    const { caTransaction1, caTransaction2, bankTransaction } = paymentDetails;
+
+    await prisma.customTaxPaymentLog.deleteMany({
+          where: { paymentId: id }
+        });
+        
+    await prisma.cATransaction.deleteMany({
+      where: {
+        OR: [
+          { id: caTransaction1.id },
+          { id: caTransaction2.id }
+        ]
+      }
+    });
+
+    const subsequentBankTransactions = await prisma.bankTransaction.findMany({
+      where: {
+        bankId: bankTransaction.bankId,
+        createdAt: { gt: bankTransaction.createdAt }
+      }
+    });
+
+    await Promise.all(
+      subsequentBankTransactions.map(async (transaction) => {
+        await prisma.bankTransaction.update({
+          where: { id: transaction.id },
+          data: { balance: transaction.balance + bankTransaction.payment }
+        });
+      })
+    );
+    
+    await prisma.bankTransaction.delete({ where: { id: bankTransaction.id } });
+  }
+
+  const deletedDeclaration = await prisma.declaration.delete({ where: { id: id } });
 
     res.json(deletedDeclaration);
   } catch (error) {
@@ -667,6 +726,155 @@ async function createProductDeclaration(req, res) {
   }
 }
 
+async function createCustomTaxPayment(req, res){
+
+const {
+  bankId,
+  date,
+  remark,
+  credit,
+  debit,
+  supplierId,
+  type,
+  chartofAccountId,
+  number,
+  paidAmount,
+  payee,
+  payment,
+  deposit
+} = req.body;
+  try {
+    const bankTransactions = await prisma.bankTransaction.findMany({
+      where: { bankId: bankId },
+      orderBy: { createdAt: "desc" },
+    });
+
+    const supplier = payee
+      ? await prisma.supplier.findUnique({
+          where: { id: payee },
+        })
+      : null;
+
+    const bankTransaction = await prisma.bankTransaction.create({
+      data:{
+        bankId:bankId,
+        payee: supplier ? supplier.name : null,
+        payment: parseFloat(payment),
+        deposit: parseFloat(deposit),
+        type: type,
+        chartofAccountId: chartofAccountId,
+        date: new Date(date),
+        balance: bankTransactions[0]
+        ? parseFloat(Number(bankTransactions[0].balance)) -
+          parseFloat(Number(payment)) +
+          parseFloat(Number(deposit))
+        : parseFloat(Number(deposit)) - parseFloat(Number(payment)),
+      }
+    });
+
+    // Create first transaction
+    const firstTransaction = await prisma.cATransaction.create({
+      data:{
+        bankTransactionId: bankTransaction.id,
+        date: new Date(date),
+        remark: remark,
+        type: type,
+        credit: parseFloat(credit),
+        supplierId: supplierId,
+      }
+    });
+    
+    // Create second transaction
+    const secondTransaction = await prisma.cATransaction.create({
+      data:{
+        chartofAccountId: chartofAccountId,
+        date: new Date(date),
+        remark: remark,
+        type: type,
+        debit: parseFloat(debit),
+        supplierId: supplierId,
+      }
+    });
+
+    const createdDeclaration = await prisma.declaration.create({
+      data: {
+        number,
+        date: new Date(date),
+        paidAmount,
+      },
+    });    
+
+        const newCustomPaymentLog = await prisma.customTaxPaymentLog.create({
+          data: {
+            paymentId: createdDeclaration.id,
+            caTransactionId1: firstTransaction.id, // Use the ID of the first transaction
+            caTransactionId2: secondTransaction.id, // Use the ID of the second transaction
+            bankTransactionId: bankTransaction.id,
+          },
+        });
+
+    res.json(createdDeclaration);
+  } catch (error) {
+    console.error("Error creating custom tax payment:", error);
+    res.status(500).send("Internal Server Error");
+  }
+}
+
+async function deleteCustomTaxPayment(req, res) {
+  try {
+    const { paymentId } = req.params;
+
+    const paymentDetails = await prisma.customTaxPaymentLog.findFirst({
+      where: { paymentId: paymentId },
+      include: {
+        caTransaction1: true,
+        caTransaction2: true,
+        bankTransaction: true,
+      }
+    });
+    
+    const { caTransaction1, caTransaction2, bankTransaction } = paymentDetails;
+
+    await prisma.customTaxPaymentLog.deleteMany({
+          where: { paymentId: paymentId }
+        });
+    
+    const deletedDeclaration = await prisma.declaration.delete({ where: { id: paymentId } });
+    
+    await prisma.cATransaction.deleteMany({
+      where: {
+        OR: [
+          { id: caTransaction1.id },
+          { id: caTransaction2.id }
+        ]
+      }
+    });
+
+    const subsequentBankTransactions = await prisma.bankTransaction.findMany({
+      where: {
+        bankId: bankTransaction.bankId,
+        createdAt: { gt: bankTransaction.createdAt }
+      }
+    });
+
+    await Promise.all(
+      subsequentBankTransactions.map(async (transaction) => {
+        await prisma.bankTransaction.update({
+          where: { id: transaction.id },
+          data: { balance: transaction.balance + bankTransaction.payment }
+        });
+      })
+    );
+    
+    await prisma.bankTransaction.delete({ where: { id: bankTransaction.id } });
+
+    res.json(deletedDeclaration);
+  } catch (error) {
+    console.error("Error deleting transit payment:", error);
+    res.status(500).send("Internal Server Error");
+  }
+}
+
 module.exports = {
   getDeclarationById,
   updateDeclaration,
@@ -676,4 +884,6 @@ module.exports = {
   updateProductDeclaration,
   deleteProductDeclaration,
   createProductDeclaration,
+  createCustomTaxPayment,
+  deleteCustomTaxPayment
 };

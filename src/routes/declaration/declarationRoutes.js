@@ -45,4 +45,14 @@ router.post('/declaration-detail', (req, res) => {
   authenticate(req, res, () => declarationController.createProductDeclaration(req, res));
 });
 
+router.post('/declarations/custom-tax-payment', (req, res) => {
+  req.requiredPermissions = ['CreateCustomTaxPayment'];
+  authenticate(req, res, () => declarationController.createCustomTaxPayment(req, res));
+});
+
+router.delete('/declarations/custom-tax-payment/:paymentId', (req, res) => {
+  req.requiredPermissions = ['CreateCustomTaxPayment'];
+  authenticate(req, res, () => declarationController.deleteCustomTaxPayment(req, res));
+});
+
 module.exports = router;

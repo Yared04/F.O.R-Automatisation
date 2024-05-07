@@ -32,7 +32,7 @@ router.post("/purchases/transit-fee", (req, res) => {
 router.post("/purchases/esl-custom", (req, res) => {
   req.requiredPermissions = ["CreateEslCustom"];
   authenticate(req, res, () =>
-    eslCustomController.createCustomTaxPayment(req, res)
+    eslCustomController.createEslCustom(req, res)
   );
 });
 router.get("/purchases/:id", (req, res) => {
