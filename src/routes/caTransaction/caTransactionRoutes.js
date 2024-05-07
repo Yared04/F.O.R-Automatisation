@@ -87,4 +87,9 @@ router.get("/ca-transactions/:id", (req, res) => {
   );
 });
 
+router.delete("/ca-transactions/esl-payment/:paymentId", (req, res) => {
+  req.requiredPermissions = ["DeleteEslPayment"];
+  authenticate(req, res, () => eslCustomController.deleteEslPayment(req, res));
+});
+
 module.exports = router;
