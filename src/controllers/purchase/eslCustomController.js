@@ -1,6 +1,6 @@
 const prisma = require("../../database");
 
-async function createCustomTaxPayment(req, res) {
+async function createEslCustom(req, res) {
   try {
     const { date, cost, paidAmount, type, purchaseId } = req.body;
     const customTax = await prisma.eSL.create({
@@ -245,7 +245,7 @@ async function deleteEslPayment(req, res) {
 }
 
 module.exports = {
-  createCustomTaxPayment,
+  createEslCustom,
   createESLPayment,
   deleteEslPayment
 };
