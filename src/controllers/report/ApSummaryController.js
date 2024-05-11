@@ -8,27 +8,48 @@ async function generateApAgingSummary(req, res) {
 
     // Use the provided end date or default to the current date
     const currentDate = endDate ? new Date(endDate) : new Date();
-    console.log(endDate)
-
-    // Find the Chart of Account for Accounts Receivable (A/P)
-    const arChartOfAccount = await prisma.chartOfAccount.findFirst({
-      where: {
-        name: "Accounts Payable (A/P) - ETB",
-      },
+    
+    let accountPayableType = await prisma.accountType.findMany({
+      where:{
+        name:"Accounts Payable(A/P)"
+      }
     });
 
-    if (!arChartOfAccount) {
+    if (accountPayableType.length === 0) {
       return res
         .status(404)
         .json({
-          error: "Accounts Payable (A/P) - ETB chart of account not found.",
+          error: "No Accounts Payable (A/P) account type found.",
         });
     }
+
+    accountPayableType = accountPayableType.map(item=>item.id);
+
+    // Find the Chart of Account for Accounts Receivable (A/P)
+    let arChartOfAccount = await prisma.chartOfAccount.findMany({
+      where: {
+       accountTypeId: {
+        in:accountPayableType
+       }
+      },
+    });
+
+    if (arChartOfAccount.length === 0) {
+      return res
+        .status(404)
+        .json({
+          error: "Accounts Payable (A/P) chart of account not found.",
+        });
+    }
+
+    arChartOfAccount = arChartOfAccount.map(item=> item.id);
 
     // Find all transactions related to the Accounts Receivable (A/P) chart of account
     const arTransactions = await prisma.CATransaction.findMany({
       where: {
-        chartofAccountId: arChartOfAccount.id,
+        chartofAccountId:{
+          in: arChartOfAccount
+        },
         date: {
           lte: currentDate, // Filter transactions up to the end date
         },
@@ -76,7 +97,7 @@ function categorizeApAgingTransactions(transactions, currentDate) {
   const agingBuckets = {};
 
   transactions.forEach((transaction) => {
-    const { supplier, date, credit } = transaction;
+    const { supplier, date, credit, usdAmount, ExchangeRate  } = transaction;
     const daysDifference = Math.ceil(
       (currentDate - new Date(date)) / (1000 * 60 * 60 * 24)
     );
@@ -94,7 +115,12 @@ function categorizeApAgingTransactions(transactions, currentDate) {
       };
     }
 
-    agingBuckets[supplierKey][bucket] += credit || 0;
+    if(usdAmount) {
+      agingBuckets[supplierKey][bucket] += usdAmount * exchangeRate || 0;
+    }
+    else{
+      agingBuckets[supplierKey][bucket] += credit || 0;
+    }
   });
 
   return agingBuckets;
@@ -162,7 +188,7 @@ async function generateApAgingPDFContent(
 
     // Add table headers
     doc.fontSize(7)
-    let xOffset = 30;
+    let xOffset = 20;
     xOffset += 80;
     doc.text("Current", xOffset, 150);
     xOffset += 80;
@@ -178,8 +204,8 @@ async function generateApAgingPDFContent(
 
     doc.lineWidth(0.5); // Set line weight to 2 (adjust as needed)
 
-    doc.moveTo(30, 145).lineTo(600, 145).stroke(); // Line above the first row
-    doc.moveTo(30, 165).lineTo(600, 165).stroke(); // Line above the first row
+    doc.moveTo(20, 145).lineTo(600, 145).stroke(); // Line above the first row
+    doc.moveTo(20, 165).lineTo(600, 165).stroke(); // Line above the first row
     // Add data rows
     let yOffset = 190;
     let totalColumnSum = 0; // Total sum of the "Total" column
@@ -193,7 +219,7 @@ async function generateApAgingPDFContent(
     };
 
     Object.keys(agingBuckets).forEach((supplier) => {
-      xOffset = 30;
+      xOffset = 20;
       doc.font("Helvetica").text(supplier, xOffset, yOffset);
       xOffset += 80;
       let rowTotal = 0; // Total sum for the current row
@@ -212,20 +238,20 @@ async function generateApAgingPDFContent(
       });
       doc.text(rowTotal.toFixed(2), xOffset, yOffset); // Display row total
       totalColumnSum += rowTotal; // Accumulate row total to total column sum
-      yOffset += 20; // Move to the next row
+      yOffset += 30; // Move to the next row
     });
 
     doc
-      .moveTo(30, yOffset - 10)
+      .moveTo(20, yOffset - 10)
       .lineTo(600, yOffset - 10)
       .stroke(); // Line above the last row
     doc.lineWidth(1.5); // Set line weight to 2 (adjust as needed)
     doc
-      .moveTo(30, yOffset + 10)
-      .lineTo(600, yOffset + 10)
+      .moveTo(20, yOffset + 15)
+      .lineTo(600, yOffset + 15)
       .stroke(); // Line below the last row
     // Add totals row
-    xOffset = 30;
+    xOffset = 20;
     doc.font("Helvetica-Bold").text("Total", xOffset, yOffset);
     xOffset += 80;
     Object.keys(totals).forEach((bucket) => {

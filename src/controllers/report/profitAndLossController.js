@@ -103,7 +103,7 @@ function aggregatedTransactions(transactions) {
   };
   transactions.forEach((transaction) => {
     const { debit, credit, chartofAccount } = transaction;
-    const accountType = chartofAccount.accountType.name;
+    const accountType = chartofAccount?.accountType?.name;
 
     if (incomeAccountTypes.includes(accountType)) {
       if (aggregateTransactions.income[chartofAccount.name]) {
