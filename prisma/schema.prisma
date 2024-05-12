@@ -396,6 +396,8 @@ model CATransaction {
   supplierCredit      SupplierPaymentLog[] @relation("Transaction2")
   customTaxPaymentDebit       CustomTaxPaymentLog[] @relation("Transaction1")
   customTaxPaymentCredit      CustomTaxPaymentLog[] @relation("Transaction2")
+  expensesPaymentDebit       ExpensesPaymentLog[] @relation("Transaction1")
+  expensesPaymentCredit      ExpensesPaymentLog[] @relation("Transaction2")
   createdAt         DateTime         @default(now()) @map("created_at")
   updatedAt         DateTime         @updatedAt @map("updated_at")
 }
@@ -431,6 +433,7 @@ model BankTransaction {
   eslPaymentLogs      EslPaymentLog[]
   supplierPaymentLogs  SupplierPaymentLog[]
   customTaxPaymentLogs  CustomTaxPaymentLog[]
+  expensesPaymentLogs  ExpensesPaymentLog[]
   createdAt        DateTime        @default(now()) @map("created_at")
   updatedAt        DateTime        @updatedAt @map("updated_at")
 }
@@ -532,6 +535,16 @@ model CustomTaxPaymentLog {
   id                   String          @id @default(uuid()) @db.Uuid
   paymentId            String          @map("payment_id") @db.Uuid
   payment              Declaration       @relation(fields: [paymentId], references: [id],onDelete: Cascade)
+  caTransactionId1     String          @map("ca_transaction_id_1") @db.Uuid
+  caTransaction1       CATransaction  @relation(name: "Transaction1", fields: [caTransactionId1], references: [id],onDelete: Cascade)
+  caTransactionId2     String          @map("ca_transaction_id_2") @db.Uuid
+  caTransaction2       CATransaction  @relation(name: "Transaction2", fields: [caTransactionId2], references: [id],onDelete: Cascade)
+  bankTransactionId    String          @map("bank_transaction_id") @db.Uuid
+  bankTransaction      BankTransaction @relation(fields: [bankTransactionId], references: [id],onDelete: Cascade)
+}
+
+model ExpensesPaymentLog {
+  id                   String          @id @default(uuid()) @db.Uuid
   caTransactionId1     String          @map("ca_transaction_id_1") @db.Uuid
   caTransaction1       CATransaction  @relation(name: "Transaction1", fields: [caTransactionId1], references: [id],onDelete: Cascade)
   caTransactionId2     String          @map("ca_transaction_id_2") @db.Uuid
