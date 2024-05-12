@@ -2,6 +2,7 @@ const express = require("express");
 const caTransactionController = require("../../controllers/caTransaction/caTransactionController");
 const transitController = require("../../controllers/purchase/transitController");
 const eslCustomController = require("../../controllers/purchase/eslCustomController");
+const expensesPaymentController = require("../../controllers/purchase/expensesPaymentController");
 const authenticate = require("../../middlewares/authenticate");
 
 const router = express.Router();
@@ -90,6 +91,20 @@ router.get("/ca-transactions/:id", (req, res) => {
 router.delete("/ca-transactions/esl-payment/:paymentId", (req, res) => {
   req.requiredPermissions = ["DeleteEslPayment"];
   authenticate(req, res, () => eslCustomController.deleteEslPayment(req, res));
+});
+
+router.post("/ca-transactions/expenses-payment", (req, res) => {
+  req.requiredPermissions = ["CreateExpensesPayment"];
+  authenticate(req, res, () =>
+  expensesPaymentController.createExpensesPayment(req, res)
+  );
+});
+
+router.delete("/ca-transactions/expenses-payment/:transactionId", (req, res) => {
+  req.requiredPermissions = ["DeleteExpensesPayment"];
+  authenticate(req, res, () =>
+  expensesPaymentController.deleteExpensesPayment(req, res)
+  );
 });
 
 module.exports = router;
