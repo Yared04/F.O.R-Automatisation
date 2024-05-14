@@ -63,7 +63,7 @@ async function getProvisions(req, res) {
           },
         },
         orderBy: {
-          createdAt: "desc",
+          date: "desc",
         },
       });
     }
@@ -83,6 +83,49 @@ async function getProvisions(req, res) {
   }
 }
 
+async function getProvisionsByMonth(req, res) {
+  try {
+    const { month, year } = req.query;
+    const provisions = await prisma.provision.findMany({
+      where: {
+        date: {
+          gte: new Date(`${year}-${month}-01`),
+          lt: new Date(`${year}-${month}-31`),
+        },
+      },
+      select: {
+        id: true,
+        date: true,
+        productDeclaration: true,
+        saleDetail: {
+          select: {
+            product: true,
+            purchase: true,
+            declaration: true,
+            unitCostOfGoods: true,
+            sale: true,
+            saleQuantity: true,
+            productPurchase: {
+              select: {
+                transit: true,
+                transport: true,
+                esl: true,
+                purchaseUnitCostOfGoods: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    res.json({ items: provisions });
+  } catch (error) {
+    console.error("Error retrieving provisions:", error);
+    res.status(500).send("Internal Server Error");
+  }
+}
+
 module.exports = {
   getProvisions,
+  getProvisionsByMonth,
 };

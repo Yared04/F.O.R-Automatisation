@@ -99,15 +99,7 @@ async function getCaTransactionsByMonth(req, res) {
       where: {
         date: {
           gte: new Date(`${year}-${month}-01`),
-          lt: new Date(`${year}-${month}-31`),
-        },
-      },
-      include: {
-        chartofAccount: {
-          select: {
-            name: true,
-          },
-          debit: true,
+          lt: new Date(`${year}-${month}-30`),
         },
       },
     });
