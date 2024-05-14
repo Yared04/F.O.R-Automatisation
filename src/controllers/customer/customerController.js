@@ -124,10 +124,121 @@ async function getCustomerById(req, res) {
   }
 }
 
+async function getCustomerPayment(req, res) {
+  try {
+    const { page = 1, pageSize = 10 } = req.query;
+    const customerId = req.params.id;    
+    const totalCount = await prisma.sale.count({
+      where: {
+        customerId: customerId,
+        NOT: {
+          sales: {
+            some: {} // This ensures that at least one sale exists, effectively filtering out sales where there are no sales
+          }
+        }
+      }
+    });
+    
+    const sales = await prisma.sale.findMany({
+      where: {
+        customerId: customerId,
+        NOT: {
+          sales: {
+            some: {} // This ensures that at least one sale exists, effectively filtering out sales where there are no sales
+          }
+        }
+      },
+      select: {
+        id: true,
+        invoiceNumber: true,
+        invoiceDate: true,
+        customer: true,
+        paymentStatus: true,
+        sales: true,
+        paidAmount: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+
+      skip: (page - 1) * parseInt(pageSize, 10),
+      take: parseInt(pageSize, 10),
+    });
+
+    const totalPages = Math.ceil(totalCount / parseInt(pageSize, 10));
+
+    res.json({
+      items: sales,
+      totalCount: totalCount,
+      pageSize: parseInt(pageSize, 10),
+      currentPage: parseInt(page, 10),
+      totalPages: totalPages,
+    });
+  } catch (error) {
+    console.error("Error retrieving Sales:", error);
+    res.status(500).send("Internal Server Error");
+  }
+} 
+
+
+async function getCustomerSales(req, res) {
+  try {
+    const { page = 1, pageSize = 10 } = req.query;
+    const customerId = req.params.id;
+    
+    const totalCount = await prisma.sale.count({
+      where: {
+        customerId: customerId,
+        sales: {
+          some: {} // This ensures that at least one sale detail exists
+        }
+      }
+    });
+
+    const sales = await prisma.sale.findMany({
+      where: {
+        customerId: customerId,
+        sales: {
+          some: {} // This ensures that at least one sale detail exists
+        }
+      },
+      select: {
+        id: true,
+        invoiceNumber: true,
+        invoiceDate: true,
+        customer: true,
+        paymentStatus: true,
+        sales: true,
+        paidAmount: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      skip: (page - 1) * parseInt(pageSize, 10),
+      take: parseInt(pageSize, 10),
+    });
+
+    const totalPages = Math.ceil(totalCount / parseInt(pageSize, 10));
+
+    res.json({
+      items: sales,
+      totalCount: totalCount,
+      pageSize: parseInt(pageSize, 10),
+      currentPage: parseInt(page, 10),
+      totalPages: totalPages,
+    });
+  } catch (error) {
+    console.error("Error retrieving Sales:", error);
+    res.status(500).send("Internal Server Error");
+  }
+}
+
 module.exports = {
   getCustomers,
   createCustomer,
   updateCustomer,
   deleteCustomer,
   getCustomerById,
+  getCustomerPayment,
+  getCustomerSales
 };

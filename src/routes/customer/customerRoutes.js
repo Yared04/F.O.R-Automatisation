@@ -30,4 +30,14 @@ router.delete('/customers/:id', (req, res) => {
   authenticate(req, res, () => customerController.deleteCustomer(req, res));
 });
 
+router.get('/customers/payments/:id', (req, res) => {
+  req.requiredPermissions = ['GetCustomerById'];
+  authenticate(req, res, () => customerController.getCustomerPayment(req, res));
+});
+
+router.get('/customers/sales/:id', (req, res) => {
+  req.requiredPermissions = ['GetCustomerById'];
+  authenticate(req, res, () => customerController.getCustomerSales(req, res));
+});
+
 module.exports = router;

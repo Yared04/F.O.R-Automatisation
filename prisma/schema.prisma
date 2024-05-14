@@ -280,6 +280,10 @@ model Sale {
   paidAmount     Float?          @default(0)
   createdAt      DateTime        @default(now()) @map("created_at")
   updatedAt      DateTime        @updatedAt @map("updated_at")
+
+  costExpenses         CustomerPaymentDetail[] @relation("CustomerPaymentExpense")
+  paymentExpenses         CustomerPaymentDetail[] @relation("PaymentPaymentExpense")
+  customerPaymentLogs        CustomerPaymentLog[] 
 }
 
 model SaleDetail {
@@ -398,6 +402,8 @@ model CATransaction {
   customTaxPaymentCredit      CustomTaxPaymentLog[] @relation("Transaction2")
   expensesPaymentDebit       ExpensesPaymentLog[] @relation("Transaction1")
   expensesPaymentCredit      ExpensesPaymentLog[] @relation("Transaction2")
+  customerPaymentDebit       CustomerPaymentLog[] @relation("Transaction1")
+  customerPaymentCredit      CustomerPaymentLog[] @relation("Transaction2")
   createdAt         DateTime         @default(now()) @map("created_at")
   updatedAt         DateTime         @updatedAt @map("updated_at")
 }
@@ -434,6 +440,7 @@ model BankTransaction {
   supplierPaymentLogs  SupplierPaymentLog[]
   customTaxPaymentLogs  CustomTaxPaymentLog[]
   expensesPaymentLogs  ExpensesPaymentLog[]
+  customerPaymentLogs  CustomerPaymentLog[]
   createdAt        DateTime        @default(now()) @map("created_at")
   updatedAt        DateTime        @updatedAt @map("updated_at")
 }
@@ -552,3 +559,25 @@ model ExpensesPaymentLog {
   bankTransactionId    String          @map("bank_transaction_id") @db.Uuid
   bankTransaction      BankTransaction @relation(fields: [bankTransactionId], references: [id],onDelete: Cascade)
 }
+
+model CustomerPaymentDetail {
+  id                     String            @id @default(uuid()) @db.Uuid
+  saleId                 String            @map("sale_id") @db.Uuid
+  sale                   Sale              @relation(name: "CustomerPaymentExpense", fields: [saleId], references: [id], onDelete: Cascade)
+  paymentId              String            @map("payment_id") @db.Uuid
+  payment                Sale              @relation(name: "PaymentPaymentExpense", fields: [paymentId], references: [id], onDelete: Cascade)
+  amountPaid         Float?
+}
+
+model CustomerPaymentLog {
+  id                   String          @id @default(uuid()) @db.Uuid
+  paymentId            String          @map("payment_id") @db.Uuid
+  payment              Sale            @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  caTransactionId1     String          @map("ca_transaction_id_1") @db.Uuid
+  caTransaction1       CATransaction   @relation(name: "Transaction1", fields: [caTransactionId1], references: [id], onDelete: Cascade)
+  caTransactionId2     String          @map("ca_transaction_id_2") @db.Uuid
+  caTransaction2       CATransaction   @relation(name: "Transaction2", fields: [caTransactionId2], references: [id], onDelete: Cascade)
+  bankTransactionId    String          @map("bank_transaction_id") @db.Uuid
+  bankTransaction      BankTransaction @relation(fields: [bankTransactionId], references: [id], onDelete: Cascade)
+}
+
