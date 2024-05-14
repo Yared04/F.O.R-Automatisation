@@ -2,6 +2,7 @@ const prisma = require("../../database");
 const {
   createTransaction,
 } = require("../caTransaction/caTransactionController");
+const { deleteCustomerPayment } = require("../caTransaction/customerPaymentController");
 
 async function getSales(req, res) {
   try {
@@ -569,6 +570,12 @@ async function deleteSaleById(req, res) {
         saleId: id,
       },
     });
+
+    if(saleDetails.length === 0){
+      const deletedSale = await deleteCustomerPayment(id);
+      res.json(deletedSale);
+      return
+    }
 
     for (const saleDetail of saleDetails) {
       const productPurchase = await prisma.productPurchase.findFirst({
