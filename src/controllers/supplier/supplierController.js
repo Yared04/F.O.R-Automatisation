@@ -103,10 +103,143 @@ async function getSupplierById(req, res) {
   }
 }
 
+async function getSupplierPayment(req, res) {
+  try {
+    const { page = 1, pageSize = 10 } = req.query;
+    const supplierId = req.params.id;    
+    const totalCount = await prisma.purchase.count({
+      where: {
+        supplierId: supplierId,
+        NOT: {
+          products: {
+            some: {} // This ensures that at least one sale exists, effectively filtering out sales where there are no sales
+          }
+        }
+      }
+    });
+    
+    const purchases = await prisma.purchase.findMany({
+      where: {
+        supplierId: supplierId,
+        NOT: {
+          products: {
+            some: {} // This ensures that at least one sale exists, effectively filtering out sales where there are no sales
+          }
+        }
+      },
+      select: {
+        id: true,
+        date: true,
+        number: true,
+        truckNumber: true,
+        exchangeRate: true,
+        paymentStatus: true,
+        paidAmountETB: true,
+        paidAmountUSD: true,
+        supplier: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        products: true,
+        transports: true,
+        esls: true,
+        transits: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+
+      skip: (page - 1) * parseInt(pageSize, 10),
+      take: parseInt(pageSize, 10),
+    });
+
+    const totalPages = Math.ceil(totalCount / parseInt(pageSize, 10));
+
+    res.json({
+      items: purchases,
+      totalCount: totalCount,
+      pageSize: parseInt(pageSize, 10),
+      currentPage: parseInt(page, 10),
+      totalPages: totalPages,
+    });
+  } catch (error) {
+    console.error("Error retrieving Sales:", error);
+    res.status(500).send("Internal Server Error");
+  }
+} 
+
+async function getSupplierPurchase(req, res) {
+  try {
+    const { page = 1, pageSize = 10 } = req.query;
+    const supplierId = req.params.id;    
+    const totalCount = await prisma.purchase.count({
+      where: {
+        supplierId: supplierId,
+          products: {
+            some: {} // This ensures that at least one sale exists, effectively filtering out sales where there are no sales
+          }
+      }
+    });
+    
+    const purchases = await prisma.purchase.findMany({
+      where: {
+        supplierId: supplierId,
+          products: {
+            some: {} // This ensures that at least one sale exists, effectively filtering out sales where there are no sales
+        }
+      },
+      select: {
+        id: true,
+        date: true,
+        number: true,
+        truckNumber: true,
+        exchangeRate: true,
+        paymentStatus: true,
+        paidAmountETB: true,
+        paidAmountUSD: true,
+        supplier: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        products: true,
+        transports: true,
+        esls: true,
+        transits: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+
+      skip: (page - 1) * parseInt(pageSize, 10),
+      take: parseInt(pageSize, 10),
+    });
+
+    const totalPages = Math.ceil(totalCount / parseInt(pageSize, 10));
+
+    res.json({
+      items: purchases,
+      totalCount: totalCount,
+      pageSize: parseInt(pageSize, 10),
+      currentPage: parseInt(page, 10),
+      totalPages: totalPages,
+    });
+  } catch (error) {
+    console.error("Error retrieving purchases:", error);
+    res.status(500).send("Internal Server Error");
+  }
+} 
+
+
 module.exports = {
   getSuppliers,
   createSupplier,
   updateSupplier,
   deleteSupplier,
   getSupplierById,
+  getSupplierPayment,
+  getSupplierPurchase
 };
