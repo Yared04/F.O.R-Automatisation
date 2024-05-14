@@ -163,10 +163,139 @@ async function getDriverById(req, res) {
   }
 }
 
+async function getDriverPayment(req, res) {
+  try {
+    const { page = 1, pageSize = 10 } = req.query;
+    const driverId = req.params.id;  
+    const driver = await prisma.driver.findUnique({
+      where:{
+        id: driverId
+      }
+    })  
+    const totalCount = await prisma.transport.count({
+      where: {
+        purchase: {
+          truckNumber: driver.truckNumber
+        },
+        type: 'Payment'
+      }
+    });
+    
+    const transports = await prisma.transport.findMany({
+      where: {
+        purchase: {
+          truckNumber: driver.truckNumber
+        },
+        type: 'Payment'
+      },
+      select: {
+        id: true,
+        date: true,
+        cost: true,
+        type: true,
+        purchase: true,
+        paymentStatus: true,
+        productPurchase: {
+          select: {
+            declaration: true,
+          },
+        },
+        paidAmount: true,
+        unitTransportCost: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+
+      skip: (page - 1) * parseInt(pageSize, 10),
+      take: parseInt(pageSize, 10),
+    });
+
+    const totalPages = Math.ceil(totalCount / parseInt(pageSize, 10));
+
+    res.json({
+      items: transports,
+      totalCount: totalCount,
+      pageSize: parseInt(pageSize, 10),
+      currentPage: parseInt(page, 10),
+      totalPages: totalPages,
+    });
+  } catch (error) {
+    console.error("Error retrieving Sales:", error);
+    res.status(500).send("Internal Server Error");
+  }
+} 
+
+async function getDriverTransports(req, res) {
+  try {
+    const { page = 1, pageSize = 10 } = req.query;
+    const driverId = req.params.id;  
+    const driver = await prisma.driver.findUnique({
+      where:{
+        id: driverId
+      }
+    })  
+    const totalCount = await prisma.transport.count({
+      where: {
+        purchase: {
+          truckNumber: driver.truckNumber
+        },
+        type: 'Bill'
+      }
+    });
+    
+    const transports = await prisma.transport.findMany({
+      where: {
+        purchase: {
+          truckNumber: driver.truckNumber
+        },
+        type: 'Bill'
+      },
+      select: {
+        id: true,
+        date: true,
+        cost: true,
+        type: true,
+        purchase: true,
+        paymentStatus: true,
+        productPurchase: {
+          select: {
+            declaration: true,
+          },
+        },
+        paidAmount: true,
+        unitTransportCost: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+
+      skip: (page - 1) * parseInt(pageSize, 10),
+      take: parseInt(pageSize, 10),
+    });
+
+    const totalPages = Math.ceil(totalCount / parseInt(pageSize, 10));
+
+    res.json({
+      items: transports,
+      totalCount: totalCount,
+      pageSize: parseInt(pageSize, 10),
+      currentPage: parseInt(page, 10),
+      totalPages: totalPages,
+    });
+  } catch (error) {
+    console.error("Error retrieving Sales:", error);
+    res.status(500).send("Internal Server Error");
+  }
+} 
+
+
 module.exports = {
   getDrivers,
   createDriver,
   updateDriver,
   deleteDriver,
   getDriverById,
+  getDriverPayment,
+  getDriverTransports
 };

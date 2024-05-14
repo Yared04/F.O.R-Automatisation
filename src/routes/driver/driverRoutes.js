@@ -30,4 +30,14 @@ router.get('/drivers/:id', (req, res) => {
   authenticate(req, res, () => driverController.getDriverById(req, res));
 });
 
+router.get('/drivers/payment/:id', (req, res) => {
+  req.requiredPermissions = ['GetDriverById'];
+  authenticate(req, res, () => driverController.getDriverPayment(req, res));
+});
+
+router.get('/drivers/transport/:id', (req, res) => {
+  req.requiredPermissions = ['GetDriverById'];
+  authenticate(req, res, () => driverController.getDriverTransports(req, res));
+});
+
 module.exports = router;
