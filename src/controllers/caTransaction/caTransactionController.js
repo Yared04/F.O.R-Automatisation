@@ -95,6 +95,9 @@ async function getCaTransactions(req, res) {
 async function getCaTransactionsByMonth(req, res) {
   try {
     const { month, year } = req.query;
+    if (!month || !year) {
+      return res.status(400).send("Month and year are required");
+    }
     const caTransactions = await prisma.CATransaction.findMany({
       where: {
         date: {
