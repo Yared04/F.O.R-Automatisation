@@ -69,7 +69,6 @@ async function deleteProductCategory(req, res) {
         id: id,
       },
     });
-console.log(category)
     return res.json(category);
   } catch (error) {
     console.error("Error updating product:", error);
