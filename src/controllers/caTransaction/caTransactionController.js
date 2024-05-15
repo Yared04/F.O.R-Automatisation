@@ -911,6 +911,25 @@ async function deleteJournalEntry(req, res) {
   }
 }
 
+async function deleteCaTransaction(req, res){
+  try {
+    const id = req.params.id;
+    const caTransaction = await prisma.CATransaction.findUnique({
+      where: { id: id },
+    });
+    if (!caTransaction) {
+      return res.status(404).send("CA Transaction not found");
+    }
+    await prisma.CATransaction.delete({
+      where: { id: id },
+    });
+    res.json({ message: "CA Transaction deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting CA Transaction:", error);
+    res.status(500).send("Internal Server Error");
+  }
+}
+
 module.exports = {
   getCaTransactions,
   createCaTransaction,
@@ -921,4 +940,5 @@ module.exports = {
   createJournalEntry,
   deleteJournalEntry,
   getCaTransactionsByMonth,
+  deleteCaTransaction,
 };

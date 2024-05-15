@@ -118,4 +118,11 @@ router.delete("/ca-transactions/expenses-payment/:transactionId", (req, res) => 
   );
 });
 
+router.delete("/ca-transactions/:id", (req, res) => {
+  req.requiredPermissions = ["DeleteJournalEntry"];
+  authenticate(req, res, () =>
+    caTransactionController.deleteCaTransaction(req, res)
+  );
+})
+
 module.exports = router;
