@@ -5,78 +5,146 @@ const prisma = require("../../database");
 
 async function getCaTransactions(req, res) {
   try {
-    const { page = 1, pageSize = 10 } = req.query;
+    const { page, pageSize } = req.query;
     const totalCount = await prisma.CATransaction.count();
-    const caTransactions = await prisma.CATransaction.findMany({
-      orderBy: [
-        {
-          date: "desc",
-        },
-        {
-          supplier: {
-            name: "asc",
+    let caTransactions;
+    if (page && pageSize) {
+      caTransactions = await prisma.CATransaction.findMany({
+        orderBy: [
+          {
+            date: "desc",
           },
-        },
+          {
+            supplier: {
+              name: "asc",
+            },
+          },
 
-        {
-          createdAt: "desc",
-        },
-      ],
-      include: {
-        supplier: {
-          select: {
-            name: true,
+          {
+            createdAt: "desc",
           },
-        },
-        customer: {
-          select: {
-            firstName: true,
-            lastName: true,
+        ],
+        include: {
+          supplier: {
+            select: {
+              name: true,
+            },
           },
-        },
-        productPurchase: {
-          select: {
-            product: true,
+          customer: {
+            select: {
+              firstName: true,
+              lastName: true,
+            },
           },
-        },
-        saleDetail: {
-          select: {
-            product: true,
+          productPurchase: {
+            select: {
+              product: true,
+            },
           },
-        },
-        bankTransaction: {
-          select: {
-            bank: {
-              select: {
-                name: true,
+          saleDetail: {
+            select: {
+              product: true,
+            },
+          },
+          bankTransaction: {
+            select: {
+              bank: {
+                select: {
+                  name: true,
+                },
               },
             },
           },
-        },
-        purchase: {
-          select: {
-            number: true,
+          purchase: {
+            select: {
+              number: true,
+            },
+          },
+          sale: {
+            select: {
+              invoiceNumber: true,
+            },
+          },
+          chartofAccount: {
+            select: {
+              name: true,
+            },
+          },
+          productDeclaration: {
+            select: {
+              product: true,
+            },
           },
         },
-        sale: {
-          select: {
-            invoiceNumber: true,
+        skip: (page - 1) * parseInt(pageSize, 10),
+        take: parseInt(pageSize, 10),
+      });
+    } else {
+      caTransactions = await prisma.CATransaction.findMany({
+        orderBy: [
+          {
+            date: "desc",
+          },
+          {
+            supplier: {
+              name: "asc",
+            },
+          },
+        ],
+        include: {
+          supplier: {
+            select: {
+              name: true,
+            },
+          },
+          customer: {
+            select: {
+              firstName: true,
+              lastName: true,
+            },
+          },
+          productPurchase: {
+            select: {
+              product: true,
+            },
+          },
+          saleDetail: {
+            select: {
+              product: true,
+            },
+          },
+          bankTransaction: {
+            select: {
+              bank: {
+                select: {
+                  name: true,
+                },
+              },
+            },
+          },
+          purchase: {
+            select: {
+              number: true,
+            },
+          },
+          sale: {
+            select: {
+              invoiceNumber: true,
+            },
+          },
+          chartofAccount: {
+            select: {
+              name: true,
+            },
+          },
+          productDeclaration: {
+            select: {
+              product: true,
+            },
           },
         },
-        chartofAccount: {
-          select: {
-            name: true,
-          },
-        },
-        productDeclaration: {
-          select: {
-            product: true,
-          },
-        },
-      },
-      skip: (page - 1) * parseInt(pageSize, 10),
-      take: parseInt(pageSize, 10),
-    });
+      });
+    }
 
     const totalPages = Math.ceil(totalCount / parseInt(pageSize, 10));
     res.json({
@@ -911,7 +979,7 @@ async function deleteJournalEntry(req, res) {
   }
 }
 
-async function deleteCaTransaction(req, res){
+async function deleteCaTransaction(req, res) {
   try {
     const id = req.params.id;
     const caTransaction = await prisma.CATransaction.findUnique({

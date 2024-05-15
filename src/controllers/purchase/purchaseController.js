@@ -6,37 +6,61 @@ const { deleteSupplierPayment } = require("./supplierPaymentController");
 
 async function getPurchases(req, res) {
   try {
-    const { page = 1, pageSize = 10 } = req.query;
+    const { page, pageSize } = req.query;
     const totalCount = await prisma.purchase.count();
 
-    const purchases = await prisma.purchase.findMany({
-      select: {
-        id: true,
-        date: true,
-        number: true,
-        truckNumber: true,
-        exchangeRate: true,
-        paymentStatus: true,
-        paidAmountETB: true,
-        paidAmountUSD: true,
-        supplier: {
-          select: {
-            id: true,
-            name: true,
+    let purchases;
+    if (page && pageSize) {
+      purchases = await prisma.purchase.findMany({
+        select: {
+          id: true,
+          date: true,
+          number: true,
+          truckNumber: true,
+          exchangeRate: true,
+          paymentStatus: true,
+          paidAmountETB: true,
+          paidAmountUSD: true,
+          supplier: {
+            select: {
+              id: true,
+              name: true,
+            },
           },
+          products: true,
+          transports: true,
+          esls: true,
+          transits: true,
         },
-        products: true,
-        transports: true,
-        esls: true,
-        transits: true,
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-      skip: (page - 1) * parseInt(pageSize, 10),
-      take: parseInt(pageSize, 10),
-    });
-
+        orderBy: {
+          createdAt: "desc",
+        },
+        skip: (page - 1) * parseInt(pageSize, 10),
+        take: parseInt(pageSize, 10),
+      });
+    } else {
+      purchases = await prisma.purchase.findMany({
+        select: {
+          id: true,
+          date: true,
+          number: true,
+          truckNumber: true,
+          exchangeRate: true,
+          paymentStatus: true,
+          paidAmountETB: true,
+          paidAmountUSD: true,
+          supplier: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          products: true,
+          transports: true,
+          esls: true,
+        },
+      });
+    }
     // Recalculate total costs for each purchase
     for (const purchase of purchases) {
       let totalTransportCost = 0;
@@ -194,7 +218,7 @@ async function createPurchase(req, res) {
             ],
           },
         });
-        const p=await prisma.productDeclaration.update({
+        const p = await prisma.productDeclaration.update({
           where: {
             id: currentDeclaration.id,
           },
@@ -943,7 +967,6 @@ async function deletePurchase(req, res) {
           purchaseId: id,
         },
       });
-
 
       inventoryEntry.length > 0 &&
         (await prisma.inventory.deleteMany({
