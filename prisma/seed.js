@@ -108,6 +108,7 @@ async function seedSuppliers() {
   const suppliers = JSON.parse(suppliersData);
 
   for (const supplier of suppliers) {
+    supplier.isSeeded = true;
     const createdSupplier = await prisma.supplier.create({
       data: supplier,
     });
