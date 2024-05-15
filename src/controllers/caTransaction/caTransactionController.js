@@ -173,48 +173,6 @@ async function createBankTransaction(req, res) {
   }
 }
 
-async function createSupplierPayment(req, res) {
-  try {
-    const { date, purchases } = req.body;
-    await Promise.all(
-      purchases.map(async (purchase) => {
-        await prisma.purchase.create({
-          data: {
-            supplier: {
-              connect: {
-                id: purchase.supplier.id,
-              },
-            },
-            date: new Date(date),
-            number: purchase.number,
-            exchangeRate: purchase.exchangeRate,
-            paymentStatus: "",
-            paidAmountUSD: purchase.paidAmountUSD,
-            paidAmountETB: purchase.paidAmountETB,
-          },
-        });
-
-        await prisma.purchase.update({
-          where: { id: purchase.id },
-          data: {
-            paidAmountETB: {
-              increment: purchase.paidAmountETB, // Increment by the value of purchase.paidAmountETB
-            },
-            paidAmountUSD: {
-              increment: purchase.paidAmountUSD, // Increment by the value of purchase.paidAmountUSD
-            },
-            paymentStatus: purchase.paymentStatus,
-          },
-        });
-      })
-    );
-    res.json({ message: "Payment successful" });
-  } catch (error) {
-    console.error("Error creating supplier payment:", error);
-    res.status(500).send("Internal Server Error");
-  }
-}
-
 async function createTransaction(
   chartofAccountId,
   bankId,
@@ -958,7 +916,6 @@ module.exports = {
   createCaTransaction,
   getCaTransactionById,
   createTransaction,
-  createSupplierPayment,
   createBankTransaction,
   generateCaTransactionSummary,
   createJournalEntry,

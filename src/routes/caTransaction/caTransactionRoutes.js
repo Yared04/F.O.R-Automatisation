@@ -4,6 +4,7 @@ const transitController = require("../../controllers/purchase/transitController"
 const eslCustomController = require("../../controllers/purchase/eslCustomController");
 const expensesPaymentController = require("../../controllers/purchase/expensesPaymentController");
 const customerPaymentController = require("../../controllers/caTransaction/customerPaymentController");
+const supplierPaymentController = require("../../controllers/purchase/supplierPaymentController");
 const authenticate = require("../../middlewares/authenticate");
 
 const router = express.Router();
@@ -33,7 +34,7 @@ router.post("/ca-transactions", (req, res) => {
 router.post("/ca-transactions/supplier-payment", (req, res) => {
   req.requiredPermissions = ["CreateSupplierPayment"];
   authenticate(req, res, () =>
-    caTransactionController.createSupplierPayment(req, res)
+    supplierPaymentController.createSupplierPayment(req, res)
   );
 });
 
