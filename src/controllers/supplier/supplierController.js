@@ -77,6 +77,17 @@ async function deleteSupplier(req, res) {
   try {
     const SupplierId = req.params.id;
 
+    const supplier = await prisma.supplier.findUnique({
+      where: { id: SupplierId },
+    });
+
+    if(supplier.isSeeded){
+      return res.status(400).json({
+        error:
+          "You can not delete this supplier since it is used in operations.",
+      });
+    }
+
     const deletedSupplier = await prisma.supplier.delete({
       where: { id: SupplierId },
     });
