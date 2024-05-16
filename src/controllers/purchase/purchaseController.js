@@ -1194,6 +1194,25 @@ async function getTransiFees(req, res) {
   }
 }
 
+async function getPurchaseWaybillNumber(req, res) {
+  try {
+
+    const waybillNumber = await prisma.purchase.findFirst({
+      select: {
+        number: true
+      },
+      orderBy: {
+        number: 'desc'
+      }
+    });
+     res.json(++waybillNumber.number??0);
+  }
+   catch (error) {
+    console.error("Error: ", error);
+    res.status(500).send(error.message);
+  }
+}
+
 module.exports = {
   getPurchases,
   createPurchase,
@@ -1206,4 +1225,5 @@ module.exports = {
   getTransportCosts,
   getEslCosts,
   getTransiFees,
+  getPurchaseWaybillNumber
 };
