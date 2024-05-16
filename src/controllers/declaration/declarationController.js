@@ -5,7 +5,7 @@ const {
 
 async function getDeclarations(req, res) {
   try {
-    const { page = 1, pageSize = 10 } = req.query;
+    const { page, pageSize } = req.query;
 
     if (page && pageSize) {
       const totalCount = await prisma.declaration.count();
@@ -230,22 +230,23 @@ async function updateDeclaration(req, res) {
     const { number, date } = req.body; // Extract updated data from request body
 
     const payment = await prisma.declaration.findUnique({
-      where:{
-        id: id
-      }
-    })
+      where: {
+        id: id,
+      },
+    });
 
-    if (payment.paidAmount !== 0 ) {
+    if (payment.paidAmount !== 0) {
       return res.status(400).json({
-        error: "You can not update declaration number and date of custom tax payment.",
+        error:
+          "You can not update declaration number and date of custom tax payment.",
       });
     }
 
     const existingDeclaration = await prisma.declaration.findFirst({
       where: {
         number: number,
-        paidAmount: 0
-      }
+        paidAmount: 0,
+      },
     });
 
     if (existingDeclaration && existingDeclaration.id !== id) {
@@ -291,13 +292,13 @@ async function deleteDeclaration(req, res) {
     const productDeclarations = await prisma.productDeclaration.findMany({
       where: {
         declarationId: id,
-      }
-    })
+      },
+    });
 
-    productDeclarations.forEach(async element => {
+    productDeclarations.forEach(async (element) => {
       await prisma.cATransaction.deleteMany({
-        where: {productDeclarationId: element.id}
-      })
+        where: { productDeclarationId: element.id },
+      });
     });
 
     // Delete the associated product declarations
@@ -314,51 +315,52 @@ async function deleteDeclaration(req, res) {
     //   },
     // });
 
-    
     const paymentDetails = await prisma.customTaxPaymentLog.findFirst({
       where: { paymentId: id },
       include: {
         caTransaction1: true,
         caTransaction2: true,
         bankTransaction: true,
-      }
+      },
     });
-    if(paymentDetails){
-    const { caTransaction1, caTransaction2, bankTransaction } = paymentDetails;
+    if (paymentDetails) {
+      const { caTransaction1, caTransaction2, bankTransaction } =
+        paymentDetails;
 
-    await prisma.customTaxPaymentLog.deleteMany({
-          where: { paymentId: id }
-        });
-        
-    await prisma.cATransaction.deleteMany({
-      where: {
-        OR: [
-          { id: caTransaction1.id },
-          { id: caTransaction2.id }
-        ]
-      }
+      await prisma.customTaxPaymentLog.deleteMany({
+        where: { paymentId: id },
+      });
+
+      await prisma.cATransaction.deleteMany({
+        where: {
+          OR: [{ id: caTransaction1.id }, { id: caTransaction2.id }],
+        },
+      });
+
+      const subsequentBankTransactions = await prisma.bankTransaction.findMany({
+        where: {
+          bankId: bankTransaction.bankId,
+          createdAt: { gt: bankTransaction.createdAt },
+        },
+      });
+
+      await Promise.all(
+        subsequentBankTransactions.map(async (transaction) => {
+          await prisma.bankTransaction.update({
+            where: { id: transaction.id },
+            data: { balance: transaction.balance + bankTransaction.payment },
+          });
+        })
+      );
+
+      await prisma.bankTransaction.delete({
+        where: { id: bankTransaction.id },
+      });
+    }
+
+    const deletedDeclaration = await prisma.declaration.delete({
+      where: { id: id },
     });
-
-    const subsequentBankTransactions = await prisma.bankTransaction.findMany({
-      where: {
-        bankId: bankTransaction.bankId,
-        createdAt: { gt: bankTransaction.createdAt }
-      }
-    });
-
-    await Promise.all(
-      subsequentBankTransactions.map(async (transaction) => {
-        await prisma.bankTransaction.update({
-          where: { id: transaction.id },
-          data: { balance: transaction.balance + bankTransaction.payment }
-        });
-      })
-    );
-    
-    await prisma.bankTransaction.delete({ where: { id: bankTransaction.id } });
-  }
-
-  const deletedDeclaration = await prisma.declaration.delete({ where: { id: id } });
 
     res.json(deletedDeclaration);
   } catch (error) {
@@ -459,7 +461,6 @@ async function updateProductDeclaration(req, res) {
       },
     });
 
-
     let chartOfAccounts = [];
     let suppliers = [];
     try {
@@ -483,21 +484,20 @@ async function updateProductDeclaration(req, res) {
     );
 
     const productDeclarations = await prisma.productDeclaration.findMany({
-      where: {declarationId: updatedProductDeclaration.declarationId}
-    })
+      where: { declarationId: updatedProductDeclaration.declarationId },
+    });
 
     const totalTax = productDeclarations.reduce((total, declaration) => {
       return total + declaration.totalIncomeTax;
-    }, 0); 
-
+    }, 0);
 
     const existingDebitTransaction = await prisma.cATransaction.findFirst({
       where: {
         AND: [
           { productDeclarationId: updatedProductDeclaration.id },
-          { chartofAccountId: incomeTaxExpense.id }
-        ]
-      }
+          { chartofAccountId: incomeTaxExpense.id },
+        ],
+      },
     });
 
     // If a matching record is found, update it
@@ -506,26 +506,28 @@ async function updateProductDeclaration(req, res) {
         where: { id: existingDebitTransaction.id }, // Specify the ID of the found record
         data: {
           debit: updatedProductDeclaration.totalIncomeTax,
-        }
+        },
       });
     }
 
-   const existingTransaction = await prisma.cATransaction.findFirst({
-      where:{
+    const existingTransaction = await prisma.cATransaction.findFirst({
+      where: {
         AND: [
-       { declarationId: updatedProductDeclaration.declarationId},
-        {chartofAccountId: accountsPayable.id},]
-      }
-    })
+          { declarationId: updatedProductDeclaration.declarationId },
+          { chartofAccountId: accountsPayable.id },
+        ],
+      },
+    });
 
-    if(existingTransaction){
+    if (existingTransaction) {
       await prisma.cATransaction.update({
         where: {
-          id: existingTransaction.id
-        }, data:{
+          id: existingTransaction.id,
+        },
+        data: {
           credit: totalTax,
-        }
-      })
+        },
+      });
     }
 
     res.json(updatedProductDeclaration);
@@ -585,28 +587,31 @@ async function deleteProductDeclaration(req, res) {
       (account) => account.name === "Accounts Payable (A/P) - ETB"
     );
 
-
-   const existingTransaction = await prisma.cATransaction.findFirst({
-      where:{
+    const existingTransaction = await prisma.cATransaction.findFirst({
+      where: {
         AND: [
-       { declarationId: existingProductDeclaration.declarationId},
-        {chartofAccountId: accountsPayable.id},]
-      }
-    })
+          { declarationId: existingProductDeclaration.declarationId },
+          { chartofAccountId: accountsPayable.id },
+        ],
+      },
+    });
 
-    if(existingTransaction){
+    if (existingTransaction) {
       await prisma.cATransaction.update({
         where: {
-          id: existingTransaction.id
-        }, data:{
-          credit: (existingTransaction.credit - existingProductDeclaration.totalIncomeTax),
-        }
-      })
+          id: existingTransaction.id,
+        },
+        data: {
+          credit:
+            existingTransaction.credit -
+            existingProductDeclaration.totalIncomeTax,
+        },
+      });
     }
 
     await prisma.cATransaction.deleteMany({
-      where: {productDeclarationId: id}
-    })
+      where: { productDeclarationId: id },
+    });
     // Delete the ProductDeclaration
     const deletedProductDeclaration = await prisma.productDeclaration.delete({
       where: { id: id },
@@ -640,7 +645,7 @@ async function createProductDeclaration(req, res) {
       },
       include: {
         product: true,
-        declaration: true
+        declaration: true,
       },
     });
 
@@ -671,12 +676,12 @@ async function createProductDeclaration(req, res) {
     );
 
     const productDeclarations = await prisma.productDeclaration.findMany({
-      where: {declarationId: declarationId}
-    })
+      where: { declarationId: declarationId },
+    });
 
     const totalTax = productDeclarations.reduce((total, declaration) => {
       return total + declaration.totalIncomeTax;
-    }, 0); 
+    }, 0);
 
     await createTransaction(
       incomeTaxExpense.id,
@@ -696,27 +701,27 @@ async function createProductDeclaration(req, res) {
       null,
       null,
       null,
-      productDeclaration.id,
+      productDeclaration.id
     );
-
 
     const existingTransaction = await prisma.cATransaction.findFirst({
       where: {
         AND: [
-          { declarationId: productDeclaration.declarationId},
-          { chartofAccountId: accountsPayable.id}
-        ]
-      }
-    })
+          { declarationId: productDeclaration.declarationId },
+          { chartofAccountId: accountsPayable.id },
+        ],
+      },
+    });
 
-    if(existingTransaction){
+    if (existingTransaction) {
       await prisma.cATransaction.update({
-        where:{
-          id: existingTransaction.id
-        }, data:{
+        where: {
+          id: existingTransaction.id,
+        },
+        data: {
           credit: totalTax,
-        }
-      })
+        },
+      });
     }
 
     res.json(productDeclaration);
@@ -726,23 +731,22 @@ async function createProductDeclaration(req, res) {
   }
 }
 
-async function createCustomTaxPayment(req, res){
-
-const {
-  bankId,
-  date,
-  remark,
-  credit,
-  debit,
-  supplierId,
-  type,
-  chartofAccountId,
-  number,
-  paidAmount,
-  payee,
-  payment,
-  deposit
-} = req.body;
+async function createCustomTaxPayment(req, res) {
+  const {
+    bankId,
+    date,
+    remark,
+    credit,
+    debit,
+    supplierId,
+    type,
+    chartofAccountId,
+    number,
+    paidAmount,
+    payee,
+    payment,
+    deposit,
+  } = req.body;
   try {
     const bankTransactions = await prisma.bankTransaction.findMany({
       where: { bankId: bankId },
@@ -756,8 +760,8 @@ const {
       : null;
 
     const bankTransaction = await prisma.bankTransaction.create({
-      data:{
-        bankId:bankId,
+      data: {
+        bankId: bankId,
         payee: supplier ? supplier.name : null,
         payment: parseFloat(payment),
         deposit: parseFloat(deposit),
@@ -765,35 +769,35 @@ const {
         chartofAccountId: chartofAccountId,
         date: new Date(date),
         balance: bankTransactions[0]
-        ? parseFloat(Number(bankTransactions[0].balance)) -
-          parseFloat(Number(payment)) +
-          parseFloat(Number(deposit))
-        : parseFloat(Number(deposit)) - parseFloat(Number(payment)),
-      }
+          ? parseFloat(Number(bankTransactions[0].balance)) -
+            parseFloat(Number(payment)) +
+            parseFloat(Number(deposit))
+          : parseFloat(Number(deposit)) - parseFloat(Number(payment)),
+      },
     });
 
     // Create first transaction
     const firstTransaction = await prisma.cATransaction.create({
-      data:{
+      data: {
         bankTransactionId: bankTransaction.id,
         date: new Date(date),
         remark: remark,
         type: type,
         credit: parseFloat(credit),
         supplierId: supplierId,
-      }
+      },
     });
-    
+
     // Create second transaction
     const secondTransaction = await prisma.cATransaction.create({
-      data:{
+      data: {
         chartofAccountId: chartofAccountId,
         date: new Date(date),
         remark: remark,
         type: type,
         debit: parseFloat(debit),
         supplierId: supplierId,
-      }
+      },
     });
 
     const createdDeclaration = await prisma.declaration.create({
@@ -802,16 +806,16 @@ const {
         date: new Date(date),
         paidAmount,
       },
-    });    
+    });
 
-        const newCustomPaymentLog = await prisma.customTaxPaymentLog.create({
-          data: {
-            paymentId: createdDeclaration.id,
-            caTransactionId1: firstTransaction.id, // Use the ID of the first transaction
-            caTransactionId2: secondTransaction.id, // Use the ID of the second transaction
-            bankTransactionId: bankTransaction.id,
-          },
-        });
+    const newCustomPaymentLog = await prisma.customTaxPaymentLog.create({
+      data: {
+        paymentId: createdDeclaration.id,
+        caTransactionId1: firstTransaction.id, // Use the ID of the first transaction
+        caTransactionId2: secondTransaction.id, // Use the ID of the second transaction
+        bankTransactionId: bankTransaction.id,
+      },
+    });
 
     res.json(createdDeclaration);
   } catch (error) {
@@ -830,42 +834,41 @@ async function deleteCustomTaxPayment(req, res) {
         caTransaction1: true,
         caTransaction2: true,
         bankTransaction: true,
-      }
+      },
     });
-    
+
     const { caTransaction1, caTransaction2, bankTransaction } = paymentDetails;
 
     await prisma.customTaxPaymentLog.deleteMany({
-          where: { paymentId: paymentId }
-        });
-    
-    const deletedDeclaration = await prisma.declaration.delete({ where: { id: paymentId } });
-    
+      where: { paymentId: paymentId },
+    });
+
+    const deletedDeclaration = await prisma.declaration.delete({
+      where: { id: paymentId },
+    });
+
     await prisma.cATransaction.deleteMany({
       where: {
-        OR: [
-          { id: caTransaction1.id },
-          { id: caTransaction2.id }
-        ]
-      }
+        OR: [{ id: caTransaction1.id }, { id: caTransaction2.id }],
+      },
     });
 
     const subsequentBankTransactions = await prisma.bankTransaction.findMany({
       where: {
         bankId: bankTransaction.bankId,
-        createdAt: { gt: bankTransaction.createdAt }
-      }
+        createdAt: { gt: bankTransaction.createdAt },
+      },
     });
 
     await Promise.all(
       subsequentBankTransactions.map(async (transaction) => {
         await prisma.bankTransaction.update({
           where: { id: transaction.id },
-          data: { balance: transaction.balance + bankTransaction.payment }
+          data: { balance: transaction.balance + bankTransaction.payment },
         });
       })
     );
-    
+
     await prisma.bankTransaction.delete({ where: { id: bankTransaction.id } });
 
     res.json(deletedDeclaration);
@@ -885,5 +888,5 @@ module.exports = {
   deleteProductDeclaration,
   createProductDeclaration,
   createCustomTaxPayment,
-  deleteCustomTaxPayment
+  deleteCustomTaxPayment,
 };
