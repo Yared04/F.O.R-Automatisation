@@ -560,6 +560,25 @@ async function getSaleById(req, res) {
   }
 }
 
+async function getSalesInvoiceNumber(req, res) {
+  try {
+
+    const invoiceNumber = await prisma.sale.findFirst({
+      select: {
+        invoiceNumber: true
+      },
+      orderBy: {
+        invoiceNumber: 'desc'
+      }
+    });
+     res.json(++invoiceNumber.invoiceNumber??0);
+  }
+   catch (error) {
+    console.error("Error: ", error);
+    res.status(500).send(error.message);
+  }
+}
+
 async function deleteSaleById(req, res) {
   try {
     const { id } = req.params;
@@ -652,4 +671,5 @@ module.exports = {
   getSaleDetailById,
   deleteSaleById,
   updateSale,
+  getSalesInvoiceNumber
 };

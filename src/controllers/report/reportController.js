@@ -37,9 +37,26 @@ async function generateCustomerAgingSummary(req, res) {
       },
     });
 
+    const customerIds = arTransactions.map((transaction) => transaction.customer.id);
+    console.log(customerIds);
+
+    const paidAmounts = await prisma.sale.findMany({
+      where: {
+        customerId: {
+          in: customerIds,
+        },
+        paidAmount: true,
+      },
+      include:{
+        customer: true,
+      }
+    });
+
+
     // Categorize transactions into aging buckets
     const agingBuckets = categorizeARAgingTransactions(
       arTransactions,
+      paidAmounts,
       currentDate
     );
 
@@ -71,7 +88,7 @@ async function generateCustomerAgingSummary(req, res) {
   }
 }
 
-function categorizeARAgingTransactions(transactions, currentDate) {
+function categorizeARAgingTransactions(transactions,painAmount, currentDate) {
   const agingBuckets = {};
 
   transactions.forEach((transaction) => {
@@ -95,6 +112,30 @@ function categorizeARAgingTransactions(transactions, currentDate) {
 
     agingBuckets[customerKey][bucket] += credit || 0;
   });
+  paidAmount.forEach(
+    (sale) => {
+      const { customer, createdAt, paidAmount } = sale;
+      const daysDifference = Math.ceil(
+        (currentDate - new Date(createdAt)) / (1000 * 60 * 60 * 24)
+      );
+      const bucket = getBucket(daysDifference);
+  
+      const customerKey = `${customer.firstName} ${customer.lastName}`;
+  
+      if (!agingBuckets[customerKey]) {
+        agingBuckets[customerKey] = {
+          current: 0,
+          days1to30: 0,
+          days31to60: 0,
+          days61to90: 0,
+          over90: 0,
+        };
+      }
+  
+      agingBuckets[customerKey][bucket] -= paidAmount || 0;
+    }
+  )
+
 
   return agingBuckets;
 }

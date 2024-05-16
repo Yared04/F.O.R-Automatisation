@@ -20,6 +20,12 @@ router.get('/sales/:id', (req, res) => {
   authenticate(req, res, () => salesController.getSaleById(req, res));
 });
 
+router.get('/sales/invoice-number/latest', (req, res) => {
+  
+  req.requiredPermissions = ['GetSalesInvoiceNumber'];
+  authenticate(req, res, () => salesController.getSalesInvoiceNumber(req, res));
+});
+
 router.delete('/sales/:id', (req, res) => {
   req.requiredPermissions = ['DeleteSale'];
   authenticate(req, res, () => salesController.deleteSaleById(req, res));

@@ -106,5 +106,8 @@
   { "name": "CreateJournalEntry" },
   { "name": "DeleteJournalEntry" },
   { "name": "GenerateProfitAndLossReport" },
-  { "name": "GenerateBalanceSheetReport" }
+  { "name": "GenerateBalanceSheetReport" },
+  {"name":"GetSalesInvoiceNumber"},
+  {"name":"GetPurchaseWaybillNumber"}
+
 ]

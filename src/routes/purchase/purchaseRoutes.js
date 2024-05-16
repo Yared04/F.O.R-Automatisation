@@ -23,6 +23,12 @@ router.post("/purchases/transport-payment", (req, res) => {
   );
 });
 
+router.get('/purchases/waybill-number/latest', (req, res) => {
+  
+  req.requiredPermissions = ['GetPurchaseWaybillNumber'];
+  authenticate(req, res, () => purchaseController.getPurchaseWaybillNumber(req, res));
+});
+
 router.post("/purchases/transit-fee", (req, res) => {
   req.requiredPermissions = ["CreateTransitFee"];
   authenticate(req, res, () => transitController.createTransitFee(req, res));
