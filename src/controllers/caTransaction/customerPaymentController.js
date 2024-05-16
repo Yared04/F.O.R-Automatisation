@@ -1,23 +1,23 @@
 const prisma = require("../../database");
 
-async function createTransportPayment(req, res) {
+async function createCustomerPayment(req, res) {
+  const {
+    bankId,
+    date,
+    remark,
+    credit,
+    debit,
+    customerId,
+    type,
+    chartofAccountId,
+    payee,
+    foreignCurrency,
+    payment,
+    deposit,
+    exchangeRate,
+    sales,
+  } = req.body;
   try {
-    const {
-      bankId,
-      date,
-      remark,
-      credit,
-      debit,
-      supplierId,
-      purchaseId,
-      type,
-      chartofAccountId,
-      transports,
-      payee,
-      payment,
-      deposit,
-    } = req.body;
-
     const bankTransactions = await prisma.bankTransaction.findMany({
       where: { bankId: bankId },
       orderBy: { createdAt: "desc" },
@@ -53,8 +53,8 @@ async function createTransportPayment(req, res) {
         date: new Date(date),
         remark: remark,
         type: type,
-        credit: parseFloat(credit),
-        supplierId: supplierId,
+        debit: parseFloat(debit),
+        customerId: customerId,
       },
     });
 
@@ -65,53 +65,46 @@ async function createTransportPayment(req, res) {
         date: new Date(date),
         remark: remark,
         type: type,
-        debit: parseFloat(debit),
-        supplierId: supplierId,
+        credit: parseFloat(credit),
+        customerId: customerId,
       },
     });
 
     await Promise.all(
-      transports.map(async (transport) => {
-        // Create a new payment record
-        const newPayment = await prisma.transport.create({
+      sales.map(async (sale) => {
+        const newPayment = await prisma.sale.create({
           data: {
-            date: new Date(date),
-            paidAmount: parseFloat(transport.paidAmount),
-            type: "Payment",
-            paymentStatus: "",
-            purchase: {
+            customer: {
               connect: {
-                id: transport.purchase.id,
+                id: sale.customer.id,
               },
             },
+            invoiceDate: new Date(date),
+            invoiceNumber: sale.invoiceNumber,
+            paymentStatus: "",
+            paidAmount: sale.paidAmount,
           },
         });
 
-        // Update existing transport record with new paid amount and payment status
-        const existingtransport = await prisma.transport.findUnique({
-          where: { id: transport.id },
-        });
-        const newPaidAmount =
-          existingtransport.paidAmount + parseFloat(transport.paidAmount);
-        await prisma.transport.update({
-          where: { id: transport.id },
+        await prisma.sale.update({
+          where: { id: sale.id },
           data: {
-            paymentStatus: transport.paymentStatus,
-            paidAmount: newPaidAmount,
+            paidAmount: {
+              increment: sale.paidAmount,
+            },
+            paymentStatus: sale.paymentStatus,
           },
         });
 
-        // Create entry in transportPaymentDetail table
-        await prisma.transportPaymentDetail.create({
+        await prisma.customerPaymentDetail.create({
           data: {
-            transportId: transport.id,
+            saleId: sale.id,
             paymentId: newPayment.id,
-            amountPaid: parseFloat(transport.paidAmount),
+            amountPaid: parseFloat(sale.paidAmount),
           },
         });
 
-        // Create entries in transportPaymentLog
-        const newtransportPaymentLog = await prisma.transportPaymentLog.create({
+        const newPaymentLog = await prisma.customerPaymentLog.create({
           data: {
             paymentId: newPayment.id,
             caTransactionId1: firstTransaction.id, // Use the ID of the first transaction
@@ -124,16 +117,17 @@ async function createTransportPayment(req, res) {
 
     res.json({ message: "Payment successful" });
   } catch (error) {
-    console.error("Error creating transport payment:", error);
+    console.error("Error creating customer payment:", error);
     res.status(500).send("Internal Server Error");
   }
 }
 
-async function deleteTransportPayment(req, res) {
+async function deleteCustomerPayment(paymentId) {
   try {
-    const { paymentId } = req.params;
+    // const { paymentId } = req.params;
 
-    const paymentDetails = await prisma.transportPaymentLog.findFirst({
+    // Retrieve the payment details, including associated transactions and logs
+    const paymentDetails = await prisma.customerPaymentLog.findFirst({
       where: { paymentId: paymentId },
       include: {
         caTransaction1: true,
@@ -145,7 +139,7 @@ async function deleteTransportPayment(req, res) {
     // Extract relevant data
     const { caTransaction1, caTransaction2, bankTransaction } = paymentDetails;
 
-    const paymentLogs = await prisma.transportPaymentLog.findMany({
+    const paymentLogs = await prisma.customerPaymentLog.findMany({
       where: {
         caTransactionId1: caTransaction1.id,
         caTransactionId2: caTransaction2.id,
@@ -153,43 +147,42 @@ async function deleteTransportPayment(req, res) {
       },
     });
 
-    const transportPaymentDetails =
-      await prisma.transportPaymentDetail.findMany({
-        where: {
-          paymentId: {
-            in: paymentLogs.map((log) => log.paymentId),
-          },
+    const customerPaymentDetails = await prisma.customerPaymentDetail.findMany({
+      where: {
+        paymentId: {
+          in: paymentLogs.map((log) => log.paymentId),
         },
-      });
+      },
+    });
 
     await Promise.all(
-      transportPaymentDetails.map(async (paymentDetail) => {
-        const transportExpense = await prisma.transport.findUnique({
-          where: { id: paymentDetail.transportId },
+      customerPaymentDetails.map(async (paymentDetail) => {
+        const customerExpense = await prisma.sale.findUnique({
+          where: { id: paymentDetail.saleId },
         });
-        await prisma.transport.update({
-          where: { id: transportExpense.id },
+        await prisma.sale.update({
+          where: { id: customerExpense.id },
           data: {
-            paidAmount: transportExpense.paidAmount - paymentDetail.amountPaid,
+            paidAmount: customerExpense.paidAmount - paymentDetail.amountPaid,
             paymentStatus:
-              transportExpense.paidAmount - paymentDetail.amountPaid === 0
+              customerExpense.paidAmount - paymentDetail.amountPaid === 0
                 ? "Incomplete"
                 : "Partially Complete",
           },
         });
 
         // Delete the payment detail entries
-        await prisma.transportPaymentDetail.deleteMany({
+        await prisma.customerPaymentDetail.deleteMany({
           where: { paymentId: paymentDetail.paymentId },
         });
 
         // Delete the payment log entries
-        await prisma.transportPaymentLog.deleteMany({
+        await prisma.customerPaymentLog.deleteMany({
           where: { paymentId: paymentDetail.paymentId },
         });
 
-        // Delete the transport payment itself
-        await prisma.transport.delete({
+        // Delete the customer payment itself
+        await prisma.sale.delete({
           where: { id: paymentDetail.paymentId },
         });
       })
@@ -213,21 +206,20 @@ async function deleteTransportPayment(req, res) {
       subsequentBankTransactions.map(async (transaction) => {
         await prisma.bankTransaction.update({
           where: { id: transaction.id },
-          data: { balance: transaction.balance + bankTransaction.payment },
+          data: { balance: transaction.balance - bankTransaction.deposit },
         });
       })
     );
 
     await prisma.bankTransaction.delete({ where: { id: bankTransaction.id } });
 
-    res.json({ message: "Transport payment deleted successfully" });
+    return { message: "customer payment deleted successfully" };
   } catch (error) {
-    console.error("Error deleting transport payment:", error);
-    res.status(500).send("Internal Server Error");
+    console.error("Error deleting customer payment:", error);
   }
 }
 
 module.exports = {
-  createTransportPayment,
-  deleteTransportPayment,
+  createCustomerPayment,
+  deleteCustomerPayment,
 };

@@ -30,4 +30,14 @@ router.get('/suppliers/:id', (req, res) => {
   authenticate(req, res, () => supplierController.getSupplierById(req, res));
 });
 
+router.get('/suppliers/payment/:id', (req, res) => {
+  req.requiredPermissions = ['GetSupplierById'];
+  authenticate(req, res, () => supplierController.getSupplierPayment(req, res));
+});
+
+router.get('/suppliers/purchase/:id', (req, res) => {
+  req.requiredPermissions = ['GetSupplierById'];
+  authenticate(req, res, () => supplierController.getSupplierPurchase(req, res));
+});
+
 module.exports = router;

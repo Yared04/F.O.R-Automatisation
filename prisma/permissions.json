@@ -109,5 +109,9 @@
   { "name": "GenerateBalanceSheetReport" },
   {"name":"GetSalesInvoiceNumber"},
   {"name":"GetPurchaseWaybillNumber"}
-
+  { "name": "DeleteTransportPayment" },
+  { "name": "DeleteTransitPayment" },
+  { "name": "DeleteEslPayment" },
+  { "name": "CreateExpensesPayment" },
+  { "name": "DeleteExpensesPayment" }
 ]

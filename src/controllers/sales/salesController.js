@@ -2,29 +2,50 @@ const prisma = require("../../database");
 const {
   createTransaction,
 } = require("../caTransaction/caTransactionController");
+const {
+  deleteCustomerPayment,
+} = require("../caTransaction/customerPaymentController");
 
 async function getSales(req, res) {
   try {
-    const { page = 1, pageSize = 10 } = req.query;
+    const { page, pageSize } = req.query;
     const totalCount = await prisma.sale.count();
 
-    const sales = await prisma.sale.findMany({
-      select: {
-        id: true,
-        invoiceNumber: true,
-        invoiceDate: true,
-        customer: true,
-        paymentStatus: true,
-        sales: true,
-        paidAmount: true,
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
+    let sales;
+    if (page && pageSize) {
+      sales = await prisma.sale.findMany({
+        select: {
+          id: true,
+          invoiceNumber: true,
+          invoiceDate: true,
+          customer: true,
+          paymentStatus: true,
+          sales: true,
+          paidAmount: true,
+        },
+        orderBy: {
+          invoiceDate: "desc",
+        },
 
-      skip: (page - 1) * parseInt(pageSize, 10),
-      take: parseInt(pageSize, 10),
-    });
+        skip: (page - 1) * parseInt(pageSize, 10),
+        take: parseInt(pageSize, 10),
+      });
+    } else {
+      sales = await prisma.sale.findMany({
+        select: {
+          id: true,
+          invoiceNumber: true,
+          invoiceDate: true,
+          customer: true,
+          paymentStatus: true,
+          sales: true,
+          paidAmount: true,
+        },
+        orderBy: {
+          invoiceDate: "desc",
+        },
+      });
+    }
 
     const totalPages = Math.ceil(totalCount / parseInt(pageSize, 10));
 
@@ -588,6 +609,12 @@ async function deleteSaleById(req, res) {
         saleId: id,
       },
     });
+
+    if (saleDetails.length === 0) {
+      const deletedSale = await deleteCustomerPayment(id);
+      res.json(deletedSale);
+      return;
+    }
 
     for (const saleDetail of saleDetails) {
       const productPurchase = await prisma.productPurchase.findFirst({
