@@ -108,7 +108,7 @@
   { "name": "GenerateProfitAndLossReport" },
   { "name": "GenerateBalanceSheetReport" },
   {"name":"GetSalesInvoiceNumber"},
-  {"name":"GetPurchaseWaybillNumber"}
+  {"name":"GetPurchaseWaybillNumber"},
   { "name": "DeleteTransportPayment" },
   { "name": "DeleteTransitPayment" },
   { "name": "DeleteEslPayment" },
