@@ -92,6 +92,20 @@ router.delete("/ca-transactions/journal-entry/:id", (req, res) => {
   );
 });
 
+router.post("/ca-transactions/journal-entry/montly-summary", (req, res) => {
+  req.requiredPermissions = ["CreateJournalEntry"];
+  authenticate(req, res, () =>
+    caTransactionController.createMonthlyJournalEntry(req, res)
+  );
+});
+
+router.delete("/ca-transactions/journal-entry/montly-summary/:id", (req, res) => {
+  req.requiredPermissions = ["DeleteJournalEntry"];
+  authenticate(req, res, () =>
+    caTransactionController.deleteMonthlyJournalEntry(req, res)
+  );
+});
+
 router.get("/ca-transactions/:id", (req, res) => {
   req.requiredPermissions = ["GetCaTransactionById"];
   authenticate(req, res, () =>
@@ -107,22 +121,25 @@ router.delete("/ca-transactions/esl-payment/:paymentId", (req, res) => {
 router.post("/ca-transactions/expenses-payment", (req, res) => {
   req.requiredPermissions = ["CreateExpensesPayment"];
   authenticate(req, res, () =>
-  expensesPaymentController.createExpensesPayment(req, res)
+    expensesPaymentController.createExpensesPayment(req, res)
   );
 });
 
-router.delete("/ca-transactions/expenses-payment/:transactionId", (req, res) => {
-  req.requiredPermissions = ["DeleteExpensesPayment"];
-  authenticate(req, res, () =>
-  expensesPaymentController.deleteExpensesPayment(req, res)
-  );
-});
+router.delete(
+  "/ca-transactions/expenses-payment/:transactionId",
+  (req, res) => {
+    req.requiredPermissions = ["DeleteExpensesPayment"];
+    authenticate(req, res, () =>
+      expensesPaymentController.deleteExpensesPayment(req, res)
+    );
+  }
+);
 
 router.delete("/ca-transactions/:id", (req, res) => {
   req.requiredPermissions = ["DeleteJournalEntry"];
   authenticate(req, res, () =>
     caTransactionController.deleteCaTransaction(req, res)
   );
-})
+});
 
 module.exports = router;

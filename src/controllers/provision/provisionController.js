@@ -86,9 +86,6 @@ async function getProvisions(req, res) {
 async function getProvisionsByMonth(req, res) {
   try {
     const { month, year } = req.query;
-    if(!month || !year) {
-      return res.status(400).send("Month and year are required.");
-    }
     const provisions = await prisma.provision.findMany({
       where: {
         date: {

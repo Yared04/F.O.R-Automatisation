@@ -163,9 +163,6 @@ async function getCaTransactions(req, res) {
 async function getCaTransactionsByMonth(req, res) {
   try {
     const { month, year } = req.query;
-    if (!month || !year) {
-      return res.status(400).send("Month and year are required");
-    }
     const caTransactions = await prisma.CATransaction.findMany({
       where: {
         date: {
@@ -906,6 +903,200 @@ async function createJournalEntry(req, res) {
   }
 }
 
+async function createMonthlyJournalEntry(req, res) {
+  try {
+    const {
+      chartofAccountId1,
+      chartofAccountId2,
+      chartofAccountId3,
+      chartofAccountId4,
+      chartofAccountId5,
+      chartofAccountId6,
+      chartofAccountId7,
+      chartofAccountId8,
+      date,
+      amount1,
+      amount2,
+      amount3,
+      amount4,
+      remark,
+      type,
+    } = req.body;
+
+    const highest = await prisma.cATransaction.findFirst({
+      where: {
+        type: "Journal Entry",
+      },
+      orderBy: {
+        number: "desc", // Order by CA transaction number in descending order
+      },
+      take: 1, // Take only the first result
+    });
+
+    const journalNumber = highest ? highest.number + 1 : 1;
+
+    const orders = [
+      {
+        _chartofAccountId1: chartofAccountId1,
+        _chartofAccountId2: chartofAccountId2,
+        amount: amount1,
+      },
+      {
+        _chartofAccountId1: chartofAccountId3,
+        _chartofAccountId2: chartofAccountId4,
+        amount: amount2,
+      },
+      {
+        _chartofAccountId1: chartofAccountId5,
+        _chartofAccountId2: chartofAccountId6,
+        amount: amount3,
+      },
+      {
+        _chartofAccountId1: chartofAccountId7,
+        _chartofAccountId2: chartofAccountId8,
+        amount: amount4,
+      },
+    ];
+
+    const transactions = [];  // Store all transactions
+
+    for (let i = 0; i < 4; i++) {
+      const { _chartofAccountId1, _chartofAccountId2, amount } = orders[i];
+      const firstTransaction = await prisma.cATransaction.create({
+        data: {
+          chartofAccountId: _chartofAccountId1,
+          date: new Date(date),
+          remark: remark,
+          type: type,
+          debit: parseFloat(amount),
+          number: journalNumber,
+        },
+        include: {
+          supplier: {
+            select: {
+              name: true,
+            },
+          },
+          customer: {
+            select: {
+              firstName: true,
+              lastName: true,
+            },
+          },
+          productPurchase: {
+            select: {
+              product: true,
+            },
+          },
+          saleDetail: {
+            select: {
+              product: true,
+            },
+          },
+          bankTransaction: {
+            select: {
+              bank: {
+                select: {
+                  name: true,
+                },
+              },
+            },
+          },
+          purchase: {
+            select: {
+              number: true,
+            },
+          },
+          sale: {
+            select: {
+              invoiceNumber: true,
+            },
+          },
+          chartofAccount: {
+            select: {
+              name: true,
+            },
+          },
+          productDeclaration: {
+            select: {
+              product: true,
+            },
+          },
+        },
+      });
+
+      const secondTransaction = await prisma.cATransaction.create({
+        data: {
+          chartofAccountId: _chartofAccountId2,
+          date: new Date(date),
+          remark: remark,
+          type: type,
+          credit: parseFloat(amount),
+          number: journalNumber,
+        },
+        include: {
+          supplier: {
+            select: {
+              name: true,
+            },
+          },
+          customer: {
+            select: {
+              firstName: true,
+              lastName: true,
+            },
+          },
+          productPurchase: {
+            select: {
+              product: true,
+            },
+          },
+          saleDetail: {
+            select: {
+              product: true,
+            },
+          },
+          bankTransaction: {
+            select: {
+              bank: {
+                select: {
+                  name: true,
+                },
+              },
+            },
+          },
+          purchase: {
+            select: {
+              number: true,
+            },
+          },
+          sale: {
+            select: {
+              invoiceNumber: true,
+            },
+          },
+          chartofAccount: {
+            select: {
+              name: true,
+            },
+          },
+          productDeclaration: {
+            select: {
+              product: true,
+            },
+          },
+        },
+      });
+
+      transactions.push(firstTransaction, secondTransaction);
+    }
+    return res.status(200).json(transactions);
+  } catch (error) {
+    console.error("Error creating journal entry:", error);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+}
+
 async function deleteJournalEntry(req, res) {
   try {
     const id = req.params.id;
@@ -979,6 +1170,38 @@ async function deleteJournalEntry(req, res) {
   }
 }
 
+async function deleteMonthlyJournalEntry(req, res) {
+  try {
+    const id = req.params.id;
+
+    const journalEntry = await prisma.cATransaction.findUnique({
+      where: {
+        id: id,
+      },
+    });
+
+    const deletedEntries = await prisma.cATransaction.findMany({
+      where: {
+        number: journalEntry.number,
+        type: "Journal Entry",
+      },
+    });
+
+    // Delete journal entries
+    await prisma.cATransaction.deleteMany({
+      where: {
+        number: journalEntry.number,
+        type: "Journal Entry",
+      },
+    });
+
+    res.json(deletedEntries);
+  } catch (error) {
+    console.error("Error deleting journal entry:", error);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+}
+
 async function deleteCaTransaction(req, res) {
   try {
     const id = req.params.id;
@@ -1009,4 +1232,6 @@ module.exports = {
   deleteJournalEntry,
   getCaTransactionsByMonth,
   deleteCaTransaction,
+  createMonthlyJournalEntry,
+  deleteMonthlyJournalEntry,
 };
