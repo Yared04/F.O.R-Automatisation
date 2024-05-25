@@ -45,7 +45,6 @@ async function generateCustomerAgingSummary(req, res) {
         customerId: {
           in: customerIds,
         },
-        paidAmount: true,
       },
       include:{
         customer: true,
@@ -88,7 +87,7 @@ async function generateCustomerAgingSummary(req, res) {
   }
 }
 
-function categorizeARAgingTransactions(transactions,painAmount, currentDate) {
+function categorizeARAgingTransactions(transactions,paidAmount, currentDate) {
   const agingBuckets = {};
 
   transactions.forEach((transaction) => {
