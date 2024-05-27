@@ -16,11 +16,9 @@ async function generateTrialBalance(req, res) {
     ]
 
     }  
-  
-
     
     if (startDate && endDate) {
-      CaFilter.createdAt = {
+      CaFilter.date = {
         gte: new Date(startDate),
         lte: new Date(endDate),
       };

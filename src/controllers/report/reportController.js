@@ -299,7 +299,7 @@ async function generateBankTransactionSummary(req, res) {
     };
 
     if (startDate && endDate) {
-      transactionFilter.createdAt = {
+      transactionFilter.date = {
         gte: new Date(startDate),
         lte: new Date(endDate),
       };

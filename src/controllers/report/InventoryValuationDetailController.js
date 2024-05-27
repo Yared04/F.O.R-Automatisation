@@ -5,6 +5,7 @@ const { Readable } = require("stream");
 async function generateInventoryValuation(req, res) {
   try {
     // find all products
+    const {endDate} = req.query;
     const products = await prisma.product.findMany({});
     // find all inventory transactions
     if (products.length === 0) {
@@ -15,9 +16,12 @@ async function generateInventoryValuation(req, res) {
         productId: {
           in: products.map((product) => product.id),
         },
+        date: {
+          lte: new Date(endDate)??new Date(),
+        },
       },
       orderBy: {
-        createdAt: "asc",
+        date: "asc",
       },
     });
 
@@ -62,8 +66,13 @@ async function generateInventoryValuation(req, res) {
             },
           },
         ],
+        AND:[{
+          date: {
+            lte: new Date(endDate)??new Date(),
+          },
+        },]
       },
-      orderBy: { createdAt: "asc" },
+      orderBy: { date: "asc" },
       include: {
         chartofAccount: {
           select: {
@@ -148,7 +157,7 @@ function clusterByProduct(caTransactions, products) {
             return JSON.stringify({
               product: product.name,
               number: ca.number,
-              date: formatDateUTCtoMMDDYYYY(ca.createdAt),
+              date: formatDateUTCtoMMDDYYYY(ca.date),
               transactionType: ca.type,
               qty:
                 -ca.saleDetail?.saleQuantity ||

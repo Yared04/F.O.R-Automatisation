@@ -29,7 +29,7 @@ async function generateBalanceSheetReport(req, res) {
     const incomeAccountTypes = ["Income", "Other Income"];
 
     if (endDate) {
-      CaFilter.createdAt = {
+      CaFilter.date = {
         lte: new Date(endDate),
       };
     }
