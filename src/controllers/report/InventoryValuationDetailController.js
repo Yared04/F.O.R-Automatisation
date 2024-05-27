@@ -5,19 +5,27 @@ const { Readable } = require("stream");
 async function generateInventoryValuation(req, res) {
   try {
     // find all products
+    const {endDate} = req.query;
     const products = await prisma.product.findMany({});
     // find all inventory transactions
     if (products.length === 0) {
       return res.status(404).json({ error: "No products found" });
     }
-    const productPurchaseTransactions = await prisma.productPurchase.findMany({
-      where: {
-        productId: {
-          in: products.map((product) => product.id),
-        },
+    let productFilter = {
+      productId: {
+        in: products.map((product) => product.id),
       },
+    };
+    if(endDate){
+      productFilter.date = {
+        lte: new Date(endDate),
+      };
+    }
+
+    const productPurchaseTransactions = await prisma.productPurchase.findMany({
+      where: productFilter,
       orderBy: {
-        createdAt: "asc",
+        date: "asc",
       },
     });
 
@@ -48,6 +56,12 @@ async function generateInventoryValuation(req, res) {
         saleDetailIds.push(tr.saleDetailId);
       }
     });
+    let caFilter = {};
+    if(endDate){
+      caFilter.date = {
+        lte: new Date(endDate),
+      };
+    }
     const caTransactions = await prisma.CATransaction.findMany({
       where: {
         OR: [
@@ -62,8 +76,9 @@ async function generateInventoryValuation(req, res) {
             },
           },
         ],
+        AND:[caFilter]
       },
-      orderBy: { createdAt: "asc" },
+      orderBy: { date: "asc" },
       include: {
         chartofAccount: {
           select: {
@@ -148,7 +163,7 @@ function clusterByProduct(caTransactions, products) {
             return JSON.stringify({
               product: product.name,
               number: ca.number,
-              date: formatDateUTCtoMMDDYYYY(ca.createdAt),
+              date: formatDateUTCtoMMDDYYYY(ca.date),
               transactionType: ca.type,
               qty:
                 -ca.saleDetail?.saleQuantity ||
@@ -268,10 +283,10 @@ async function generateInventoryValuationPdf(transactions, totals) {
         doc.text(number, columnOffsets[2], yOffset + 10);
         doc.text(name, columnOffsets[3], yOffset + 10);
         doc.text(qty.toString(),columnOffsets[4], yOffset + 10);
-        doc.text(rate.toString(),columnOffsets[5], yOffset + 10);
-        doc.text(fifoCost.toString(),columnOffsets[6], yOffset + 10);
+        doc.text(rate?.toFixed(2),columnOffsets[5], yOffset + 10);
+        doc.text(fifoCost?.toFixed(2),columnOffsets[6], yOffset + 10);
         doc.text(qtyOnHand.toString(),columnOffsets[7], yOffset + 10);
-        doc.text(assetValue.toString(),columnOffsets[8], yOffset + 10);
+        doc.text(assetValue?.toFixed(2),columnOffsets[8], yOffset + 10);
         yOffset += 30;
       });
 
@@ -283,10 +298,10 @@ async function generateInventoryValuationPdf(transactions, totals) {
         bold:true
       });
       doc.fontSize(8);
-      doc.text(total.totalQty.toString(), columnOffsets[4], yOffset + 10);
-      doc.text(total.totalFifoCost.toString(), columnOffsets[6], yOffset + 10);
-      doc.text(total.totalQtyOnHand.toString(), columnOffsets[7], yOffset + 10);
-      doc.text(total.totalAssetValue.toString(), columnOffsets[8], yOffset + 10);
+      doc.text(total.totalQty?.toString(), columnOffsets[4], yOffset + 10);
+      doc.text(total.totalFifoCost?.toFixed(2), columnOffsets[6], yOffset + 10);
+      doc.text(total.totalQtyOnHand?.toString(), columnOffsets[7], yOffset + 10);
+      doc.text(total.totalAssetValue?.toFixed(2), columnOffsets[8], yOffset + 10);
       yOffset += 30;
       doc.moveTo(10, yOffset).lineTo(600, yOffset).stroke(); // Line below the last row
       yOffset += 10;

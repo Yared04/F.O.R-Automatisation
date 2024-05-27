@@ -29,7 +29,7 @@ async function generateProfitAndLossReport(req, res) {
     const incomeAccountTypes = ["Income", "Other Income"];
 
     if (startDate && endDate) {
-      CaFilter.createdAt = {
+      CaFilter.date = {
         gte: new Date(startDate),
         lte: new Date(endDate),
       };
@@ -204,14 +204,14 @@ async function generateProfitLossPdf(
     if (Object.keys(transactions.income).length !== 0) {
       Object.entries(transactions.income).forEach((transaction) => {
         doc.text(transaction[0], columnOffsets[0], yOffset);
-      doc.text(transaction[1].value, columnOffsets[1], yOffset);
+      doc.text(transaction[1].value?.toFixed(2), columnOffsets[1], yOffset);
         yOffset += 20;
       });
     }
     doc.moveTo(10, yOffset).lineTo(600, yOffset).stroke(); 
     yOffset += 10;
     doc.text("Total Income", columnOffsets[0], yOffset);
-    doc.text(transactions.incomeTotal, columnOffsets[1], yOffset);
+    doc.text(transactions.incomeTotal?.toFixed(2), columnOffsets[1], yOffset);
 
     yOffset+=20;
 
@@ -219,14 +219,14 @@ async function generateProfitLossPdf(
     if (Object.keys(transactions.costOfSales).length !== 0) {
       Object.entries(transactions.costOfSales).forEach((transaction) => {
         doc.text(transaction[0], columnOffsets[0], yOffset);
-        doc.text(transaction[1].value, columnOffsets[1], yOffset);
+        doc.text(transaction[1].value?.toFixed(2), columnOffsets[1], yOffset);
       yOffset += 20;
       });
     }
     doc.moveTo(10, yOffset).lineTo(600, yOffset).stroke(); 
     yOffset += 10;
     doc.text("Total cost of sales", columnOffsets[0], yOffset);
-    doc.text(transactions.costOfSalesTotal, columnOffsets[1], yOffset);
+    doc.text(transactions.costOfSalesTotal?.toFixed(2), columnOffsets[1], yOffset);
     yOffset+=20;
     // expenses
     doc.fontSize(10).text("Expenses", 10, yOffset).moveDown();
@@ -234,14 +234,14 @@ async function generateProfitLossPdf(
     if (Object.keys(transactions.expenses).length !== 0) {
       Object.entries(transactions.expenses).forEach((transaction) => {
       doc.text(transaction[0], columnOffsets[0], yOffset);
-      doc.text(transaction[1].value, columnOffsets[1], yOffset);
+      doc.text(transaction[1].value?.toFixed(2), columnOffsets[1], yOffset);
       yOffset += 20;
       });
     }
     doc.moveTo(10, yOffset).lineTo(600, yOffset).stroke(); 
     yOffset += 10;
     doc.text("Total Expenses", columnOffsets[0], yOffset);
-    doc.text(transactions.expensesTotal, columnOffsets[1], yOffset);
+    doc.text(transactions.expensesTotal?.toFixed(2), columnOffsets[1], yOffset);
     yOffset += 20;
 
     // other expenses
@@ -249,20 +249,19 @@ async function generateProfitLossPdf(
     yOffset += 20;
     Object.entries(transactions.otherExpenses).forEach((transaction) => {
       doc.text(transaction[0], columnOffsets[0], yOffset);
-      doc.text(transaction[1].value, columnOffsets[1], yOffset);
+      doc.text(transaction[1].value?.toFixed(2), columnOffsets[1], yOffset);
       yOffset += 20;
     });
     doc.moveTo(10, yOffset).lineTo(600, yOffset).stroke(); 
     yOffset += 10;
     doc.text("Total Other Expenses", columnOffsets[0], yOffset);
-    doc.text(transactions.otherExpensesTotal, columnOffsets[1], yOffset);
+    doc.text(transactions.otherExpensesTotal?.toFixed(2), columnOffsets[1], yOffset);
     yOffset += 20;
 
     doc.moveTo(10, yOffset).lineTo(600, yOffset).stroke(); 
     yOffset +=10;
     doc.text("NET EARINING", columnOffsets[0], yOffset);
-    doc.text(transactions.netEarning, columnOffsets[1], yOffset);
-
+    doc.text(transactions.netEarning?.toFixed(2), columnOffsets[1], yOffset);
     doc.end();
   });
 }

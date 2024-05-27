@@ -29,7 +29,7 @@ async function generateBalanceSheetReport(req, res) {
     const incomeAccountTypes = ["Income", "Other Income"];
 
     if (endDate) {
-      CaFilter.createdAt = {
+      CaFilter.date = {
         lte: new Date(endDate),
       };
     }
@@ -328,7 +328,7 @@ async function generateBalanceSheetPdf(transactions, endDate) {
     if (Object.keys(transactions.accountReceivable).length !== 0) {
       Object.entries(transactions.accountReceivable).forEach((transaction) => {
         doc.text(transaction[0], columnOffsets[0], yOffset);
-        doc.text(transaction[1].value, columnOffsets[1], yOffset);
+        doc.text(transaction[1].value?.toFixed(2), columnOffsets[1], yOffset);
         yOffset += 15;
       });
     }
@@ -337,7 +337,7 @@ async function generateBalanceSheetPdf(transactions, endDate) {
     doc.lineWidth(0.5);
     yOffset += 10;
     doc.text("Total account receivable", columnOffsets[0], yOffset);
-    doc.text(transactions.incomeTotal, columnOffsets[1], yOffset);
+    doc.text(transactions.incomeTotal?.toFixed(2), columnOffsets[1], yOffset);
 
     yOffset += 20;
 
@@ -345,7 +345,7 @@ async function generateBalanceSheetPdf(transactions, endDate) {
     if (Object.keys(transactions.currentAsset).length !== 0) {
       Object.entries(transactions.currentAsset).forEach((transaction) => {
         doc.text(transaction[0], columnOffsets[0], yOffset);
-        doc.text(transaction[1].value, columnOffsets[1], yOffset);
+        doc.text(transaction[1].value?.toFixed(2), columnOffsets[1], yOffset);
         yOffset += 15;
       });
 
@@ -355,14 +355,14 @@ async function generateBalanceSheetPdf(transactions, endDate) {
     doc.lineWidth(0.5)
     yOffset += 10;
     doc.text("Total current asset", columnOffsets[0], yOffset);
-    doc.text(transactions.totalCurrentAssets, columnOffsets[1], yOffset);
+    doc.text(transactions.totalCurrentAssets?.toFixed(2), columnOffsets[1], yOffset);
     yOffset += 10;
     doc.lineWidth(0.2)
     doc.moveTo(10, yOffset).lineTo(600, yOffset).stroke();
     doc.lineWidth(0.5)
     yOffset += 10;
     doc.text("Total asset", columnOffsets[0], yOffset);
-    doc.text(transactions.totalAssets, columnOffsets[1], yOffset);
+    doc.text(transactions.totalAssets?.toFixed(2), columnOffsets[1], yOffset);
     yOffset += 10;
 
     doc.lineWidth(0.6)
@@ -382,7 +382,7 @@ async function generateBalanceSheetPdf(transactions, endDate) {
     if (Object.keys(transactions.accountPayable).length !== 0) {
       Object.entries(transactions.accountPayable).forEach((transaction) => {
         doc.text(transaction[0], columnOffsets[0], yOffset);
-        doc.text(transaction[1].value, columnOffsets[1], yOffset);
+        doc.text(transaction[1].value?.toFixed(2), columnOffsets[1], yOffset);
         yOffset += 15;
       });
     }
@@ -391,13 +391,13 @@ async function generateBalanceSheetPdf(transactions, endDate) {
     doc.lineWidth(0.5)
     yOffset += 10;
     doc.text("Total Account payable", columnOffsets[0], yOffset);
-    doc.text(transactions.totalAccountsPayable, columnOffsets[1], yOffset);
+    doc.text(transactions.totalAccountsPayable?.toFixed(2), columnOffsets[1], yOffset);
     yOffset += 20;
 
     // provisions
     Object.entries(transactions.provisions).forEach((transaction) => {
       doc.text(transaction[0], columnOffsets[0], yOffset);
-      doc.text(transaction[1].value, columnOffsets[1], yOffset);
+      doc.text(transaction[1].value?.toFixed(2), columnOffsets[1], yOffset);
       yOffset += 15;
     });
     doc.lineWidth(0.2)
@@ -405,7 +405,7 @@ async function generateBalanceSheetPdf(transactions, endDate) {
     doc.lineWidth(0.5)
     yOffset += 10;
     doc.text("Total current liabilities", columnOffsets[0], yOffset);
-    doc.text(transactions.totalCurrentLiabilities, columnOffsets[1], yOffset);
+    doc.text(transactions.totalCurrentLiabilities?.toFixed(2), columnOffsets[1], yOffset);
     yOffset += 20;
 
 
@@ -413,11 +413,11 @@ async function generateBalanceSheetPdf(transactions, endDate) {
     doc.text("Shareholders' equity", columnOffsets[0], yOffset);
     yOffset += 20;
     doc.text("net income", columnOffsets[0], yOffset);
-    doc.text(transactions.netEarning, columnOffsets[1], yOffset);
+    doc.text(transactions.netEarning?.toFixed(2), columnOffsets[1], yOffset);
     yOffset +=15;
     Object.entries(transactions.shareHoldersEquity).forEach((transaction) => {
       doc.text(transaction[0], columnOffsets[0], yOffset);
-      doc.text(transaction[1].value, columnOffsets[1], yOffset);
+      doc.text(transaction[1].value?.toFixed(2), columnOffsets[1], yOffset);
       yOffset += 15;
     });
     doc.lineWidth(0.2)
@@ -425,7 +425,7 @@ async function generateBalanceSheetPdf(transactions, endDate) {
     doc.lineWidth(0.5);
     yOffset += 10;
     doc.text("Total shareholders' equity", columnOffsets[0], yOffset);
-    doc.text(transactions.totalShareHoldersEquity, columnOffsets[1], yOffset);
+    doc.text(transactions.totalShareHoldersEquity?.toFixed(2), columnOffsets[1], yOffset);
     yOffset += 10;
 
     doc.lineWidth(0.2)
@@ -433,7 +433,7 @@ async function generateBalanceSheetPdf(transactions, endDate) {
     doc.lineWidth(0.5);
     yOffset += 10;
     doc.text("Total liabilities and equity", columnOffsets[0], yOffset);
-    doc.text(transactions.totalLiabilitiesAndEquity, columnOffsets[1], yOffset);
+    doc.text(transactions.totalLiabilitiesAndEquity?.toFixed(2), columnOffsets[1], yOffset);
     yOffset+=10;
     doc.lineWidth(0.6);
     doc.moveTo(10, yOffset).lineTo(600, yOffset).stroke();

@@ -16,11 +16,9 @@ async function generateTrialBalance(req, res) {
     ]
 
     }  
-  
-
     
     if (startDate && endDate) {
-      CaFilter.createdAt = {
+      CaFilter.date = {
         gte: new Date(startDate),
         lte: new Date(endDate),
       };
@@ -165,8 +163,8 @@ async function generateTrialBalancePdf(transactions, totals, startDate, endDate)
     Object.entries(transactions).forEach((transaction) => {
       
       doc.text(transaction[0], columnOffsets[0], yOffset);
-      doc.text(transaction[1].debit, columnOffsets[1], yOffset);
-      doc.text(transaction[1].credit, columnOffsets[2], yOffset);
+      doc.text(transaction[1].debit?.toFixed(2), columnOffsets[1], yOffset);
+      doc.text(transaction[1].credit?.toFixed(2), columnOffsets[2], yOffset);
       yOffset += 20;
     });
 
@@ -176,8 +174,8 @@ async function generateTrialBalancePdf(transactions, totals, startDate, endDate)
 
     // Print totals
     doc.text("Total", columnOffsets[0], yOffset);
-    doc.text(totals.debit, columnOffsets[1], yOffset);
-    doc.text(totals.credit, columnOffsets[2], yOffset);
+    doc.text(totals.debit?.toFixed(2), columnOffsets[1], yOffset);
+    doc.text(totals.credit?.toFixed(2), columnOffsets[2], yOffset);
 
     doc.end();
   });
