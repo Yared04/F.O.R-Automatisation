@@ -61,7 +61,7 @@ async function generateProfitAndLossReport(req, res) {
 
 
     // Generate PDF content
-    const pdfContent = await generateTrialBalancePdf(
+    const pdfContent = await generateProfitLossPdf(
       aggregateTransactions,
       startDate,
       endDate
@@ -71,7 +71,7 @@ async function generateProfitAndLossReport(req, res) {
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader(
       "Content-Disposition",
-      'attachment; filename="TrialBalance.pdf"'
+      'attachment; filename="profit-and-loss.pdf"'
     );
 
     // Stream PDF content to the client
@@ -159,7 +159,7 @@ function aggregatedTransactions(transactions) {
   return aggregateTransactions;
 }
 
-async function generateTrialBalancePdf(
+async function generateProfitLossPdf(
   transactions,
   startDate,
   endDate
@@ -187,7 +187,7 @@ async function generateTrialBalancePdf(
     doc.fontSize(8).text(handleTimeSpan(), { align: "center" }).moveDown();
 
     const columnTitles = [" ", "Total"];
-    const columnOffsets = [10, 490];
+    const columnOffsets = [10, 390];
 
     columnTitles.forEach((title, i) => {
       doc.text(title, columnOffsets[i], 110);
