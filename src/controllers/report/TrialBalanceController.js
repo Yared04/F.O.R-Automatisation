@@ -152,7 +152,7 @@ async function generateTrialBalancePdf(transactions, totals, startDate, endDate)
 
 
     const columnTitles = [" ", "Debit", "Credit"];
-    const columnOffsets = [10, 300, 490];
+    const columnOffsets = [10, 250, 440];
 
     columnTitles.forEach((title, i) => {
       doc.text(title, columnOffsets[i], 110);
