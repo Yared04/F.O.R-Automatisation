@@ -958,7 +958,7 @@ async function createMonthlyJournalEntry(req, res) {
       },
     ];
 
-    const transactions = [];  // Store all transactions
+    const transactions = []; // Store all transactions
 
     for (let i = 0; i < 4; i++) {
       const { _chartofAccountId1, _chartofAccountId2, amount } = orders[i];
