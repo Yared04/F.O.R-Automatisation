@@ -17,6 +17,9 @@ async function createCustomerPayment(req, res) {
     exchangeRate,
     sales,
   } = req.body;
+  if(sales.length === 0) {
+    return res.status(400).json({ message: "There are no sales to pay for." });
+  }
   try {
     const bankTransactions = await prisma.bankTransaction.findMany({
       where: { bankId: bankId },
@@ -104,7 +107,7 @@ async function createCustomerPayment(req, res) {
           },
         });
 
-        const newPaymentLog = await prisma.customerPaymentLog.create({
+        await prisma.customerPaymentLog.create({
           data: {
             paymentId: newPayment.id,
             caTransactionId1: firstTransaction.id, // Use the ID of the first transaction

@@ -83,10 +83,9 @@ async function getBankTransactions(req, res) {
     const { page, pageSize } = req.query;
 
     let bankTransactions;
-    let totalCount;
+    const totalCount = await prisma.bankTransaction.count();
 
     if (page && pageSize) {
-      totalCount = await prisma.bank.count();
       bankTransactions = await prisma.bankTransaction.findMany({
         where: {
           bankId: id,
@@ -108,8 +107,6 @@ async function getBankTransactions(req, res) {
         },
         orderBy: { createdAt: "desc" },
       });
-
-      totalCount = banks.length;
     }
 
     const totalPages = Math.ceil(totalCount / parseInt(pageSize, 10));
@@ -151,16 +148,16 @@ async function createBank(req, res) {
     });
 
     const accountType = await prisma.accountType.findFirst({
-      where:{
-        name:'Bank'
-      }
-    })
+      where: {
+        name: "Bank",
+      },
+    });
 
     const accountSubType = await prisma.accountSubType.findFirst({
-      where:{
-        name:'Current'
-      }
-    })
+      where: {
+        name: "Current",
+      },
+    });
 
     const createdChartOfAccount = await prisma.chartOfAccount.create({
       data: {
@@ -187,10 +184,10 @@ async function updateBank(req, res) {
     const { name, address, startingValue, startingValueDate } = req.body;
 
     const beforeUpdate = await prisma.bank.findUnique({
-      where:{
-        id: bankId
-      }
-    })
+      where: {
+        id: bankId,
+      },
+    });
     const updatedBank = await prisma.bank.update({
       where: { id: bankId },
       data: {
@@ -211,22 +208,22 @@ async function updateBank(req, res) {
           { type: null },
           { chartofAccountId: null },
           { exchangeRate: null },
-        ]
+        ],
       },
       data: {
         balance: parseFloat(startingValue), // Starting value
-        date: startingValueDate
+        date: startingValueDate,
       },
     });
-    
-   
+
     const updatedChartOfAccount = await prisma.chartOfAccount.updateMany({
-      where:{
-        name: beforeUpdate.name
-      },data:{
-        name: name
-      }
-    })
+      where: {
+        name: beforeUpdate.name,
+      },
+      data: {
+        name: name,
+      },
+    });
 
     res.json(updatedBank);
   } catch (error) {
@@ -244,10 +241,10 @@ async function deleteBank(req, res) {
     });
 
     const deletedChartOfAccount = await prisma.chartOfAccount.deleteMany({
-      where:{
-        name: deletedBank.name
-      }
-    })
+      where: {
+        name: deletedBank.name,
+      },
+    });
 
     res.json(deletedBank);
   } catch (error) {
