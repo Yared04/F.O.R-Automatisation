@@ -33,7 +33,7 @@ async function getPurchases(req, res) {
           transits: true,
         },
         orderBy: {
-          createdAt: "desc",
+          date: "desc",
         },
         skip: (page - 1) * parseInt(pageSize, 10),
         take: parseInt(pageSize, 10),
