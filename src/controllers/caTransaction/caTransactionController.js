@@ -196,7 +196,7 @@ async function createBankTransaction(req, res) {
   try {
     const bankTransactions = await prisma.bankTransaction.findMany({
       where: { bankId: bankId },
-      orderBy: { createdAt: "desc" },
+      orderBy: { date: "desc" },
     });
 
     const supplier = payee
@@ -265,7 +265,7 @@ async function createTransaction(
       bankId &&
       (await prisma.bankTransaction.findMany({
         where: { bankId: bankId },
-        orderBy: { createdAt: "desc" },
+        orderBy: { date: "desc" },
       }));
     createdCaTransaction = await prisma.cATransaction.create({
       data: {
@@ -737,7 +737,7 @@ async function createJournalEntry(req, res) {
 
     const bankTransactions = await prisma.bankTransaction.findMany({
       where: { bankId: bankId },
-      orderBy: { createdAt: "desc" },
+      orderBy: { date: "desc" },
     });
 
     const bankTransaction = await prisma.bankTransaction.create({
@@ -1127,7 +1127,7 @@ async function deleteJournalEntry(req, res) {
         type: "Journal Entry",
       },
       orderBy: {
-        createdAt: "desc",
+        date: "desc",
       },
     });
 

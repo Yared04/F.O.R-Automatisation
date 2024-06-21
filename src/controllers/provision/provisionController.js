@@ -32,7 +32,7 @@ async function getProvisions(req, res) {
           },
         },
         orderBy: {
-          createdAt: "desc",
+          date: "desc",
         },
         skip: (page - 1) * parseInt(pageSize, 10),
         take: parseInt(pageSize, 10),

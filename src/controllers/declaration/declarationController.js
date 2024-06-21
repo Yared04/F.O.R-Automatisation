@@ -750,7 +750,7 @@ async function createCustomTaxPayment(req, res) {
   try {
     const bankTransactions = await prisma.bankTransaction.findMany({
       where: { bankId: bankId },
-      orderBy: { createdAt: "desc" },
+      orderBy: { date: "desc" },
     });
 
     const supplier = payee
