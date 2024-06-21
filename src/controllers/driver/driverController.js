@@ -204,7 +204,7 @@ async function getDriverPayment(req, res) {
         unitTransportCost: true,
       },
       orderBy: {
-        createdAt: "desc",
+        date: "desc",
       },
 
       skip: (page - 1) * parseInt(pageSize, 10),
@@ -267,7 +267,7 @@ async function getDriverTransports(req, res) {
         unitTransportCost: true,
       },
       orderBy: {
-        createdAt: "desc",
+        date: "desc",
       },
 
       skip: (page - 1) * parseInt(pageSize, 10),

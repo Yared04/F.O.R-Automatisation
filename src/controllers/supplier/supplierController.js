@@ -41,7 +41,7 @@ async function createSupplier(req, res) {
       data: {
         name,
         address,
-        currency
+        currency,
       },
     });
 
@@ -62,7 +62,7 @@ async function updateSupplier(req, res) {
       data: {
         name: name,
         address: address,
-        currency: currency
+        currency: currency,
       },
     });
 
@@ -81,7 +81,7 @@ async function deleteSupplier(req, res) {
       where: { id: SupplierId },
     });
 
-    if(supplier.isSeeded){
+    if (supplier.isSeeded) {
       return res.status(400).json({
         error:
           "You can not delete this supplier since it is used in operations.",
@@ -117,26 +117,26 @@ async function getSupplierById(req, res) {
 async function getSupplierPayment(req, res) {
   try {
     const { page = 1, pageSize = 10 } = req.query;
-    const supplierId = req.params.id;    
+    const supplierId = req.params.id;
     const totalCount = await prisma.purchase.count({
       where: {
         supplierId: supplierId,
         NOT: {
           products: {
-            some: {} // This ensures that at least one sale exists, effectively filtering out sales where there are no sales
-          }
-        }
-      }
+            some: {}, // This ensures that at least one sale exists, effectively filtering out sales where there are no sales
+          },
+        },
+      },
     });
-    
+
     const purchases = await prisma.purchase.findMany({
       where: {
         supplierId: supplierId,
         NOT: {
           products: {
-            some: {} // This ensures that at least one sale exists, effectively filtering out sales where there are no sales
-          }
-        }
+            some: {}, // This ensures that at least one sale exists, effectively filtering out sales where there are no sales
+          },
+        },
       },
       select: {
         id: true,
@@ -159,7 +159,7 @@ async function getSupplierPayment(req, res) {
         transits: true,
       },
       orderBy: {
-        createdAt: "desc",
+        date: "desc",
       },
 
       skip: (page - 1) * parseInt(pageSize, 10),
@@ -179,27 +179,27 @@ async function getSupplierPayment(req, res) {
     console.error("Error retrieving Sales:", error);
     res.status(500).send("Internal Server Error");
   }
-} 
+}
 
 async function getSupplierPurchase(req, res) {
   try {
     const { page = 1, pageSize = 10 } = req.query;
-    const supplierId = req.params.id;    
+    const supplierId = req.params.id;
     const totalCount = await prisma.purchase.count({
       where: {
         supplierId: supplierId,
-          products: {
-            some: {} // This ensures that at least one sale exists, effectively filtering out sales where there are no sales
-          }
-      }
+        products: {
+          some: {}, // This ensures that at least one sale exists, effectively filtering out sales where there are no sales
+        },
+      },
     });
-    
+
     const purchases = await prisma.purchase.findMany({
       where: {
         supplierId: supplierId,
-          products: {
-            some: {} // This ensures that at least one sale exists, effectively filtering out sales where there are no sales
-        }
+        products: {
+          some: {}, // This ensures that at least one sale exists, effectively filtering out sales where there are no sales
+        },
       },
       select: {
         id: true,
@@ -222,7 +222,7 @@ async function getSupplierPurchase(req, res) {
         transits: true,
       },
       orderBy: {
-        createdAt: "desc",
+        date: "desc",
       },
 
       skip: (page - 1) * parseInt(pageSize, 10),
@@ -242,8 +242,7 @@ async function getSupplierPurchase(req, res) {
     console.error("Error retrieving purchases:", error);
     res.status(500).send("Internal Server Error");
   }
-} 
-
+}
 
 module.exports = {
   getSuppliers,
@@ -252,5 +251,5 @@ module.exports = {
   deleteSupplier,
   getSupplierById,
   getSupplierPayment,
-  getSupplierPurchase
+  getSupplierPurchase,
 };
