@@ -95,7 +95,7 @@ async function getBankTransactions(req, res) {
         },
         skip: (page - 1) * parseInt(pageSize, 10),
         take: parseInt(pageSize, 10),
-        orderBy: { startingValueDate: "desc" },
+        orderBy: { date: "desc" },
       });
     } else {
       bankTransactions = await prisma.bankTransaction.findMany({
@@ -105,7 +105,7 @@ async function getBankTransactions(req, res) {
         include: {
           chartofAccount: true,
         },
-        orderBy: { startingValueDate: "desc" },
+        orderBy: { date: "desc" },
       });
     }
 
