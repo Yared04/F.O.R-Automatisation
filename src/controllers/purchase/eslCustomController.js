@@ -85,7 +85,7 @@ async function createESLPayment(req, res) {
         date: new Date(date),
         remark: remark,
         type: type,
-        debit: parseFloat(credit),
+        debit: parseFloat(debit),
         supplierId: supplierId,
       }
     });
