@@ -17,7 +17,7 @@ async function getBanks(req, res) {
           startingValue: true,
           startingValueDate: true,
           bankTransactions: {
-            orderBy: { startingValueDate: "desc" },
+            orderBy: { date: "desc" },
           },
         },
         skip: (page - 1) * parseInt(pageSize, 10),
@@ -33,7 +33,7 @@ async function getBanks(req, res) {
           startingValue: true,
           startingValueDate: true,
           bankTransactions: {
-            orderBy: { startingValueDate: "desc" },
+            orderBy: { date: "desc" },
           },
         },
         orderBy: { startingValueDate: "desc" },
