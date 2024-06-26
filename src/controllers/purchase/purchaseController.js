@@ -58,6 +58,7 @@ async function getPurchases(req, res) {
           products: true,
           transports: true,
           esls: true,
+          transits: true,
         },
       });
     }
@@ -931,7 +932,7 @@ async function deletePurchase(req, res) {
       },
     });
 
-    if(productPurchases.length === 0){
+    if (productPurchases.length === 0) {
       const deleted = await deleteSupplierPayment(id);
       res.json(deleted);
       return;
@@ -1196,18 +1197,16 @@ async function getTransiFees(req, res) {
 
 async function getPurchaseWaybillNumber(req, res) {
   try {
-
     const waybillNumber = await prisma.purchase.findFirst({
       select: {
-        number: true
+        number: true,
       },
       orderBy: {
-        number: 'desc'
-      }
+        number: "desc",
+      },
     });
-     res.json(++waybillNumber.number??0);
-  }
-   catch (error) {
+    res.json(++waybillNumber.number ?? 0);
+  } catch (error) {
     console.error("Error: ", error);
     res.status(500).send(error.message);
   }
@@ -1225,5 +1224,5 @@ module.exports = {
   getTransportCosts,
   getEslCosts,
   getTransiFees,
-  getPurchaseWaybillNumber
+  getPurchaseWaybillNumber,
 };
