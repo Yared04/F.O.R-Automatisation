@@ -1,6 +1,7 @@
 const prisma = require("../../database");
 const PDFDocument = require("pdfkit");
 const { Readable } = require("stream");
+const { creditAccounts, debitAccounts } = require("./trialBalanceAccountTypes");
 
 async function generateTrialBalance(req, res) {
   try {
@@ -81,11 +82,10 @@ async function generateTrialBalance(req, res) {
 function aggregateTransactions(transactions) {
   const aggregatedTransactions = {};
   transactions.forEach((transaction) => {
-    const {debit, credit, chartofAccount, bankTransaction, saleDetail} = transaction;
+    const {debit, type, credit, chartofAccount, bankTransaction, saleDetail} = transaction;
     const accountName = chartofAccount?.name;
     const bankName = bankTransaction?.bank?.name??"";
     const accountType = accountName || bankName;
-    
 
     if (!aggregatedTransactions[accountType]) {
       aggregatedTransactions[accountType] = {
@@ -94,32 +94,19 @@ function aggregateTransactions(transactions) {
       };
     }
 
-    if (credit) {
+    if (creditAccounts.includes(accountType)) {
       aggregatedTransactions[accountType].credit += credit;
     }
 
-    if (debit) {
+    if (debitAccounts.includes(accountType)){
       aggregatedTransactions[accountType].debit += debit;
     }
-
-    // Check if there are both credit and debit for the same account
-    if (aggregatedTransactions[accountType]?.credit !== 0 && aggregatedTransactions[accountType]?.debit !== 0) {
-      const diff = aggregatedTransactions[accountType]?.debit - aggregatedTransactions[accountType]?.credit;
-
-      if (diff > 0) {
-        aggregatedTransactions[accountType].credit = diff;
-        aggregatedTransactions[accountType].debit = 0;
-      } else {
-        aggregatedTransactions[accountType].debit = Math.abs(diff);
-        aggregatedTransactions[accountType].credit = 0;
-      }
-    }
   });
-  Object.keys(aggregatedTransactions).forEach((key) => {
-    if (aggregatedTransactions[key].credit === 0 && aggregatedTransactions[key].debit === 0) {
-      delete aggregatedTransactions[key];
-    }
-  });
+  // Object.keys(aggregatedTransactions).forEach((key) => {
+  //   if (aggregatedTransactions[key].credit === 0 && aggregatedTransactions[key].debit === 0) {
+  //     delete aggregatedTransactions[key];
+  //   }
+  // });
 
   return aggregatedTransactions;
 }
