@@ -60,6 +60,9 @@ async function getPurchases(req, res) {
           esls: true,
           transits: true,
         },
+        orderBy: {
+          date: "desc",
+        },
       });
     }
     // Recalculate total costs for each purchase
