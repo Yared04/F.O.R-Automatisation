@@ -1,7 +1,7 @@
 const prisma = require("../../database");
 const PDFDocument = require("pdfkit");
 const { Readable } = require("stream");
-const { creditAccounts, debitAccounts } = require("./trialBalanceAccountTypes");
+const { creditAccounts, debitAccounts } = require("./TrialBalanceAccountTypes.js");
 
 async function generateTrialBalance(req, res) {
   try {
