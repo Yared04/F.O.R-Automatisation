@@ -17,6 +17,9 @@ async function getDeclarations(req, res) {
           date: true,
           paidAmount: true,
         },
+        orderBy: {
+          date: "desc",
+        },
         skip: (page - 1) * parseInt(pageSize, 10),
         take: parseInt(pageSize, 10),
       });
