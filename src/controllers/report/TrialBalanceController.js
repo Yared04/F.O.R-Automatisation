@@ -1,6 +1,7 @@
 const prisma = require("../../database");
 const PDFDocument = require("pdfkit");
 const { Readable } = require("stream");
+const { creditAccounts, debitAccounts } = require("./trialBalanceAccountTypes");
 
 async function generateTrialBalance(req, res) {
   try {
@@ -14,7 +15,6 @@ async function generateTrialBalance(req, res) {
         not:null
       }}
     ]
-
     }  
     
     if (startDate && endDate) {
@@ -82,12 +82,10 @@ async function generateTrialBalance(req, res) {
 function aggregateTransactions(transactions) {
   const aggregatedTransactions = {};
   transactions.forEach((transaction) => {
-    const {debit, credit, chartofAccount, bankTransaction, saleDetail} = transaction;
+    const {debit, type, credit, chartofAccount, bankTransaction, saleDetail} = transaction;
     const accountName = chartofAccount?.name;
     const bankName = bankTransaction?.bank?.name??"";
     const accountType = accountName || bankName;
-    
-    const { saleQuantity, totalSales } = saleDetail || {};
 
     if (!aggregatedTransactions[accountType]) {
       aggregatedTransactions[accountType] = {
@@ -96,13 +94,19 @@ function aggregateTransactions(transactions) {
       };
     }
 
-    if(credit){
-    aggregatedTransactions[accountType].credit += credit;
+    if (creditAccounts.includes(accountType)) {
+      aggregatedTransactions[accountType].credit += credit;
     }
-    if(debit){
-    aggregatedTransactions[accountType].debit += debit;
+
+    if (debitAccounts.includes(accountType)){
+      aggregatedTransactions[accountType].debit += debit;
     }
   });
+  // Object.keys(aggregatedTransactions).forEach((key) => {
+  //   if (aggregatedTransactions[key].credit === 0 && aggregatedTransactions[key].debit === 0) {
+  //     delete aggregatedTransactions[key];
+  //   }
+  // });
 
   return aggregatedTransactions;
 }
@@ -176,7 +180,6 @@ async function generateTrialBalancePdf(transactions, totals, startDate, endDate)
     doc.text("Total", columnOffsets[0], yOffset);
     doc.text(totals.debit?.toFixed(2), columnOffsets[1], yOffset);
     doc.text(totals.credit?.toFixed(2), columnOffsets[2], yOffset);
-
     doc.end();
   });
 }
