@@ -2,6 +2,7 @@ const prisma = require("../../database");
 const PDFDocument = require("pdfkit");
 const { Readable } = require("stream");
 const { creditAccounts, debitAccounts } = require("./trialBalanceAccountTypes");
+const { formatNumber } = require("./NumberFormatService");
 
 async function generateTrialBalance(req, res) {
   try {
@@ -167,8 +168,8 @@ async function generateTrialBalancePdf(transactions, totals, startDate, endDate)
     Object.entries(transactions).forEach((transaction) => {
       
       doc.text(transaction[0], columnOffsets[0], yOffset);
-      doc.text(transaction[1].debit?.toFixed(2), columnOffsets[1], yOffset);
-      doc.text(transaction[1].credit?.toFixed(2), columnOffsets[2], yOffset);
+      doc.text(formatNumber(transaction[1].debit??0), columnOffsets[1], yOffset);
+      doc.text(formatNumber(transaction[1].credit??0), columnOffsets[2], yOffset);
       yOffset += 20;
     });
 
@@ -178,8 +179,8 @@ async function generateTrialBalancePdf(transactions, totals, startDate, endDate)
 
     // Print totals
     doc.text("Total", columnOffsets[0], yOffset);
-    doc.text(totals.debit?.toFixed(2), columnOffsets[1], yOffset);
-    doc.text(totals.credit?.toFixed(2), columnOffsets[2], yOffset);
+    doc.text(formatNumber(totals.debit??0), columnOffsets[1], yOffset);
+    doc.text(formatNumber(totals.credit??0), columnOffsets[2], yOffset);
     doc.end();
   });
 }
