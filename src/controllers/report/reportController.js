@@ -1,6 +1,7 @@
 const PDFDocument = require("pdfkit");
 const { Readable } = require("stream");
 const prisma = require("../../database");
+const { formatNumber } = require("./NumberFormatService");
 
 async function generateCustomerAgingSummary(req, res) {
   try {
@@ -239,7 +240,7 @@ async function generateARAgingPDFContent(
       Object.keys(agingBuckets[customer]).forEach((bucket) => {
         const value = agingBuckets[customer][bucket];
         doc.text(
-          typeof value === "number" ? value.toFixed(2) : value,
+          typeof value === "number" ? formatNumber(value??0) : value,
           xOffset,
           yOffset
         );
@@ -249,7 +250,7 @@ async function generateARAgingPDFContent(
           totals[bucket] += value; // Accumulate column totals
         }
       });
-      doc.text(rowTotal.toFixed(2), xOffset, yOffset); // Display row total
+      doc.text(formatNumber(rowTotal??0), xOffset, yOffset); // Display row total
       totalColumnSum += rowTotal; // Accumulate row total to total column sum
       yOffset += 20; // Move to the next row
     });
@@ -268,10 +269,10 @@ async function generateARAgingPDFContent(
     doc.font("Helvetica-Bold").text("Total", xOffset, yOffset);
     xOffset += 80;
     Object.keys(totals).forEach((bucket) => {
-      doc.text(totals[bucket].toFixed(2), xOffset, yOffset);
+      doc.text(formatNumber(totals[bucket]??0), xOffset, yOffset);
       xOffset += 80;
     });
-    doc.text(totalColumnSum.toFixed(2), xOffset, yOffset); // Display total column sum
+    doc.text(formatNumber(totalColumnSum??0), xOffset, yOffset); // Display total column sum
 
     doc.end();
   });
@@ -401,26 +402,26 @@ async function generateBankTransactionPDFContent(
       xOffset += 80;
       doc.text(
         transaction.foreignCurrency
-          ? transaction.foreignCurrency.toFixed(2)
+          ? formatNumber(transaction.foreignCurrency??0)
           : "",
         xOffset,
         yOffset
       );
       xOffset += 80;
       doc.text(
-        transaction.balance ? transaction.balance.toFixed(2) : "",
+        transaction.balance ? formatNumber(transaction.balance??0) : "",
         xOffset,
         yOffset
       );
       xOffset += 80;
       doc.text(
-        transaction.payment ? transaction.payment.toFixed(2) : "",
+        transaction.payment ? formatNumber(transaction.payment??0) : "",
         xOffset,
         yOffset
       );
       xOffset += 80;
       doc.text(
-        transaction.deposit ? transaction.deposit.toFixed(2) : "",
+        transaction.deposit ? formatNumber(transaction.deposit??0) : "",
         xOffset,
         yOffset
       );
@@ -430,7 +431,7 @@ async function generateBankTransactionPDFContent(
       doc.text(transaction.chartofAccount?.name || "", xOffset, yOffset);
       xOffset += 100;
       doc.text(
-        transaction.exchangeRate ? transaction.exchangeRate.toFixed(2) : "",
+        transaction.exchangeRate ? formatNumber(transaction.exchangeRate??0) : "",
         xOffset,
         yOffset
       );

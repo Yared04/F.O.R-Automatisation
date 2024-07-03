@@ -1,6 +1,7 @@
 const prisma = require("../../database");
 const PDFDocument = require("pdfkit");
 const { Readable } = require("stream");
+const { formatNumber } = require("./NumberFormatService");
 
 async function generateProfitAndLossReport(req, res) {
   try {
@@ -193,14 +194,14 @@ async function generateProfitLossPdf(
     if (Object.keys(transactions.income).length !== 0) {
       Object.entries(transactions.income).forEach((transaction) => {
         doc.text(transaction[0], columnOffsets[0], yOffset);
-      doc.text(transaction[1].value?.toFixed(2), columnOffsets[1], yOffset);
+      doc.text(formatNumber(transaction[1].value??0), columnOffsets[1], yOffset);
         yOffset += 20;
       });
     }
     doc.moveTo(10, yOffset).lineTo(600, yOffset).stroke(); 
     yOffset += 10;
     doc.text("Total Income", columnOffsets[0], yOffset);
-    doc.text(`Br ${transactions.incomeTotal?.toFixed(2)}`, columnOffsets[1], yOffset);
+    doc.text(`Br ${formatNumber(transactions.incomeTotal??0)}`, columnOffsets[1], yOffset);
 
     yOffset+=20;
 
@@ -210,19 +211,19 @@ async function generateProfitLossPdf(
     if (Object.keys(transactions.costOfSales).length !== 0) {
       Object.entries(transactions.costOfSales).forEach((transaction) => {
         doc.text(transaction[0], columnOffsets[0], yOffset);
-        doc.text(transaction[1].value?.toFixed(2), columnOffsets[1], yOffset);
+        doc.text(formatNumber(transaction[1].value??0), columnOffsets[1], yOffset);
       yOffset += 20;
       });
     }
     doc.moveTo(10, yOffset).lineTo(600, yOffset).stroke(); 
     yOffset += 10;
     doc.text("Total cost of sales", columnOffsets[0], yOffset);
-    doc.text(`Br ${transactions.costOfSalesTotal?.toFixed(2)}`, columnOffsets[1], yOffset);
+    doc.text(`Br ${formatNumber(transactions.costOfSalesTotal??0)}`, columnOffsets[1], yOffset);
     yOffset+=20;
     doc.moveTo(10, yOffset).lineTo(600, yOffset).stroke(); 
     yOffset += 10;
     doc.text("GROSS PROFIT", columnOffsets[0], yOffset);
-    doc.text(`Br ${transactions.grossProfit?.toFixed(2)}`, columnOffsets[1], yOffset);
+    doc.text(`Br ${formatNumber(transactions.grossProfit??0)}`, columnOffsets[1], yOffset);
     yOffset+=20;
     // expenses
     doc.fontSize(10).text("Expenses", 10, yOffset).moveDown();
@@ -230,14 +231,14 @@ async function generateProfitLossPdf(
     if (Object.keys(transactions.expenses).length !== 0) {
       Object.entries(transactions.expenses).forEach((transaction) => {
       doc.text(transaction[0], columnOffsets[0], yOffset);
-      doc.text(transaction[1].value?.toFixed(2), columnOffsets[1], yOffset);
+      doc.text(formatNumber(transaction[1].value??0), columnOffsets[1], yOffset);
       yOffset += 20;
       });
     }
     doc.moveTo(10, yOffset).lineTo(600, yOffset).stroke(); 
     yOffset += 10;
     doc.text("Total Expenses", columnOffsets[0], yOffset);
-    doc.text(`Br ${transactions.expensesTotal?.toFixed(2)}`, columnOffsets[1], yOffset);
+    doc.text(`Br ${formatNumber(transactions.expensesTotal??0)}`, columnOffsets[1], yOffset);
     yOffset += 20;
 
     // other expenses
@@ -245,19 +246,19 @@ async function generateProfitLossPdf(
     yOffset += 20;
     Object.entries(transactions.otherExpenses).forEach((transaction) => {
       doc.text(transaction[0], columnOffsets[0], yOffset);
-      doc.text(transaction[1].value?.toFixed(2), columnOffsets[1], yOffset);
+      doc.text(formatNumber(transaction[1].value??0), columnOffsets[1], yOffset);
       yOffset += 20;
     });
     doc.moveTo(10, yOffset).lineTo(600, yOffset).stroke(); 
     yOffset += 10;
     doc.text("Total Other Expenses", columnOffsets[0], yOffset);
-doc.text(`Br ${transactions.otherExpensesTotal?.toFixed(2)}`, columnOffsets[1], yOffset);
+doc.text(`Br ${formatNumber(transactions.otherExpensesTotal??0)}`, columnOffsets[1], yOffset);
     yOffset += 20;
 
     doc.moveTo(10, yOffset).lineTo(600, yOffset).stroke(); 
     yOffset +=10;
     doc.text("NET EARINING", columnOffsets[0], yOffset);
-    doc.text(`Br ${transactions.netEarning?.toFixed(2)}`, columnOffsets[1], yOffset);
+    doc.text(`Br ${formatNumber(transactions.netEarning)}`, columnOffsets[1], yOffset);
     doc.end();
   });
 }

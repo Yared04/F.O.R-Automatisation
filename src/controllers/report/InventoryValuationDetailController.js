@@ -1,6 +1,7 @@
 const prisma = require("../../database");
 const PDFDocument = require("pdfkit");
 const { Readable } = require("stream");
+const {formatNumber} = require('./NumberFormatService')
 
 async function generateInventoryValuation(req, res) {
   try {
@@ -280,13 +281,13 @@ async function generateInventoryValuationPdf(transactions, totals) {
         const { date, transactionType, number, name, qty, rate, fifoCost, qtyOnHand, assetValue } = transaction;
         doc.text(date.toString(), columnOffsets[0], yOffset + 10);
         doc.text(transactionType, columnOffsets[1], yOffset + 10);
-        doc.text(number, columnOffsets[2], yOffset + 10);
+        doc.text(formatNumber(number??0), columnOffsets[2], yOffset + 10);
         doc.text(name, columnOffsets[3], yOffset + 10);
-        doc.text(qty.toString(),columnOffsets[4], yOffset + 10);
-        doc.text(rate?.toFixed(2),columnOffsets[5], yOffset + 10);
-        doc.text(fifoCost?.toFixed(2),columnOffsets[6], yOffset + 10);
-        doc.text(qtyOnHand.toString(),columnOffsets[7], yOffset + 10);
-        doc.text(assetValue?.toFixed(2),columnOffsets[8], yOffset + 10);
+        doc.text(formatNumber(qty??0),columnOffsets[4], yOffset + 10);
+        doc.text(formatNumber(rate??0),columnOffsets[5], yOffset + 10);
+        doc.text(formatNumber(fifoCost??0),columnOffsets[6], yOffset + 10);
+        doc.text(formatNumber(qtyOnHand??0),columnOffsets[7], yOffset + 10);
+        doc.text(formatNumber(assetValue??0),columnOffsets[8], yOffset + 10);
         yOffset += 30;
       });
 
@@ -298,10 +299,10 @@ async function generateInventoryValuationPdf(transactions, totals) {
         bold:true
       });
       doc.fontSize(8);
-      doc.text(total.totalQty?.toString(), columnOffsets[4], yOffset + 10);
-      doc.text(total.totalFifoCost?.toFixed(2), columnOffsets[6], yOffset + 10);
-      doc.text(total.totalQtyOnHand?.toString(), columnOffsets[7], yOffset + 10);
-      doc.text(total.totalAssetValue?.toFixed(2), columnOffsets[8], yOffset + 10);
+      doc.text(formatNumber(total.totalQty??0), columnOffsets[4], yOffset + 10);
+      doc.text(formatNumber(total.totalFifoCost??0), columnOffsets[6], yOffset + 10);
+      doc.text(formatNumber(total.totalQtyOnHand??0), columnOffsets[7], yOffset + 10);
+      doc.text(formatNumber(total.totalAssetValue??0), columnOffsets[8], yOffset + 10);
       yOffset += 30;
       doc.moveTo(10, yOffset).lineTo(600, yOffset).stroke(); // Line below the last row
       yOffset += 10;
