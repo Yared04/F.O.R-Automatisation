@@ -86,6 +86,11 @@ async function generateInventoryValuation(req, res) {
             name: true,
           },
         },
+        sale:{
+          select:{
+            invoiceDate:true,
+          }
+        },
         saleDetail: {
           select: {
             saleQuantity: true,
@@ -107,6 +112,7 @@ async function generateInventoryValuation(req, res) {
                 name: true,
               },
             },
+            date:true,
             purchaseQuantity: true,
             remainingQuantity: true,
             purchaseUnitPriceETB: true,
@@ -116,6 +122,15 @@ async function generateInventoryValuation(req, res) {
         },
       },
       orderBy: { date: "asc" },
+    });
+
+    caTransactions.sort((a, b) => {
+      const dateA = a.sale?.invoiceDate || a.productPurchase?.date;
+      const dateB = b.sale?.invoiceDate || b.productPurchase?.date;
+    
+      if (dateA < dateB) return -1;
+      if (dateA > dateB) return 1;
+      return 0;
     });
 
     // return accountType credit and debit detail
@@ -152,7 +167,6 @@ async function generateInventoryValuation(req, res) {
 function clusterByProduct(caTransactions, products) {
   let clusteredProducts = {};
   products.forEach((product) => {
-    let currentAssetValue = 0;
     clusteredProducts[product.name] = Array.from(
       new Set(
         caTransactions
@@ -165,7 +179,8 @@ function clusterByProduct(caTransactions, products) {
           })
           .map((ca) => {
             return JSON.stringify({
-              product: product.name,
+              product:-ca.saleDetail?.saleQuantity ||
+              ca.productPurchase?.purchaseQuantity,
               number: ca.number,
               date: formatDateUTCtoMMDDYYYY(ca.date),
               transactionType: ca.type,
@@ -186,9 +201,16 @@ function clusterByProduct(caTransactions, products) {
 
           })
       )
-    ).map((stringifiedObject) => JSON.parse(stringifiedObject));
+    ).map((stringifiedObject) => JSON.parse(stringifiedObject)).sort((a, b) => {
+      const dateA = new Date( a.date); 
+      const dateB = new Date (b.date);
+    
+      if (dateA < dateB) return -1;
+      if (dateA > dateB) return 1;
+      return 0;
+    });
 }
-  )
+)
   return clusteredProducts;
 }
 
@@ -283,11 +305,12 @@ async function generateInventoryValuationPdf(transactions, totals, endDate) {
           xOffset = 10;
           yOffset = 190;
           }
-        const { date, transactionType, number, name, qty, rate, fifoCost, qtyOnHand, assetValue } = transaction;
+        const { date, transactionType, number, product, qty, rate, fifoCost, qtyOnHand, assetValue } = transaction;
+        console.log(product, date);
         doc.text(date.toString(), columnOffsets[0], yOffset + 10);
         doc.text(transactionType, columnOffsets[1], yOffset + 10);
         doc.text(formatNumber(number??0), columnOffsets[2], yOffset + 10);
-        doc.text(name, columnOffsets[3], yOffset + 10);
+        doc.text(product, columnOffsets[3], yOffset + 10);
         doc.text(formatNumber(qty??0),columnOffsets[4], yOffset + 10);
         doc.text(formatNumber(rate??0),columnOffsets[5], yOffset + 10);
         doc.text(formatNumber(fifoCost??0),columnOffsets[6], yOffset + 10);
