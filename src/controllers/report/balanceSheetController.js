@@ -283,7 +283,6 @@ function calculateNetIncome(transactions) {
 }
 
 async function generateBalanceSheetPdf(transactions, endDate) {
-  console.log(transactions);
   const handleTimeSpan = () => {
     if (endDate) {
       return `As of ${formatDateUTCtoMMDDYYYY(new Date(endDate))}`;
@@ -370,7 +369,6 @@ async function generateBalanceSheetPdf(transactions, endDate) {
     addSpacing(10);
     doc.lineWidth(1.5)
     doc.text("Total account receivable", columnOffsets[0], yOffset);
-    console.log(aggregatedTransactions)
     doc.text(formatNumber(aggregateTransactions.incomeTotal), columnOffsets[1], yOffset);
 
     doc.lineWidth(1);
@@ -531,13 +529,12 @@ async function generateBalanceSheetPdf(transactions, endDate) {
 
 function formatDateUTCtoMMDDYYYY(utcDate) {
   const date = new Date(utcDate);
-  const mm = date.getUTCMonth() + 1; // getMonth() is zero-based
-  const dd = date.getUTCDate();
-  const yyyy = date.getUTCFullYear();
 
-  return `${mm.toString().padStart(2, "0")}/${dd
-    .toString()
-    .padStart(2, "0")}/${yyyy}`;
+  return date.toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  })
 }
 
 module.exports = {
