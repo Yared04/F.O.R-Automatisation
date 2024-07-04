@@ -55,6 +55,7 @@ async function generateApAgingSummary(req, res) {
         supplier: true,
       },
     });
+    console.log(arTransactions)
     // Categorize transactions into aging buckets
     const agingBuckets = categorizeApAgingTransactions(
       arTransactions,
@@ -255,7 +256,10 @@ async function generateApAgingPDFContent(
       doc.text(formatNumber(totals[bucket]), xOffset, yOffset);
       xOffset += 80;
     });
-    doc.text(formatNumber(totalColumnSum), xOffset, yOffset); // Display total column sum
+    doc.text(formatNumber(totalColumnSum), xOffset, yOffset ,{
+      width:60,
+      align: "left",
+    }); 
 
     doc.end();
   });

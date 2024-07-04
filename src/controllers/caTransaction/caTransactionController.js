@@ -606,9 +606,9 @@ async function generateCaTransactionPDFContent(
     let pageCount = 0;
     const handleTimeSpan = () => {
       if (startDate && endDate) {
-        return `Transactions from ${formatDateUTCtoMMDDYYYY(
+        return `Transactions from ${formatDateUTCtoTitleFormat(
           new Date(startDate)
-        )} to ${formatDateUTCtoMMDDYYYY(new Date(endDate))}`;
+        )} to ${formatDateUTCtoTitleFormat(new Date(endDate))}`;
       }
       return "All Dates";
     };
@@ -683,7 +683,7 @@ async function generateCaTransactionPDFContent(
       xOffset += columnTitlesWithOffset[1][1];
       doc.text(transaction.number, xOffset, yOffset);
       xOffset += columnTitlesWithOffset[2][1];
-      doc.text(transaction.posting, xOffset, yOffset);
+      doc.text("Yes", xOffset, yOffset);
       xOffset += columnTitlesWithOffset[3][1];
       doc.text(showName? currentName: "", xOffset, yOffset);
       xOffset += columnTitlesWithOffset[4][1];
@@ -739,6 +739,15 @@ function formatDateUTCtoMMDDYYYY(utcDate) {
   return `${mm.toString().padStart(2, "0")}/${dd
     .toString()
     .padStart(2, "0")}/${yyyy}`;
+}
+
+function formatDateUTCtoTitleFormat(utcDate){
+  const date = new Date(utcDate);
+  return date.toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  })
 }
 
 async function createJournalEntry(req, res) {

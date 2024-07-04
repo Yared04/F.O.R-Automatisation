@@ -187,11 +187,11 @@ async function generateTrialBalancePdf(transactions, totals, startDate, endDate)
 
 function formatDateUTCtoMMDDYYYY(utcDate) {
   const date = new Date(utcDate);
-  const mm = date.getUTCMonth() + 1; // getMonth() is zero-based
-  const dd = date.getUTCDate();
-  const yyyy = date.getUTCFullYear();
-
-  return `${mm.toString().padStart(2, '0')}/${dd.toString().padStart(2, '0')}/${yyyy}`;
+  return date.toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
 }
 
 module.exports = {

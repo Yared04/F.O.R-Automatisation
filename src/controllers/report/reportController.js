@@ -242,7 +242,11 @@ async function generateARAgingPDFContent(
         doc.text(
           typeof value === "number" ? formatNumber(value??0) : value,
           xOffset,
-          yOffset
+          yOffset,
+          {
+            width:80,
+            align: "left",
+          }
         );
         xOffset += 80;
         if (bucket !== "Total") {
@@ -250,7 +254,10 @@ async function generateARAgingPDFContent(
           totals[bucket] += value; // Accumulate column totals
         }
       });
-      doc.text(formatNumber(rowTotal??0), xOffset, yOffset); // Display row total
+      doc.text(formatNumber(rowTotal??0), xOffset, yOffset,{
+        width:80,
+        align: "left",
+      }); // Display row total
       totalColumnSum += rowTotal; // Accumulate row total to total column sum
       yOffset += 20; // Move to the next row
     });
@@ -269,10 +276,16 @@ async function generateARAgingPDFContent(
     doc.font("Helvetica-Bold").text("Total", xOffset, yOffset);
     xOffset += 80;
     Object.keys(totals).forEach((bucket) => {
-      doc.text(formatNumber(totals[bucket]??0), xOffset, yOffset);
+      doc.text(formatNumber(totals[bucket]??0), xOffset, yOffset,{
+          width:80,
+          align: "left",
+        });
       xOffset += 80;
     });
-    doc.text(formatNumber(totalColumnSum??0), xOffset, yOffset); // Display total column sum
+    doc.text(formatNumber(totalColumnSum??0), xOffset, yOffset,{
+      width:80,
+      align: "left",
+    }); // Display total column sum
 
     doc.end();
   });
@@ -356,11 +369,11 @@ async function generateBankTransactionPDFContent(
     // Add date interval or date below the bank name
     let dateText = "";
     if (startDate && endDate) {
-      dateText = `Transactions from ${formatDate(startDate)} to ${formatDate(
+      dateText = `Transactions from ${formatDateUTCtoTitleFormat(startDate)} to ${formatDateUTCtoTitleFormat(
         endDate
       )}`;
     } else {
-      dateText = `Transactions as of ${formatDate(new Date())}`;
+      dateText = `Transactions as of ${formatDateUTCtoTitleFormat(new Date())}`;
     }
     doc.fontSize(10).text(dateText, { align: "center" }).moveDown();
 
@@ -451,6 +464,14 @@ async function generateBankTransactionPDFContent(
 // Utility function to format date
 function formatDate(date) {
   return date ? new Date(date).toLocaleDateString("en-US") : "";
+}
+function formatDateUTCtoTitleFormat(utcDate) {
+  const date = new Date(utcDate);
+  return date.toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
 }
 
 module.exports = {

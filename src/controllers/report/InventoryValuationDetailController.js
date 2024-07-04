@@ -115,6 +115,7 @@ async function generateInventoryValuation(req, res) {
           },
         },
       },
+      orderBy: { date: "asc" },
     });
 
     // return accountType credit and debit detail
@@ -126,7 +127,8 @@ async function generateInventoryValuation(req, res) {
     // Generate PDF content
     const pdfContent = await generateInventoryValuationPdf(
       clusteredProducts,
-      totals
+      totals,
+      endDate
     );
 
     // Set response headers for PDF download
@@ -150,6 +152,7 @@ async function generateInventoryValuation(req, res) {
 function clusterByProduct(caTransactions, products) {
   let clusteredProducts = {};
   products.forEach((product) => {
+    let currentAssetValue = 0;
     clusteredProducts[product.name] = Array.from(
       new Set(
         caTransactions
@@ -180,6 +183,7 @@ function clusterByProduct(caTransactions, products) {
               qtyOnHand: ca.productPurchase?.remainingQuantity || 0.0,
               assetValue:  -ca.saleDetail?.totalSales || ca.productPurchase?.purchaseTotalETB || 0.0,
             });
+
           })
       )
     ).map((stringifiedObject) => JSON.parse(stringifiedObject));
@@ -220,8 +224,9 @@ function calculateTotal(products) {
   return totals;
 }
 
-async function generateInventoryValuationPdf(transactions, totals) {
-  const handleTimeSpan = () => {
+async function generateInventoryValuationPdf(transactions, totals, endDate) {
+  const handleTimeSpan = (endDate) => {
+    if(endDate) return formatDateForTitle(endDate);
     return "All Dates";
   };
   return new Promise((resolve, reject) => {
@@ -239,11 +244,11 @@ async function generateInventoryValuationPdf(transactions, totals) {
       .fontSize(10)
       .text("Inventory Valuation", { align: "center" })
       .moveDown();
-    doc.fontSize(8).text(handleTimeSpan(), { align: "center" }).moveDown();
+    doc.fontSize(8).text(handleTimeSpan(endDate), { align: "center" }).moveDown();
 
     let pageCount = 0;
     const columnTitles = ["DATE", "TRANSACTION TYPE", "NO.", "NAME", "QTY", "RATE", "FIFO COST", "QTY ON HAND", "ASSET VALUE"];
-    const columnOffsets = [10, 70, 180, 210, 300, 350, 400, 450,540];
+    const columnOffsets = [10, 70, 180, 210, 300, 350, 400, 470,540];
 
     columnTitles.forEach((title, i) => {
       doc.text(title, columnOffsets[i], 110);
@@ -320,6 +325,15 @@ function formatDateUTCtoMMDDYYYY(utcDate) {
   return `${mm.toString().padStart(2, "0")}/${dd
     .toString()
     .padStart(2, "0")}/${yyyy}`;
+}
+
+function formatDateForTitle(utcDate){
+  const date = newDate(utcDate);
+  return date.toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  })
 }
 
 module.exports = {
