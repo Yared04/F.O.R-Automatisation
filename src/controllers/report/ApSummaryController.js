@@ -12,9 +12,12 @@ async function generateApAgingSummary(req, res) {
 
     let accountPayableType = await prisma.accountType.findMany({
       where: {
-        name: "Accounts Payable(A/P)",
+        name:{
+          in:["Accounts Payable(A/P)","Expenses"]
+        } 
       },
     });
+
 
     if (accountPayableType.length === 0) {
       return res.status(404).json({
@@ -29,9 +32,8 @@ async function generateApAgingSummary(req, res) {
       where: {
         accountTypeId: {
           in: accountPayableType,
-        },
-      },
-    });
+        }, }
+  });
 
     if (arChartOfAccount.length === 0) {
       return res.status(404).json({
@@ -42,10 +44,19 @@ async function generateApAgingSummary(req, res) {
     arChartOfAccount = arChartOfAccount.map((item) => item.id);
 
     // Find all transactions related to the Accounts Receivable (A/P) chart of account
+
+    let suppliers = await prisma.supplier.findMany({});
+    suppliers = suppliers.map(item=>item.id);
+    if(suppliers.length === 0) {
+      return res.status(404).json({
+        error: "No supplier found.",
+      });
+    }
+
     const arTransactions = await prisma.CATransaction.findMany({
       where: {
-        chartofAccountId: {
-          in: arChartOfAccount,
+        supplierId: {
+          in: suppliers,
         },
         date: {
           lte: currentDate, // Filter transactions up to the end date
@@ -55,7 +66,8 @@ async function generateApAgingSummary(req, res) {
         supplier: true,
       },
     });
-    console.log(arTransactions)
+
+
     // Categorize transactions into aging buckets
     const agingBuckets = categorizeApAgingTransactions(
       arTransactions,
@@ -99,8 +111,9 @@ function categorizeApAgingTransactions(transactions, currentDate) {
       (currentDate - new Date(date)) / (1000 * 60 * 60 * 24)
     );
     const bucket = getBucket(daysDifference);
-
-    const supplierKey = `${supplier.name}`;
+    
+    const supplierKey = supplier?.name;
+    if(!supplierKey) return;
 
     if (!agingBuckets[supplierKey]) {
       agingBuckets[supplierKey] = {
@@ -113,7 +126,7 @@ function categorizeApAgingTransactions(transactions, currentDate) {
     }
 
     if (usdAmount) {
-      agingBuckets[supplierKey][bucket] += usdAmount * exchangeRate || 0;
+      agingBuckets[supplierKey][bucket] += usdAmount * ExchangeRate || 0;
     } else {
       agingBuckets[supplierKey][bucket] += credit || 0;
     }
@@ -234,7 +247,10 @@ async function generateApAgingPDFContent(
           totals[bucket] += value; // Accumulate column totals
         }
       });
-      doc.text(formatNumber(rowTotal), xOffset, yOffset); // Display row total
+      doc.text(formatNumber(rowTotal), xOffset, yOffset,{
+        width:60,
+        align: "left",
+      }); // Display row total
       totalColumnSum += rowTotal; // Accumulate row total to total column sum
       yOffset += 30; // Move to the next row
     });
