@@ -32,9 +32,8 @@ async function generateApAgingSummary(req, res) {
       where: {
         accountTypeId: {
           in: accountPayableType,
-        },
-      },
-    });
+        }, }
+  });
 
     if (arChartOfAccount.length === 0) {
       return res.status(404).json({
