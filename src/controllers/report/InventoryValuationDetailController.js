@@ -205,14 +205,14 @@ function clusterByProduct(caTransactions, products) {
       return { key, name };
     });
 
-    
+    console.log(test.map(item=>item.key));
     clusteredProducts[product.name] = Array.from(
       new Set(
         test.map(item=>item.key)
       )
     ).map((object) => {
       // Add the 'name' property back to the final object
-      return { ...object, name: object.name };
+      return { ...object, name: test.find((item) => item.key === object).name};
     });
   });
   return clusteredProducts;
@@ -321,7 +321,7 @@ async function generateInventoryValuationPdf(transactions, totals, endDate) {
         const { date, transactionType, number, product, name, rate, fifoCost, qtyOnHand, assetValue } = transaction;
         doc.text(date.toString(), columnTitles[0][1], yOffset);
         doc.text(transactionType, columnTitles[1][1], yOffset);
-        doc.text(formatNumber(number??0), columnTitles[2][1], yOffset);
+        doc.text(number??0, columnTitles[2][1], yOffset);
         doc.text(name, columnTitles[3][1], yOffset);
         doc.text(product??0,columnTitles[4][1], yOffset);
         doc.text(formatNumber(rate??0),columnTitles[5][1], yOffset);
@@ -332,6 +332,7 @@ async function generateInventoryValuationPdf(transactions, totals, endDate) {
       });
 
       doc.moveTo(10, yOffset).lineTo(600, yOffset).stroke();
+      yOffset+=10;
       //view the total of each product
       const total = totals[productName];
       doc.fontSize(8);
