@@ -205,7 +205,6 @@ function clusterByProduct(caTransactions, products) {
       return { key, name };
     });
 
-    console.log(test.map(item=>item.key));
     clusteredProducts[product.name] = Array.from(
       new Set(
         test.map(item=>item.key)
