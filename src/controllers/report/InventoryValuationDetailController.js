@@ -140,10 +140,13 @@ function calculateTotal(products) {
     let totalAssetValue = 0;
 
     let prevAssetValue = 0;
-    
+    let prevQty = 0
     for (const transaction of productTransactions) {
-      if(transaction.transactionType === "Bill")
-      transaction.assetValue += prevAssetValue;
+      if(transaction.transactionType === "Bill"){
+        transaction.assetValue += prevAssetValue;
+        transaction.qty = transaction.qty - prevQty;
+        prevQty += transaction.qty;
+      }
     else if(transaction.transactionType === "Invoice")
       transaction.assetValue = prevAssetValue - transaction.assetValue;
       prevAssetValue = transaction.assetValue;
@@ -235,9 +238,9 @@ async function generateInventoryValuationPdf(transactions, totals, endDate) {
         doc.text(transactionType, columnTitles[1][1], yOffset);
         doc.text(number??0, columnTitles[2][1], yOffset);
         doc.text(name, columnTitles[3][1], yOffset);
-        doc.text(qty??0,columnTitles[4][1], yOffset);
+        doc.text(`${transactionType === 'Invoice'? '-' :""} ${qty??0}`,columnTitles[4][1], yOffset);
         doc.text(formatNumber(rate??0),columnTitles[5][1], yOffset);
-        doc.text(formatNumber(fifoCost??0),columnTitles[6][1], yOffset);
+        doc.text(`${ formatNumber(fifoCost??0)}`,columnTitles[6][1], yOffset);
         doc.text(formatNumber(qtyOnHand??0),columnTitles[7][1], yOffset);
         doc.text(formatNumber(assetValue??0),columnTitles[8][1], yOffset);
         yOffset += 20;
