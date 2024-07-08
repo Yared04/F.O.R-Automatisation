@@ -114,7 +114,6 @@ function aggregatedTransactions(transactions) {
           name: chartofAccount,
         };
       }
-      aggregateTransactions.incomeTotal += debit;
     } else if (expenseAccountTypes.includes(accountType)) {
       if (aggregateTransactions.expenses[chartofAccount.name]) {
         if(supplierId)
@@ -125,7 +124,7 @@ function aggregatedTransactions(transactions) {
           name: chartofAccount.name,
         };
       }
-      aggregateTransactions.expensesTotal += debit;
+      
     }  else if (accountType === "Cost of Goods Sold") {
       if (aggregateTransactions.costOfSales[chartofAccount.name]) {
         aggregateTransactions.costOfSales[chartofAccount.name].value += debit ?? 0;
@@ -135,8 +134,21 @@ function aggregatedTransactions(transactions) {
           name: chartofAccount.name,
         };
       }
-      aggregateTransactions.costOfSalesTotal += debit;
+      
     }
+  });
+  Object.keys(aggregateTransactions.expenses).forEach((expense) => { 
+    aggregateTransactions.expensesTotal += aggregateTransactions.expenses[expense].value;
+  });
+  Object.keys(aggregateTransactions.otherExpenses).forEach((expense) => {
+    aggregateTransactions.otherExpensesTotal += aggregateTransactions.otherExpenses[expense].value;
+  });
+  Object.keys(aggregateTransactions.income).forEach((income) => {
+    aggregateTransactions.incomeTotal += aggregateTransactions.income[income].value;
+  }
+  );
+  Object.keys(aggregateTransactions.costOfSales).forEach((costOfSale) => {
+    aggregateTransactions.costOfSalesTotal += aggregateTransactions.costOfSales[costOfSale].value;
   });
   aggregateTransactions.grossProfit =
     aggregateTransactions.incomeTotal -
