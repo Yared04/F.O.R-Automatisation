@@ -12,38 +12,34 @@ async function generateInventoryValuation(req, res) {
     if (products.length === 0) {
       return res.status(404).json({ error: "No products found" });
     }
-    let productFilter = {
-      productId: {
-        in: products.map((product) => product.id),
-      },
-    };
+    productFilter = {};
     if(endDate){
       productFilter.date = {
         lte: new Date(endDate),
       };
     }
-
-    const productPurchaseTransactions = await prisma.productPurchase.findMany({
-      where: productFilter,
-      orderBy: {
-        date: "asc",
-      },
-    });
-
     const inventoryTransactions = await prisma.inventory.findMany({
-      where: {
-        productId: {
-          in: products.map((product) => product.id),
-        },
-      },
       include: {
+        purchase: {
+          include:{
+            supplier:true,
+          }
+        },
+        product: true,
+        productPurchase: true,
         saleDetail: {
-          select: {
-            id: true,
-            saleQuantity: true,
-            saleUnitPrice: true,
-            totalSales: true,
-          },
+          include:{
+            purchase:{
+              select:{
+                number:true
+              }
+            }
+          }
+        },
+        sale: {
+          include:{
+            customer:true
+          }
         },
       },
     });
@@ -57,95 +53,9 @@ async function generateInventoryValuation(req, res) {
         saleDetailIds.push(tr.saleDetailId);
       }
     });
-    let caFilter = {};
-    if(endDate){
-      caFilter.date = {
-        lte: new Date(endDate),
-      };
-    }
-    const caTransactions = await prisma.CATransaction.findMany({
-      where: {
-        OR: [
-          {
-            saleDetailId: {
-              in: saleDetailIds,
-            },
-          },
-          {
-            productPurchaseId: {
-              in: productPurchaseTransactions.map((tr) => tr.id),
-            },
-          },
-        ],
-        AND:[caFilter]
-      },
-      orderBy: { date: "asc" },
-      include: {
-        chartofAccount: {
-          select: {
-            name: true,
-          },
-        },
-        sale:{
-          select:{
-            invoiceDate:true,
-          }
-        },
-        saleDetail: {
-          select: {
-            saleQuantity: true,
-            saleUnitPrice: true,
-            totalSales: true,
-            product: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
-          },
-        },
-        customer:{
-          select:{
-            firstName:true,
-            lastName: true
-          }
-        },
-        productPurchase: {
-          select: {
-            product: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
-            date:true,
-            purchaseQuantity: true,
-            remainingQuantity: true,
-            purchaseUnitPriceETB: true,
-            purchaseUnitPriceUSD: true,
-            purchaseTotalETB: true,
-          },
-        },
-        supplier:{
-          select:{
-            name:true,
-          }
-        }
-      },
-      orderBy: { date: "asc" },
-    });
-
-    caTransactions.sort((a, b) => {
-      const dateA = a.sale?.invoiceDate || a.productPurchase?.date;
-      const dateB = b.sale?.invoiceDate || b.productPurchase?.date;
-    
-      if (dateA < dateB) return -1;
-      if (dateA > dateB) return 1;
-      return 0;
-    });
 
     // return accountType credit and debit detail
-    const clusteredProducts = clusterByProduct(caTransactions, products);
+    const clusteredProducts = clusterByProduct(inventoryTransactions, products);
 
     //return total credit and debit
     const totals = calculateTotal(clusteredProducts);
@@ -175,33 +85,34 @@ async function generateInventoryValuation(req, res) {
   }
 }
 
-function clusterByProduct(caTransactions, products) {
+function clusterByProduct(invTransactions, products) {
+ 
   let clusteredProducts = {};
   products.forEach((product) => {
-    const test = caTransactions
-    .filter((tr) => {
-      return (
-        tr.productPurchase?.product?.id === product.id ||
-        tr.saleDetail?.product?.id === product.id
-      );
-    })
-    .map((ca) => {
-      const customerName = ca.customer?.firstName && ca.customer?.lastName ? `${ca.customer?.firstName} ${ca.customer?.lastName}` : undefined;
-      const supplierName = ca.supplier?.name;
+    let test = invTransactions
+    .filter((tr) => 
+        tr.product?.id === product.id);
+    test = test.map((ca) => {
+      const customerName = ca.sale?.customer?.firstName && ca.sale?.customer?.lastName ? `${ca.sale?.customer?.firstName} ${ca.sale?.customer?.lastName}` : undefined;
+      const supplierName = ca.purchase?.supplier?.name;
       const name = customerName ? customerName : supplierName;
+      const date = ca.sale?.invoiceDate || ca.productPurchase?.date;
+      let number = ca.purchase?.number ? ca.purchase?.number : ca.sale?.invoiceNumber;
+      if(!number) number = "START";
+      let transactionType = ca.saleDetail ? "Invoice": "Bill";
 
+      if(!ca.purchase && !ca.saleDetail)
+        transactionType = "Inventory starting value";
       const key = {
-        product: -ca.saleDetail?.saleQuantity || ca.productPurchase?.remainingQuantity,
-        number: ca.number,
-        date: formatDateUTCtoMMDDYYYY(ca.date),
-        transactionType: ca.type,
-        qty: -ca.saleDetail?.saleQuantity || ca.productPurchase?.purchaseQuantity,
+        number: number,
+        date: formatDateUTCtoMMDDYYYY(date),
+        transactionType: transactionType,
+        qty: ca.saleDetail?.saleQuantity ? ca.saleDetail.saleQuantity : ca.balanceQuantity,
         rate: ca.saleDetail?.saleUnitPrice || ca.productPurchase?.purchaseUnitPriceETB || 0.0,
         fifoCost: -ca.saleDetail?.totalSales || ca.productPurchase?.purchaseTotalETB || 0.0,
-        qtyOnHand: ca.productPurchase?.remainingQuantity || 0.0,
-        assetValue: -ca.saleDetail?.totalSales || ca.productPurchase?.purchaseTotalETB || 0.0,
+        qtyOnHand: ca.balanceQuantity,
+        assetValue: ca.saleDetail?.totalSales || ca.productPurchase?.purchaseTotalETB || 0.0,
       };
-
       return { key, name };
     });
 
@@ -231,11 +142,13 @@ function calculateTotal(products) {
     let prevAssetValue = 0;
     
     for (const transaction of productTransactions) {
+      if(transaction.transactionType === "Bill")
       transaction.assetValue += prevAssetValue;
+    else if(transaction.transactionType === "Invoice")
+      transaction.assetValue = prevAssetValue - transaction.assetValue;
       prevAssetValue = transaction.assetValue;
       totalQty += transaction.qty || 0;
       totalFifoCost += transaction.fifoCost || 0;
-      totalQtyOnHand += transaction.qtyOnHand || 0;
       totalAssetValue += transaction.assetValue || 0;
     }
     
@@ -317,12 +230,12 @@ async function generateInventoryValuationPdf(transactions, totals, endDate) {
         if(yOffset + 20 > 680){
           addHeaders();
           }
-        const { date, transactionType, number, product, name, rate, fifoCost, qtyOnHand, assetValue } = transaction;
+        const { date, transactionType, number, qty, name, rate, fifoCost, qtyOnHand, assetValue } = transaction;
         doc.text(date.toString(), columnTitles[0][1], yOffset);
         doc.text(transactionType, columnTitles[1][1], yOffset);
         doc.text(number??0, columnTitles[2][1], yOffset);
         doc.text(name, columnTitles[3][1], yOffset);
-        doc.text(product??0,columnTitles[4][1], yOffset);
+        doc.text(qty??0,columnTitles[4][1], yOffset);
         doc.text(formatNumber(rate??0),columnTitles[5][1], yOffset);
         doc.text(formatNumber(fifoCost??0),columnTitles[6][1], yOffset);
         doc.text(formatNumber(qtyOnHand??0),columnTitles[7][1], yOffset);
@@ -335,14 +248,14 @@ async function generateInventoryValuationPdf(transactions, totals, endDate) {
       //view the total of each product
       const total = totals[productName];
       doc.fontSize(8);
-      doc.text("Total", 10, yOffset,{
+      doc.text(`Total for ${productName}`, 10, yOffset,{
         bold:true
       });
       doc.fontSize(8);
-      doc.text(formatNumber(total.totalQty??0), columnTitles[4][1], yOffset);
-      doc.text(formatNumber(total.totalFifoCost??0), columnTitles[6][1], yOffset);
-      doc.text(formatNumber(total.totalQtyOnHand??0), columnTitles[7][1], yOffset);
-      doc.text(formatNumber(productTransactions[productTransactions.length-1]?.assetValue??0), columnTitles[8][1], yOffset);
+      doc.text(formatNumber(productTransactions[productTransactions.length-1]?.totalQty??0), columnTitles[4][1], yOffset);
+      doc.text(`Br. ${formatNumber(total.totalFifoCost??0)}`, columnTitles[6][1], yOffset);
+      doc.text(productTransactions[productTransactions.length-1]?.qtyOnHand??0, columnTitles[7][1], yOffset);
+      doc.text(`Br. ${formatNumber(productTransactions[productTransactions.length-1]?.assetValue??0)}`, columnTitles[8][1], yOffset);
       yOffset += 20;
       doc.moveTo(10, yOffset).lineTo(600, yOffset).stroke(); // Line below the last row
       yOffset += 10;
