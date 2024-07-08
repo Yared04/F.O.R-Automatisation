@@ -104,6 +104,8 @@ function aggregatedTransactions(transactions) {
   transactions.forEach((transaction) => {
     const { debit, credit, chartofAccount, supplierId } = transaction;
     const accountType = chartofAccount?.accountType?.name;
+
+    console.log(accountType, debit, credit)
     
     if (incomeAccountTypes.includes(accountType)) {
       if (aggregateTransactions.income[chartofAccount.name]) {
@@ -276,7 +278,7 @@ doc.text(`Br ${formatNumber(transactions.otherExpensesTotal??0)}`, columnOffsets
 }
 
 function formatDateUTCtoMMDDYYYY(utcDate) {
-  console.log(utcDate)
+
   const date = new Date(utcDate);
   return date.toLocaleDateString("en-US", {
     month: "long",

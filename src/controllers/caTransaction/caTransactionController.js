@@ -486,10 +486,11 @@ async function getCaTransactionById(req, res) {
 async function generateCaTransactionSummary(req, res) {
   try {
     const { startDate, endDate } = req.query;
+    console.log(new Date(startDate), new Date(endDate));
     let transactionFilter = {};
 
     if (startDate && endDate) {
-      transactionFilter.createdAt = {
+      transactionFilter.date = {
         gte: new Date(startDate),
         lte: new Date(endDate),
       };
@@ -504,10 +505,6 @@ async function generateCaTransactionSummary(req, res) {
           supplier: {
             name: "asc",
           },
-        },
-
-        {
-          createdAt: "desc",
         },
       ],
       include: {
