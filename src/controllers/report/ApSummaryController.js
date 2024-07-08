@@ -67,7 +67,6 @@ async function generateApAgingSummary(req, res) {
       },
     });
 
-
     // Categorize transactions into aging buckets
     const agingBuckets = categorizeApAgingTransactions(
       arTransactions,
@@ -106,7 +105,7 @@ function categorizeApAgingTransactions(transactions, currentDate) {
   const agingBuckets = {};
 
   transactions.forEach((transaction) => {
-    const { supplier, date, credit, usdAmount, ExchangeRate } = transaction;
+    const { supplier, type, date, credit, usdAmount, ExchangeRate } = transaction;
     const daysDifference = Math.ceil(
       (currentDate - new Date(date)) / (1000 * 60 * 60 * 24)
     );
@@ -126,9 +125,15 @@ function categorizeApAgingTransactions(transactions, currentDate) {
     }
 
     if (usdAmount) {
+      if(type === "Bill")
       agingBuckets[supplierKey][bucket] += usdAmount * ExchangeRate || 0;
+    else if(type === "Supplier Payment") 
+      agingBuckets[supplierKey][bucket] -= usdAmount * ExchangeRate || 0;
     } else {
+      if(type === "Bill")
       agingBuckets[supplierKey][bucket] += credit || 0;
+    else if(type === "Supplier Payment")
+      agingBuckets[supplierKey][bucket] -= credit || 0;
     }
   });
 

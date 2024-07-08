@@ -486,7 +486,6 @@ async function getCaTransactionById(req, res) {
 async function generateCaTransactionSummary(req, res) {
   try {
     const { startDate, endDate } = req.query;
-    console.log(new Date(startDate), new Date(endDate));
     let transactionFilter = {};
 
     if (startDate && endDate) {
@@ -678,7 +677,7 @@ async function generateCaTransactionPDFContent(
       xOffset += columnTitlesWithOffset[0][1];
       doc.text(transaction.type, xOffset, yOffset);
       xOffset += columnTitlesWithOffset[1][1];
-      doc.text(transaction.number, xOffset, yOffset);
+      doc.text(transaction.sale?.invoiceNumber? transaction.sale?.invoiceNumber : transaction.purchase?.number, xOffset, yOffset);
       xOffset += columnTitlesWithOffset[2][1];
       doc.text("Yes", xOffset, yOffset);
       xOffset += columnTitlesWithOffset[3][1];
