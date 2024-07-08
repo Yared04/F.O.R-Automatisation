@@ -276,8 +276,9 @@ doc.text(`Br ${formatNumber(transactions.otherExpensesTotal??0)}`, columnOffsets
 }
 
 function formatDateUTCtoMMDDYYYY(utcDate) {
+  console.log(utcDate)
   const date = new Date(utcDate);
-  return date.loLocaleDateString("en-US", {
+  return date.toLocaleDateString("en-US", {
     month: "long",
     day: "numeric",
     year: "numeric",
