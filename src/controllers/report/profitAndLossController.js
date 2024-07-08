@@ -205,8 +205,8 @@ async function generateProfitLossPdf(
     // incomes
     if (Object.keys(transactions.income).length !== 0) {
       Object.entries(transactions.income).forEach((transaction) => {
-        doc.text(transaction[0], columnOffsets[0], yOffset);
-      doc.text(formatNumber(transaction[1].value??0), columnOffsets[1], yOffset);
+        doc.text(transaction[0], columnOffsets[0]+15, yOffset);
+      doc.text(formatNumber(transaction[1].value??0), columnOffsets[1]+15, yOffset);
         yOffset += 20;
       });
     }
@@ -222,7 +222,7 @@ async function generateProfitLossPdf(
     // cost of sales
     if (Object.keys(transactions.costOfSales).length !== 0) {
       Object.entries(transactions.costOfSales).forEach((transaction) => {
-        doc.text(transaction[0], columnOffsets[0], yOffset);
+        doc.text(transaction[0], columnOffsets[0]+15, yOffset);
         doc.text(formatNumber(transaction[1].value??0), columnOffsets[1], yOffset);
       yOffset += 20;
       });
@@ -242,7 +242,7 @@ async function generateProfitLossPdf(
     yOffset += 20;
     if (Object.keys(transactions.expenses).length !== 0) {
       Object.entries(transactions.expenses).forEach((transaction) => {
-      doc.text(transaction[0], columnOffsets[0], yOffset);
+      doc.text(transaction[0], columnOffsets[0]+15, yOffset);
       doc.text(formatNumber(transaction[1].value??0), columnOffsets[1], yOffset);
       yOffset += 20;
       });
@@ -257,7 +257,7 @@ async function generateProfitLossPdf(
     doc.fontSize(10).text("Other Expenses", 10, yOffset).moveDown();
     yOffset += 20;
     Object.entries(transactions.otherExpenses).forEach((transaction) => {
-      doc.text(transaction[0], columnOffsets[0], yOffset);
+      doc.text(transaction[0], columnOffsets[0]+15, yOffset);
       doc.text(formatNumber(transaction[1].value??0), columnOffsets[1], yOffset);
       yOffset += 20;
     });
