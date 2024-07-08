@@ -363,7 +363,7 @@ function formatDateUTCtoMMDDYYYY(utcDate) {
 }
 
 function formatDateForTitle(utcDate){
-  const date = newDate(utcDate);
+  const date = new Date(utcDate);
   return date.toLocaleDateString("en-US", {
     month: "long",
     day: "numeric",
