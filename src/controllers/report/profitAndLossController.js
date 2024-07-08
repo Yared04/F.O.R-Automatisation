@@ -104,8 +104,6 @@ function aggregatedTransactions(transactions) {
   transactions.forEach((transaction) => {
     const { debit, credit, chartofAccount, supplierId } = transaction;
     const accountType = chartofAccount?.accountType?.name;
-
-    console.log(accountType, debit, credit)
     
     if (incomeAccountTypes.includes(accountType)) {
       if (aggregateTransactions.income[chartofAccount.name]) {
@@ -117,12 +115,14 @@ function aggregatedTransactions(transactions) {
         };
       }
     } else if (expenseAccountTypes.includes(accountType)) {
+      console.log(chartofAccount.name, supplierId, credit)
       if (aggregateTransactions.expenses[chartofAccount.name]) {
+       
         if(supplierId)
-        aggregateTransactions.expenses[chartofAccount.name].value += debit ?? 0;
+        aggregateTransactions.expenses[chartofAccount.name].value += credit ?? 0;
       } else {
         aggregateTransactions.expenses[chartofAccount.name] = {
-          value: debit ?? 0,
+          value: credit ?? 0,
           name: chartofAccount.name,
         };
       }
