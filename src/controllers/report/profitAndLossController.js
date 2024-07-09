@@ -115,12 +115,11 @@ function aggregatedTransactions(transactions) {
         };
       }
     } else if (expenseAccountTypes.includes(accountType)) {
-      console.log(chartofAccount.name, supplierId, credit)
       if (aggregateTransactions.expenses[chartofAccount.name]) {
        
         if(supplierId)
         aggregateTransactions.expenses[chartofAccount.name].value += credit ?? 0;
-      } else {
+      } else { 
         aggregateTransactions.expenses[chartofAccount.name] = {
           value: credit ?? 0,
           name: chartofAccount.name,
