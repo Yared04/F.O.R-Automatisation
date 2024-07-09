@@ -118,10 +118,10 @@ function aggregatedTransactions(transactions) {
       if (aggregateTransactions.expenses[chartofAccount.name]) {
        
         if(supplierId)
-        aggregateTransactions.expenses[chartofAccount.name].value += debit ?? 0;
-      } else {
+        aggregateTransactions.expenses[chartofAccount.name].value += credit ?? 0;
+      } else { 
         aggregateTransactions.expenses[chartofAccount.name] = {
-          value: debit ?? 0,
+          value: credit ?? 0,
           name: chartofAccount.name,
         };
       }
