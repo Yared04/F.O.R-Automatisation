@@ -113,9 +113,10 @@ function categorizeARAgingTransactions(transactions,paidAmount, currentDate) {
   });
   paidAmount.forEach(
     (sale) => {
-      const { customer, createdAt, paidAmount } = sale;
+      const { customer, invoiceDate, paidAmount } = sale;
+      console.log(customer);
       const daysDifference = Math.ceil(
-        (currentDate - new Date(createdAt)) / (1000 * 60 * 60 * 24)
+        (currentDate - new Date(invoiceDate)) / (1000 * 60 * 60 * 24)
       );
       const bucket = getBucket(daysDifference);
   
@@ -386,11 +387,11 @@ async function generateBankTransactionPDFContent(
     xOffset += 80;
     doc.text("Foreign Currency", xOffset, 150);
     xOffset += 80;
-    doc.text("Balance", xOffset, 150);
-    xOffset += 80;
     doc.text("Payment", xOffset, 150);
     xOffset += 80;
     doc.text("Deposit", xOffset, 150);
+    xOffset += 80;
+    doc.text("Balance", xOffset, 150);
     xOffset += 80;
     doc.text("Type", xOffset, 150);
     xOffset += 80;
@@ -409,7 +410,7 @@ async function generateBankTransactionPDFContent(
       xOffset = 40;
       doc
         .font("Helvetica")
-        .text(formatDate(transaction.createdAt), xOffset, yOffset);
+        .text(formatDate(transaction.date), xOffset, yOffset);
       xOffset += 80;
       doc.text(transaction.payee || "", xOffset, yOffset);
       xOffset += 80;
@@ -422,12 +423,6 @@ async function generateBankTransactionPDFContent(
       );
       xOffset += 80;
       doc.text(
-        transaction.balance ? formatNumber(transaction.balance??0) : "",
-        xOffset,
-        yOffset
-      );
-      xOffset += 80;
-      doc.text(
         transaction.payment ? formatNumber(transaction.payment??0) : "",
         xOffset,
         yOffset
@@ -435,6 +430,12 @@ async function generateBankTransactionPDFContent(
       xOffset += 80;
       doc.text(
         transaction.deposit ? formatNumber(transaction.deposit??0) : "",
+        xOffset,
+        yOffset
+      );
+      xOffset += 80;
+      doc.text(
+        transaction.balance ? formatNumber(transaction.balance??0) : "",
         xOffset,
         yOffset
       );

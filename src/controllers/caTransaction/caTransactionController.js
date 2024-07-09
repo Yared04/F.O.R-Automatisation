@@ -498,7 +498,7 @@ async function generateCaTransactionSummary(req, res) {
       where: transactionFilter,
       orderBy: [
         {
-          date: "desc",
+          date: "asc",
         },
         {
           supplier: {
