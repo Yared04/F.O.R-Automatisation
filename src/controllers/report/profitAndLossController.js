@@ -118,10 +118,10 @@ function aggregatedTransactions(transactions) {
       if (aggregateTransactions.expenses[chartofAccount.name]) {
        
         if(supplierId)
-        aggregateTransactions.expenses[chartofAccount.name].value += credit ?? 0;
+        aggregateTransactions.expenses[chartofAccount.name].value += debit ?? 0;
       } else { 
         aggregateTransactions.expenses[chartofAccount.name] = {
-          value: credit ?? 0,
+          value: debit ?? 0,
           name: chartofAccount.name,
         };
       }
@@ -140,16 +140,28 @@ function aggregatedTransactions(transactions) {
   });
   Object.keys(aggregateTransactions.expenses).forEach((expense) => { 
     aggregateTransactions.expensesTotal += aggregateTransactions.expenses[expense].value;
+    if(!aggregateTransactions.expenses[expense]?.value){
+      delete aggregateTransactions.expenses[expense];
+    }
   });
   Object.keys(aggregateTransactions.otherExpenses).forEach((expense) => {
     aggregateTransactions.otherExpensesTotal += aggregateTransactions.otherExpenses[expense].value;
+    if(!aggregateTransactions.otherExpenses[expense]?.value){
+      delete aggregateTransactions.otherExpenses[expense];
+    }
   });
   Object.keys(aggregateTransactions.income).forEach((income) => {
     aggregateTransactions.incomeTotal += aggregateTransactions.income[income].value;
+    if(!aggregateTransactions.income[income]?.value){
+      delete aggregateTransactions.income[income];
+    }
   }
   );
   Object.keys(aggregateTransactions.costOfSales).forEach((costOfSale) => {
     aggregateTransactions.costOfSalesTotal += aggregateTransactions.costOfSales[costOfSale].value;
+    if(!aggregateTransactions.costOfSales[costOfSale]?.value){
+      delete aggregateTransactions.costOfSales[costOfSale];
+    }
   });
   aggregateTransactions.grossProfit =
     aggregateTransactions.incomeTotal -
