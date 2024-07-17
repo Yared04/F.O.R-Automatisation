@@ -112,7 +112,6 @@ function categorizeARAgingTransactions(transactions, paidAmount, currentDate) {
   });
   paidAmount.forEach((sale) => {
     const { customer, invoiceDate, paidAmount } = sale;
-    console.log(customer);
     const daysDifference = Math.ceil(
       (currentDate - new Date(invoiceDate)) / (1000 * 60 * 60 * 24)
     );
