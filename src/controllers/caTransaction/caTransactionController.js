@@ -2,6 +2,7 @@ const { parse } = require("path");
 const PDFDocument = require("pdfkit");
 const { Readable } = require("stream");
 const prisma = require("../../database");
+const { formatFilterDate } = require("../report/ReportFormatServices");
 
 async function getCaTransactions(req, res) {
   try {
@@ -490,8 +491,8 @@ async function generateCaTransactionSummary(req, res) {
 
     if (startDate && endDate) {
       transactionFilter.date = {
-        gte: new Date(startDate),
-        lte: new Date(endDate),
+        gte: formatFilterDate(startDate),
+        lte: formatFilterDate(endDate),
       };
     }
     const caTransactions = await prisma.CATransaction.findMany({

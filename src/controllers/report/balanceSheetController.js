@@ -1,7 +1,7 @@
 const prisma = require("../../database");
 const PDFDocument = require("pdfkit");
 const { Readable } = require("stream");
-const {formatNumber} = require("./NumberFormatService");
+const { formatNumber, formatFilterDate } = require("./ReportFormatServices");
 
 async function generateBalanceSheetReport(req, res) {
   try {
@@ -31,7 +31,7 @@ async function generateBalanceSheetReport(req, res) {
 
     if (endDate) {
       CaFilter.date = {
-        lte: new Date(endDate),
+        lte: formatFilterDate(endDate),
       };
     }
     // Find the Chart of Account for Accounts Receivable (A/R)
@@ -114,7 +114,7 @@ function aggregateTransactions(transactions) {
     const { debit, credit, chartofAccount } = transaction;
     const accountType = chartofAccount?.accountType?.name;
 
-    if(!accountType) return;
+    if (!accountType) return;
 
     if (accountType === "Accounts Receivable(A/R)") {
       if (aggregateTransactions.accountReceivable[chartofAccount.name]) {
@@ -224,7 +224,7 @@ function calculateNetIncome(transactions) {
   transactions.forEach((transaction) => {
     const { debit, credit, chartofAccount } = transaction;
     const accountType = chartofAccount?.accountType?.name;
-    if(!accountType ) return;
+    if (!accountType) return;
 
     if (incomeAccountTypes.includes(accountType)) {
       if (aggregateTransactions.income[chartofAccount.name]) {
@@ -367,9 +367,13 @@ async function generateBalanceSheetPdf(transactions, endDate) {
     doc.moveTo(10, yOffset).lineTo(600, yOffset).stroke();
     doc.lineWidth(0.5);
     addSpacing(10);
-    doc.lineWidth(1.5)
+    doc.lineWidth(1.5);
     doc.text("Total account receivable", columnOffsets[0], yOffset);
-    doc.text(formatNumber(aggregateTransactions.incomeTotal), columnOffsets[1], yOffset);
+    doc.text(
+      formatNumber(aggregateTransactions.incomeTotal),
+      columnOffsets[1],
+      yOffset
+    );
 
     doc.lineWidth(1);
     addSpacing(20);
@@ -386,7 +390,7 @@ async function generateBalanceSheetPdf(transactions, endDate) {
     doc.moveTo(10, yOffset).lineTo(600, yOffset).stroke();
     doc.lineWidth(0.5);
     addSpacing(10);
-    doc.lineWidth(1.5)
+    doc.lineWidth(1.5);
     doc.text("Total current asset", columnOffsets[0], yOffset);
     doc.text(
       formatNumber(transactions.totalCurrentAssets),
@@ -399,7 +403,7 @@ async function generateBalanceSheetPdf(transactions, endDate) {
     doc.moveTo(10, yOffset).lineTo(600, yOffset).stroke();
     doc.lineWidth(0.5);
     addSpacing(10);
-    doc.lineWidth(1.5)
+    doc.lineWidth(1.5);
     doc.text("Total asset", columnOffsets[0], yOffset);
     doc.text(
       `Br ${formatNumber(transactions.totalAssets)}`,
@@ -408,7 +412,7 @@ async function generateBalanceSheetPdf(transactions, endDate) {
     );
     addSpacing(10);
 
-    doc.lineWidth(1)
+    doc.lineWidth(1);
 
     doc.lineWidth(0.6);
     doc.moveTo(10, yOffset).lineTo(600, yOffset).stroke();
@@ -430,11 +434,7 @@ async function generateBalanceSheetPdf(transactions, endDate) {
     if (Object.keys(transactions.accountPayable).length !== 0) {
       Object.entries(transactions.accountPayable).forEach((transaction) => {
         doc.text(transaction[0], columnOffsets[0], yOffset);
-        doc.text(
-          formatNumber(transaction[1].value),
-          columnOffsets[1],
-          yOffset
-        );
+        doc.text(formatNumber(transaction[1].value), columnOffsets[1], yOffset);
         addSpacing(15);
       });
     }
@@ -442,24 +442,20 @@ async function generateBalanceSheetPdf(transactions, endDate) {
     doc.moveTo(10, yOffset).lineTo(600, yOffset).stroke();
     doc.lineWidth(0.5);
     addSpacing(10);
-    doc.lineWidth(1.5)
+    doc.lineWidth(1.5);
     doc.text("Total Account payable", columnOffsets[0], yOffset);
     doc.text(
       `Br ${formatNumber(transactions.totalAccountsPayable)}`,
       columnOffsets[1],
       yOffset
     );
-    doc.lineWidth(1)
+    doc.lineWidth(1);
     addSpacing(20);
 
     // provisions
     Object.entries(transactions.provisions).forEach((transaction) => {
       doc.text(transaction[0], columnOffsets[0], yOffset);
-      doc.text(
-        formatNumber(transaction[1].value),
-        columnOffsets[1],
-        yOffset
-      );
+      doc.text(formatNumber(transaction[1].value), columnOffsets[1], yOffset);
       addSpacing(15);
     });
     doc.fontSize(10);
@@ -473,25 +469,17 @@ async function generateBalanceSheetPdf(transactions, endDate) {
       yOffset
     );
     addSpacing(20);
-    doc.lineWidth(1)
+    doc.lineWidth(1);
 
     // share holders' equity
     doc.text("Shareholders' equity", columnOffsets[0], yOffset);
     addSpacing(20);
     doc.text("net income", columnOffsets[0], yOffset);
-    doc.text(
-      formatNumber(transactions.netEarning),
-      columnOffsets[1],
-      yOffset
-    );
+    doc.text(formatNumber(transactions.netEarning), columnOffsets[1], yOffset);
     addSpacing(15);
     Object.entries(transactions.shareHoldersEquity).forEach((transaction) => {
       doc.text(transaction[0], columnOffsets[0], yOffset);
-      doc.text(
-        formatNumber(transaction[1].value),
-        columnOffsets[1],
-        yOffset
-      );
+      doc.text(formatNumber(transaction[1].value), columnOffsets[1], yOffset);
       addSpacing(15);
     });
     doc.lineWidth(0.2);
@@ -505,14 +493,14 @@ async function generateBalanceSheetPdf(transactions, endDate) {
       columnOffsets[1],
       yOffset
     );
-    doc.lineWidth(1)
+    doc.lineWidth(1);
     addSpacing(10);
 
     doc.lineWidth(0.2);
     doc.moveTo(10, yOffset).lineTo(600, yOffset).stroke();
     doc.lineWidth(0.5);
     addSpacing(10);
-    doc.lineWidth(1.5)
+    doc.lineWidth(1.5);
     doc.text("Total liabilities and equity", columnOffsets[0], yOffset);
     doc.text(
       `Br ${formatNumber(transactions.totalLiabilitiesAndEquity)}`,
@@ -534,7 +522,7 @@ function formatDateUTCtoMMDDYYYY(utcDate) {
     month: "long",
     day: "numeric",
     year: "numeric",
-  })
+  });
 }
 
 module.exports = {

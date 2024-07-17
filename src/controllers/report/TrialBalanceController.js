@@ -1,8 +1,8 @@
 const prisma = require("../../database");
 const PDFDocument = require("pdfkit");
 const { Readable } = require("stream");
-const { formatNumber } = require("./NumberFormatService");
 const { creditAccounts, debitAccounts } = require("./TrialBalanceAccountTypes.js");
+const { formatFilterDate, formatNumber } = require("./ReportFormatServices.js");
 
 async function generateTrialBalance(req, res) {
   try {
@@ -20,8 +20,8 @@ async function generateTrialBalance(req, res) {
     
     if (startDate && endDate) {
       CaFilter.date = {
-        gte: new Date(startDate),
-        lte: new Date(endDate),
+        gte: formatFilterDate(startDate),
+        lte: formatFilterDate(endDate),
       };
     }
     // Find the Chart of Account for Accounts Receivable (A/R)
