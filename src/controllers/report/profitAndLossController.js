@@ -181,7 +181,7 @@ async function generateProfitLossPdf(
 ) {
   const handleTimeSpan = () => {
     if (startDate && endDate) {
-      return `Transactions from ${formatDateUTCtoMMDDYYYY(
+      return `${formatDateUTCtoMMDDYYYY(
         new Date(startDate)
       )} to ${formatDateUTCtoMMDDYYYY(new Date(endDate))}`;
     }
@@ -198,7 +198,7 @@ async function generateProfitLossPdf(
 
     // add table headers
     doc.moveTo(0, 50);
-    doc.fontSize(10).text("Profit and loss", { align: "center" }).moveDown();
+    doc.fontSize(10).text("Profit and Loss", { align: "center" }).moveDown();
     doc.fontSize(8).text(handleTimeSpan(), { align: "center" }).moveDown();
 
     const columnTitles = [" ", "Total"];
