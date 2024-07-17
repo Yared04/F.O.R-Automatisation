@@ -62,7 +62,7 @@ async function createExpensesPayment(req, res) {
         date: new Date(date),
         remark: remark,
         type: type,
-        debit: parseFloat(debit),
+        credit: parseFloat(credit),
       },
     });
 
@@ -73,7 +73,7 @@ async function createExpensesPayment(req, res) {
         date: new Date(date),
         remark: remark,
         type: type,
-        credit: parseFloat(credit),
+        debit: parseFloat(debit),
         exchangeRate: exchangeRate,
       },
     });
