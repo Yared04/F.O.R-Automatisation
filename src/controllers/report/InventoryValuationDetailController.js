@@ -239,7 +239,7 @@ async function generateInventoryValuationPdf(transactions, totals, endDate) {
           addHeaders();
           }
         const { date, transactionType, number, qty, name, rate, fifoCost, qtyOnHand, assetValue } = transaction;
-        doc.text(date.toString(), columnTitles[0][1], yOffset);
+        doc.text(date.toString(), columnTitles[0][1]+10, yOffset);
         doc.text(transactionType, columnTitles[1][1], yOffset);
         doc.text(number??0, columnTitles[2][1], yOffset);
         doc.text(name, columnTitles[3][1], yOffset);
