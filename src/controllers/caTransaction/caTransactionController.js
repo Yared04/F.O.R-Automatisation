@@ -685,9 +685,9 @@ async function generateCaTransactionPDFContent(
       xOffset += columnTitlesWithOffset[4][1];
       doc.text(transaction.remark, xOffset, yOffset);
       xOffset += columnTitlesWithOffset[5][1];
-      doc.text(transaction.debit, xOffset, yOffset);
+      doc.text(`Br.${transaction.debit}`, xOffset, yOffset);
       xOffset += columnTitlesWithOffset[6][1];
-      doc.text(transaction.credit, xOffset, yOffset);
+      doc.text(`Br.${transaction.credit}`, xOffset, yOffset);
       xOffset += columnTitlesWithOffset[7][1];
       doc.text(transaction.productPurchase?.product.name, xOffset, yOffset);
       xOffset += columnTitlesWithOffset[8][1];
