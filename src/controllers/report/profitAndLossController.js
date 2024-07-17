@@ -1,7 +1,7 @@
 const prisma = require("../../database");
 const PDFDocument = require("pdfkit");
 const { Readable } = require("stream");
-const { formatNumber } = require("./NumberFormatService");
+const { formatNumber,formatFilterDate } = require("./ReportFormatServices");
 
 async function generateProfitAndLossReport(req, res) {
   try {
@@ -21,17 +21,13 @@ async function generateProfitAndLossReport(req, res) {
       ],
     };
 
-    const expenseAccountTypes = [
-      "Expenses",
-      "Cost of Goods Sold",
-    ];
-
+    const expenseAccountTypes = ["Expenses", "Cost of Goods Sold"];
     const incomeAccountTypes = ["Sales of Product Income"];
 
     if (startDate && endDate) {
       CaFilter.date = {
-        gte: new Date(startDate),
-        lte: new Date(endDate),
+        gte: formatFilterDate(startDate),
+        lte: formatFilterDate(endDate),
       };
     }
     // Find the Chart of Account for Accounts Receivable (A/R)
@@ -58,7 +54,6 @@ async function generateProfitAndLossReport(req, res) {
     });
 
     const aggregateTransactions = aggregatedTransactions(transactions);
-
 
     // Generate PDF content
     const pdfContent = await generateProfitLossPdf(
@@ -88,7 +83,7 @@ async function generateProfitAndLossReport(req, res) {
 function aggregatedTransactions(transactions) {
   const expenseAccountTypes = ["Expenses"];
 
-  const incomeAccountTypes = ["Income","Sales of Product Income"];
+  const incomeAccountTypes = ["Income", "Sales of Product Income"];
   const aggregateTransactions = {
     income: {},
     costOfSales: {},
@@ -104,7 +99,7 @@ function aggregatedTransactions(transactions) {
   transactions.forEach((transaction) => {
     const { debit, credit, chartofAccount, supplierId } = transaction;
     const accountType = chartofAccount?.accountType?.name;
-    
+
     if (incomeAccountTypes.includes(accountType)) {
       if (aggregateTransactions.income[chartofAccount.name]) {
         aggregateTransactions.income[chartofAccount.name].value += debit ?? 0;
@@ -116,56 +111,57 @@ function aggregatedTransactions(transactions) {
       }
     } else if (expenseAccountTypes.includes(accountType)) {
       if (aggregateTransactions.expenses[chartofAccount.name]) {
-       
-        if(supplierId)
-        aggregateTransactions.expenses[chartofAccount.name].value += debit ?? 0;
-      } else { 
+        if (supplierId)
+          aggregateTransactions.expenses[chartofAccount.name].value +=
+            debit ?? 0;
+      } else {
         aggregateTransactions.expenses[chartofAccount.name] = {
           value: debit ?? 0,
           name: chartofAccount.name,
         };
       }
-      
-    }  else if (accountType === "Cost of Goods Sold") {
+    } else if (accountType === "Cost of Goods Sold") {
       if (aggregateTransactions.costOfSales[chartofAccount.name]) {
-        aggregateTransactions.costOfSales[chartofAccount.name].value += debit ?? 0;
+        aggregateTransactions.costOfSales[chartofAccount.name].value +=
+          debit ?? 0;
       } else {
         aggregateTransactions.costOfSales[chartofAccount.name] = {
           value: debit ?? 0,
           name: chartofAccount.name,
         };
       }
-      
     }
   });
-  Object.keys(aggregateTransactions.expenses).forEach((expense) => { 
-    aggregateTransactions.expensesTotal += aggregateTransactions.expenses[expense].value;
-    if(!aggregateTransactions.expenses[expense]?.value){
+  Object.keys(aggregateTransactions.expenses).forEach((expense) => {
+    aggregateTransactions.expensesTotal +=
+      aggregateTransactions.expenses[expense].value;
+    if (!aggregateTransactions.expenses[expense]?.value) {
       delete aggregateTransactions.expenses[expense];
     }
   });
   Object.keys(aggregateTransactions.otherExpenses).forEach((expense) => {
-    aggregateTransactions.otherExpensesTotal += aggregateTransactions.otherExpenses[expense].value;
-    if(!aggregateTransactions.otherExpenses[expense]?.value){
+    aggregateTransactions.otherExpensesTotal +=
+      aggregateTransactions.otherExpenses[expense].value;
+    if (!aggregateTransactions.otherExpenses[expense]?.value) {
       delete aggregateTransactions.otherExpenses[expense];
     }
   });
   Object.keys(aggregateTransactions.income).forEach((income) => {
-    aggregateTransactions.incomeTotal += aggregateTransactions.income[income].value;
-    if(!aggregateTransactions.income[income]?.value){
+    aggregateTransactions.incomeTotal +=
+      aggregateTransactions.income[income].value;
+    if (!aggregateTransactions.income[income]?.value) {
       delete aggregateTransactions.income[income];
     }
-  }
-  );
+  });
   Object.keys(aggregateTransactions.costOfSales).forEach((costOfSale) => {
-    aggregateTransactions.costOfSalesTotal += aggregateTransactions.costOfSales[costOfSale].value;
-    if(!aggregateTransactions.costOfSales[costOfSale]?.value){
+    aggregateTransactions.costOfSalesTotal +=
+      aggregateTransactions.costOfSales[costOfSale].value;
+    if (!aggregateTransactions.costOfSales[costOfSale]?.value) {
       delete aggregateTransactions.costOfSales[costOfSale];
     }
   });
   aggregateTransactions.grossProfit =
-    aggregateTransactions.incomeTotal -
-    aggregateTransactions.costOfSalesTotal;
+    aggregateTransactions.incomeTotal - aggregateTransactions.costOfSalesTotal;
   aggregateTransactions.netEarning =
     aggregateTransactions.grossProfit -
     (aggregateTransactions.expensesTotal +
@@ -174,11 +170,7 @@ function aggregatedTransactions(transactions) {
   return aggregateTransactions;
 }
 
-async function generateProfitLossPdf(
-  transactions,
-  startDate,
-  endDate
-) {
+async function generateProfitLossPdf(transactions, startDate, endDate) {
   const handleTimeSpan = () => {
     if (startDate && endDate) {
       return `${formatDateUTCtoMMDDYYYY(
@@ -213,89 +205,128 @@ async function generateProfitLossPdf(
 
     let yOffset = 130;
     doc.fontSize(10).text("Income", 10, yOffset).moveDown();
-    yOffset +=20;
+    yOffset += 20;
 
     // incomes
     if (Object.keys(transactions.income).length !== 0) {
       Object.entries(transactions.income).forEach((transaction) => {
-        doc.text(transaction[0], columnOffsets[0]+15, yOffset);
-      doc.text(formatNumber(transaction[1].value??0), columnOffsets[1]+15, yOffset);
+        doc.text(transaction[0], columnOffsets[0] + 15, yOffset);
+        doc.text(
+          formatNumber(transaction[1].value ?? 0),
+          columnOffsets[1] + 15,
+          yOffset
+        );
         yOffset += 20;
       });
     }
-    doc.moveTo(10, yOffset).lineTo(600, yOffset).stroke(); 
+    doc.moveTo(10, yOffset).lineTo(600, yOffset).stroke();
     yOffset += 10;
     doc.text("Total Income", columnOffsets[0], yOffset);
-    doc.text(`Br ${formatNumber(transactions.incomeTotal??0)}`, columnOffsets[1], yOffset);
+    doc.text(
+      `Br ${formatNumber(transactions.incomeTotal ?? 0)}`,
+      columnOffsets[1],
+      yOffset
+    );
 
-    yOffset+=20;
+    yOffset += 20;
 
     doc.text("Cost of Sales", columnOffsets[0], yOffset);
     yOffset += 20;
     // cost of sales
     if (Object.keys(transactions.costOfSales).length !== 0) {
       Object.entries(transactions.costOfSales).forEach((transaction) => {
-        doc.text(transaction[0], columnOffsets[0]+15, yOffset);
-        doc.text(formatNumber(transaction[1].value??0), columnOffsets[1], yOffset);
-      yOffset += 20;
+        doc.text(transaction[0], columnOffsets[0] + 15, yOffset);
+        doc.text(
+          formatNumber(transaction[1].value ?? 0),
+          columnOffsets[1],
+          yOffset
+        );
+        yOffset += 20;
       });
     }
-    doc.moveTo(10, yOffset).lineTo(600, yOffset).stroke(); 
+    doc.moveTo(10, yOffset).lineTo(600, yOffset).stroke();
     yOffset += 10;
     doc.text("Total cost of sales", columnOffsets[0], yOffset);
-    doc.text(`Br ${formatNumber(transactions.costOfSalesTotal??0)}`, columnOffsets[1], yOffset);
-    yOffset+=20;
-    doc.moveTo(10, yOffset).lineTo(600, yOffset).stroke(); 
+    doc.text(
+      `Br ${formatNumber(transactions.costOfSalesTotal ?? 0)}`,
+      columnOffsets[1],
+      yOffset
+    );
+    yOffset += 20;
+    doc.moveTo(10, yOffset).lineTo(600, yOffset).stroke();
     yOffset += 10;
     doc.text("GROSS PROFIT", columnOffsets[0], yOffset);
-    doc.text(`Br ${formatNumber(transactions.grossProfit??0)}`, columnOffsets[1], yOffset);
-    yOffset+=20;
+    doc.text(
+      `Br ${formatNumber(transactions.grossProfit ?? 0)}`,
+      columnOffsets[1],
+      yOffset
+    );
+    yOffset += 20;
     // expenses
     doc.fontSize(10).text("Expenses", 10, yOffset).moveDown();
     yOffset += 20;
     if (Object.keys(transactions.expenses).length !== 0) {
       Object.entries(transactions.expenses).forEach((transaction) => {
-      doc.text(transaction[0], columnOffsets[0]+15, yOffset);
-      doc.text(formatNumber(transaction[1].value??0), columnOffsets[1], yOffset);
-      yOffset += 20;
+        doc.text(transaction[0], columnOffsets[0] + 15, yOffset);
+        doc.text(
+          formatNumber(transaction[1].value ?? 0),
+          columnOffsets[1],
+          yOffset
+        );
+        yOffset += 20;
       });
     }
-    doc.moveTo(10, yOffset).lineTo(600, yOffset).stroke(); 
+    doc.moveTo(10, yOffset).lineTo(600, yOffset).stroke();
     yOffset += 10;
     doc.text("Total Expenses", columnOffsets[0], yOffset);
-    doc.text(`Br ${formatNumber(transactions.expensesTotal??0)}`, columnOffsets[1], yOffset);
+    doc.text(
+      `Br ${formatNumber(transactions.expensesTotal ?? 0)}`,
+      columnOffsets[1],
+      yOffset
+    );
     yOffset += 20;
 
     // other expenses
     doc.fontSize(10).text("Other Expenses", 10, yOffset).moveDown();
     yOffset += 20;
     Object.entries(transactions.otherExpenses).forEach((transaction) => {
-      doc.text(transaction[0], columnOffsets[0]+15, yOffset);
-      doc.text(formatNumber(transaction[1].value??0), columnOffsets[1], yOffset);
+      doc.text(transaction[0], columnOffsets[0] + 15, yOffset);
+      doc.text(
+        formatNumber(transaction[1].value ?? 0),
+        columnOffsets[1],
+        yOffset
+      );
       yOffset += 20;
     });
-    doc.moveTo(10, yOffset).lineTo(600, yOffset).stroke(); 
+    doc.moveTo(10, yOffset).lineTo(600, yOffset).stroke();
     yOffset += 10;
     doc.text("Total Other Expenses", columnOffsets[0], yOffset);
-doc.text(`Br ${formatNumber(transactions.otherExpensesTotal??0)}`, columnOffsets[1], yOffset);
+    doc.text(
+      `Br ${formatNumber(transactions.otherExpensesTotal ?? 0)}`,
+      columnOffsets[1],
+      yOffset
+    );
     yOffset += 20;
 
-    doc.moveTo(10, yOffset).lineTo(600, yOffset).stroke(); 
-    yOffset +=10;
+    doc.moveTo(10, yOffset).lineTo(600, yOffset).stroke();
+    yOffset += 10;
     doc.text("NET EARINING", columnOffsets[0], yOffset);
-    doc.text(`Br ${formatNumber(transactions.netEarning)}`, columnOffsets[1], yOffset);
+    doc.text(
+      `Br ${formatNumber(transactions.netEarning)}`,
+      columnOffsets[1],
+      yOffset
+    );
     doc.end();
   });
 }
 
 function formatDateUTCtoMMDDYYYY(utcDate) {
-
   const date = new Date(utcDate);
   return date.toLocaleDateString("en-US", {
     month: "long",
     day: "numeric",
     year: "numeric",
-  })
+  });
 }
 
 module.exports = {

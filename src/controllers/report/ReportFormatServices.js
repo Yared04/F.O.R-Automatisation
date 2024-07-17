@@ -20,4 +20,15 @@ const formatNumber = (number) => {
   return `${formattedIntegerPart}.${decimalPart}`;
 }
 
-module.exports = { formatNumber };
+
+function formatFilterDate(date){
+const localDate = new Date(date);
+const utcYear = localDate.getUTCFullYear();
+const utcMonth = localDate.getUTCMonth(); // Months are 0-indexed
+const utcDay = localDate.getUTCDate();
+
+// Create a new Date object representing midnight in UTC
+return new Date(Date.UTC(utcYear, utcMonth, utcDay));
+}
+
+module.exports = { formatNumber,formatFilterDate };

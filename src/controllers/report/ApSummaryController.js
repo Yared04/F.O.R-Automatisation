@@ -1,14 +1,14 @@
 const PDFDocument = require("pdfkit");
 const { Readable } = require("stream");
 const prisma = require("../../database");
-const { formatNumber } = require("./NumberFormatService");
+const { formatFilterDate,formatNumber } = require("./ReportFormatServices");
 
 async function generateApAgingSummary(req, res) {
   try {
     const { endDate } = req.query; // Assuming the end date is passed in the request body
 
     // Use the provided end date or default to the current date
-    const currentDate = endDate ? new Date(endDate) : new Date();
+    const currentDate = endDate ? formatFilterDate(endDate) : formatFilterDate(new Date());
 
     let accountPayableType = await prisma.accountType.findMany({
       where: {
