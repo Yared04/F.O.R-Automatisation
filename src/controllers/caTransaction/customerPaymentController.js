@@ -26,16 +26,15 @@ async function createCustomerPayment(req, res) {
       orderBy: { date: "desc" },
     });
 
-    const supplier = payee
-      ? await prisma.supplier.findUnique({
-          where: { id: payee },
-        })
-      : null;
+    const customer = await prisma.customer.findUnique({
+      where: { id: payee },
+    });
+
 
     const bankTransaction = await prisma.bankTransaction.create({
       data: {
         bankId: bankId,
-        payee: supplier ? supplier.name : null,
+        payee: customer.firstName + " " + customer.lastName,
         payment: parseFloat(payment),
         deposit: parseFloat(deposit),
         type: type,
