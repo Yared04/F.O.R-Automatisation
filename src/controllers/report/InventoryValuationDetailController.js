@@ -98,6 +98,11 @@ function clusterByProduct(invTransactions, products) {
       const name = customerName ? customerName : supplierName;
       const date = ca.sale?.invoiceDate || ca.productPurchase?.date;
       let number = ca.purchase?.number ? ca.purchase?.number : ca.sale?.invoiceNumber;
+      const qty = ca.saleDetail?.saleQuantity ? -ca.saleDetail.saleQuantity : ca.productPurchase?.purchaseQuantity; 
+      const unitPrice = ca.saleDetail?.saleUnitPrice || ca.productPurchase?.purchaseUnitPriceETB || 0.0;
+
+      const fifoCost =  qty * unitPrice;
+
       if(!number) number = "START";
       let transactionType = ca.saleDetail ? "Invoice": "Bill";
 
@@ -107,9 +112,9 @@ function clusterByProduct(invTransactions, products) {
         number: number,
         date: formatDateUTCtoMMDDYYYY(date),
         transactionType: transactionType,
-        qty: ca.saleDetail?.saleQuantity ? ca.saleDetail.saleQuantity : ca.balanceQuantity,
-        rate: ca.saleDetail?.saleUnitPrice || ca.productPurchase?.purchaseUnitPriceETB || 0.0,
-        fifoCost: -ca.saleDetail?.totalSales || ca.productPurchase?.purchaseTotalETB || 0.0,
+        qty: qty,
+        rate: unitPrice,
+        fifoCost: fifoCost,
         qtyOnHand: ca.balanceQuantity,
         assetValue: ca.saleDetail?.totalSales || ca.productPurchase?.purchaseTotalETB || 0.0,
       };
@@ -238,7 +243,7 @@ async function generateInventoryValuationPdf(transactions, totals, endDate) {
         doc.text(transactionType, columnTitles[1][1], yOffset);
         doc.text(number??0, columnTitles[2][1], yOffset);
         doc.text(name, columnTitles[3][1], yOffset);
-        doc.text(`${transactionType === 'Invoice'? '-' :""} ${qty??0}`,columnTitles[4][1], yOffset);
+        doc.text(`${qty??0}`,columnTitles[4][1], yOffset);
         doc.text(formatNumber(rate??0),columnTitles[5][1], yOffset);
         doc.text(`${ formatNumber(fifoCost??0)}`,columnTitles[6][1], yOffset);
         doc.text(formatNumber(qtyOnHand??0),columnTitles[7][1], yOffset);
