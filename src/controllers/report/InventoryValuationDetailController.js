@@ -1,47 +1,44 @@
 const prisma = require("../../database");
 const PDFDocument = require("pdfkit");
 const { Readable } = require("stream");
+const { formatNumber, formatFilterDate } = require("./ReportFormatServices");
 
 async function generateInventoryValuation(req, res) {
   try {
     // find all products
-    const {endDate} = req.query;
+    const { endDate } = req.query;
     const products = await prisma.product.findMany({});
     // find all inventory transactions
     if (products.length === 0) {
       return res.status(404).json({ error: "No products found" });
     }
-    let productFilter = {
-      productId: {
-        in: products.map((product) => product.id),
-      },
-    };
-    if(endDate){
+    productFilter = {};
+    if (endDate) {
       productFilter.date = {
-        lte: new Date(endDate),
+        lte: formatFilterDate(endDate),
       };
     }
-
-    const productPurchaseTransactions = await prisma.productPurchase.findMany({
-      where: productFilter,
-      orderBy: {
-        date: "asc",
-      },
-    });
-
     const inventoryTransactions = await prisma.inventory.findMany({
-      where: {
-        productId: {
-          in: products.map((product) => product.id),
-        },
-      },
       include: {
+        purchase: {
+          include: {
+            supplier: true,
+          },
+        },
+        product: true,
+        productPurchase: true,
         saleDetail: {
-          select: {
-            id: true,
-            saleQuantity: true,
-            saleUnitPrice: true,
-            totalSales: true,
+          include: {
+            purchase: {
+              select: {
+                number: true,
+              },
+            },
+          },
+        },
+        sale: {
+          include: {
+            customer: true,
           },
         },
       },
@@ -56,68 +53,9 @@ async function generateInventoryValuation(req, res) {
         saleDetailIds.push(tr.saleDetailId);
       }
     });
-    let caFilter = {};
-    if(endDate){
-      caFilter.date = {
-        lte: new Date(endDate),
-      };
-    }
-    const caTransactions = await prisma.CATransaction.findMany({
-      where: {
-        OR: [
-          {
-            saleDetailId: {
-              in: saleDetailIds,
-            },
-          },
-          {
-            productPurchaseId: {
-              in: productPurchaseTransactions.map((tr) => tr.id),
-            },
-          },
-        ],
-        AND:[caFilter]
-      },
-      orderBy: { date: "asc" },
-      include: {
-        chartofAccount: {
-          select: {
-            name: true,
-          },
-        },
-        saleDetail: {
-          select: {
-            saleQuantity: true,
-            saleUnitPrice: true,
-            totalSales: true,
-            product: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
-          },
-        },
-        productPurchase: {
-          select: {
-            product: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
-            purchaseQuantity: true,
-            remainingQuantity: true,
-            purchaseUnitPriceETB: true,
-            purchaseUnitPriceUSD: true,
-            purchaseTotalETB: true,
-          },
-        },
-      },
-    });
 
     // return accountType credit and debit detail
-    const clusteredProducts = clusterByProduct(caTransactions, products);
+    const clusteredProducts = clusterByProduct(inventoryTransactions, products);
 
     //return total credit and debit
     const totals = calculateTotal(clusteredProducts);
@@ -125,7 +63,8 @@ async function generateInventoryValuation(req, res) {
     // Generate PDF content
     const pdfContent = await generateInventoryValuationPdf(
       clusteredProducts,
-      totals
+      totals,
+      endDate
     );
 
     // Set response headers for PDF download
@@ -146,50 +85,65 @@ async function generateInventoryValuation(req, res) {
   }
 }
 
-function clusterByProduct(caTransactions, products) {
+function clusterByProduct(invTransactions, products) {
   let clusteredProducts = {};
   products.forEach((product) => {
-    clusteredProducts[product.name] = Array.from(
-      new Set(
-        caTransactions
-          .filter((tr) => {
+    let test = invTransactions.filter((tr) => tr.product?.id === product.id);
+    test = test.map((ca) => {
+      const customerName =
+        ca.sale?.customer?.firstName && ca.sale?.customer?.lastName
+          ? `${ca.sale?.customer?.firstName} ${ca.sale?.customer?.lastName}`
+          : undefined;
+      const supplierName = ca.purchase?.supplier?.name;
+      const name = customerName ? customerName : supplierName;
+      const date = ca.sale?.invoiceDate || ca.productPurchase?.date;
+      let number = ca.purchase?.number
+        ? ca.purchase?.number
+        : ca.sale?.invoiceNumber;
+      const qty = ca.saleDetail?.saleQuantity
+        ? -ca.saleDetail.saleQuantity
+        : ca.productPurchase?.purchaseQuantity;
+      const unitPrice =
+        ca.saleDetail?.saleUnitPrice ||
+        ca.productPurchase?.purchaseUnitPriceETB ||
+        0.0;
 
-            return (
-              tr.productPurchase?.product?.id === product.id ||
-              tr.saleDetail?.product?.id === product.id
-            );
-          })
-          .map((ca) => {
-            return JSON.stringify({
-              product: product.name,
-              number: ca.number,
-              date: formatDateUTCtoMMDDYYYY(ca.date),
-              transactionType: ca.type,
-              qty:
-                -ca.saleDetail?.saleQuantity ||
-                ca.productPurchase?.purchaseQuantity,
-              rate:
-                ca.saleDetail?.saleUnitPrice ||
-                ca.productPurchase?.purchaseUnitPriceETB ||
-                0.0,
-              fifoCost:
-                -ca.saleDetail?.totalSales ||
-                ca.productPurchase?.purchaseTotalETB ||
-                0.0,
-              qtyOnHand: ca.productPurchase?.remainingQuantity || 0.0,
-              assetValue:  -ca.saleDetail?.totalSales || ca.productPurchase?.purchaseTotalETB || 0.0,
-            });
-          })
-      )
-    ).map((stringifiedObject) => JSON.parse(stringifiedObject));
-}
-  )
+      const fifoCost = qty * unitPrice;
+
+      if (!number) number = "START";
+      let transactionType = ca.saleDetail ? "Invoice" : "Bill";
+
+      if (!ca.purchase && !ca.saleDetail)
+        transactionType = "Inventory starting value";
+      const key = {
+        number: number,
+        date: formatDateUTCtoMMDDYYYY(date),
+        transactionType: transactionType,
+        qty: qty,
+        rate: unitPrice,
+        fifoCost: fifoCost,
+        qtyOnHand: ca.balanceQuantity,
+        assetValue:
+          ca.saleDetail?.totalSales ||
+          ca.productPurchase?.purchaseTotalETB ||
+          0.0,
+      };
+      return { key, name };
+    });
+
+    clusteredProducts[product.name] = Array.from(
+      new Set(test.map((item) => item.key))
+    ).map((object) => {
+      // Add the 'name' property back to the final object
+      return { ...object, name: test.find((item) => item.key === object).name };
+    });
+  });
   return clusteredProducts;
 }
 
 function calculateTotal(products) {
   const totals = {};
-  
+
   for (const productName in products) {
     const productTransactions = products[productName];
     let totalQty = 0;
@@ -198,29 +152,34 @@ function calculateTotal(products) {
     let totalAssetValue = 0;
 
     let prevAssetValue = 0;
-    
+    let prevQty = 0;
     for (const transaction of productTransactions) {
-      transaction.assetValue += prevAssetValue;
+      if (transaction.transactionType === "Bill") {
+        transaction.assetValue += prevAssetValue;
+        transaction.qty = transaction.qty - prevQty;
+        prevQty += transaction.qty;
+      } else if (transaction.transactionType === "Invoice")
+        transaction.assetValue = prevAssetValue - transaction.assetValue;
       prevAssetValue = transaction.assetValue;
       totalQty += transaction.qty || 0;
       totalFifoCost += transaction.fifoCost || 0;
-      totalQtyOnHand += transaction.qtyOnHand || 0;
       totalAssetValue += transaction.assetValue || 0;
     }
-    
+
     totals[productName] = {
       totalQty,
       totalFifoCost,
       totalQtyOnHand,
-      totalAssetValue
+      totalAssetValue,
     };
   }
-  
+
   return totals;
 }
 
-async function generateInventoryValuationPdf(transactions, totals) {
-  const handleTimeSpan = () => {
+async function generateInventoryValuationPdf(transactions, totals, endDate) {
+  const handleTimeSpan = (endDate) => {
+    if (endDate) return formatDateForTitle(endDate);
     return "All Dates";
   };
   return new Promise((resolve, reject) => {
@@ -232,77 +191,130 @@ async function generateInventoryValuationPdf(transactions, totals) {
     doc.on("end", () => resolve(Buffer.concat(buffers)));
     doc.on("error", reject);
 
-    // add table headers
-    doc.moveTo(0, 50);
-    doc
-      .fontSize(10)
-      .text("Inventory Valuation", { align: "center" })
-      .moveDown();
-    doc.fontSize(8).text(handleTimeSpan(), { align: "center" }).moveDown();
-
     let pageCount = 0;
-    const columnTitles = ["DATE", "TRANSACTION TYPE", "NO.", "NAME", "QTY", "RATE", "FIFO COST", "QTY ON HAND", "ASSET VALUE"];
-    const columnOffsets = [10, 70, 180, 210, 300, 350, 400, 450,540];
+    const columnTitles = [
+      ["DATE", 10],
+      ["TRANSACTION TYPE", 70],
+      ["NO.", 180],
+      ["NAME", 210],
+      ["QTY", 300],
+      ["RATE", 350],
+      ["FIFO COST", 400],
+      ["QTY ON HAND", 470],
+      ["ASSET VALUE", 540],
+    ];
 
-    columnTitles.forEach((title, i) => {
-      doc.text(title, columnOffsets[i], 110);
-    });
+    const addHeaders = () => {
+      ++pageCount;
+      if (pageCount > 1) {
+        doc.addPage();
+      }
+      xOffset = 10;
+      yOffset = 190;
+      doc
+        .fontSize(10)
+        .text("Inventory Valuation", { align: "center" })
+        .moveDown();
+      doc
+        .fontSize(8)
+        .text(handleTimeSpan(endDate), { align: "center" })
+        .moveDown();
+      columnTitles.forEach((title) => {
+        doc.text(title[0], title[1], 150, {});
+      });
+      doc.lineWidth(0.5); // Set line weight to 2 (adjust as needed)
+      doc.moveTo(10, 145).lineTo(600, 145).stroke(); // Line above the first row
+      doc.moveTo(10, 165).lineTo(600, 165).stroke(); // Line above the first row
+      xOffset = 10;
+    };
 
     doc.lineWidth(0.5); // Set line weight to 0.5 (adjust as needed)
     doc.moveTo(10, 120).lineTo(600, 120).stroke(); // Line above the first row
 
     let yOffset = 130;
+    addHeaders();
     for (const productName in transactions) {
-      if(yOffset > 680){
-        ++pageCount;
-      if(pageCount > 1){
-      doc.addPage();
+      if (yOffset > 680) {
+        addHeaders();
       }
-      xOffset = 10;
-      yOffset = 190;
-      }
-      const productTransactions = transactions[productName];
-      doc.fontSize(9).text(productName, 10, yOffset+5,{
+      const productTransactions = transactions[productName].sort((a, b) => {
+        const dateA = new Date(a.date);
+        const dateB = new Date(b.date);
+
+        if (dateA < dateB) return -1;
+        if (dateA > dateB) return 1;
+        return 0;
+      });
+      doc
+        .fontSize(9)
+        .text(productName, 10, yOffset, {
           bold: true,
-      }).moveDown();
-      yOffset += 15;
-      doc.fontSize(8)
+        })
+        .moveDown();
+      yOffset += 30;
+      doc.fontSize(8);
       doc.bold = false;
       productTransactions.forEach((transaction) => {
-        if(yOffset + 20 > 680){
-            ++pageCount;
-          if(pageCount > 1){
-          doc.addPage();
-          }
-          xOffset = 10;
-          yOffset = 190;
-          }
-        const { date, transactionType, number, name, qty, rate, fifoCost, qtyOnHand, assetValue } = transaction;
-        doc.text(date.toString(), columnOffsets[0], yOffset + 10);
-        doc.text(transactionType, columnOffsets[1], yOffset + 10);
-        doc.text(number, columnOffsets[2], yOffset + 10);
-        doc.text(name, columnOffsets[3], yOffset + 10);
-        doc.text(qty.toString(),columnOffsets[4], yOffset + 10);
-        doc.text(rate?.toFixed(2),columnOffsets[5], yOffset + 10);
-        doc.text(fifoCost?.toFixed(2),columnOffsets[6], yOffset + 10);
-        doc.text(qtyOnHand.toString(),columnOffsets[7], yOffset + 10);
-        doc.text(assetValue?.toFixed(2),columnOffsets[8], yOffset + 10);
-        yOffset += 30;
+        if (yOffset + 20 > 680) {
+          addHeaders();
+        }
+        const {
+          date,
+          transactionType,
+          number,
+          qty,
+          name,
+          rate,
+          fifoCost,
+          qtyOnHand,
+          assetValue,
+        } = transaction;
+        doc.text(date.toString(), columnTitles[0][1] + 10, yOffset);
+        doc.text(transactionType, columnTitles[1][1], yOffset);
+        doc.text(number ?? 0, columnTitles[2][1], yOffset);
+        doc.text(name, columnTitles[3][1], yOffset);
+        doc.text(`${qty ?? 0}`, columnTitles[4][1], yOffset);
+        doc.text(formatNumber(rate ?? 0), columnTitles[5][1], yOffset);
+        doc.text(`${formatNumber(fifoCost ?? 0)}`, columnTitles[6][1], yOffset);
+        doc.text(formatNumber(qtyOnHand ?? 0), columnTitles[7][1], yOffset);
+        doc.text(formatNumber(assetValue ?? 0), columnTitles[8][1], yOffset);
+        yOffset += 20;
       });
 
       doc.moveTo(10, yOffset).lineTo(600, yOffset).stroke();
+      yOffset += 10;
       //view the total of each product
       const total = totals[productName];
       doc.fontSize(8);
-      doc.text("Total", 10, yOffset + 10,{
-        bold:true
+      doc.text(`Total for ${productName}`, 10, yOffset, {
+        bold: true,
       });
       doc.fontSize(8);
-      doc.text(total.totalQty?.toString(), columnOffsets[4], yOffset + 10);
-      doc.text(total.totalFifoCost?.toFixed(2), columnOffsets[6], yOffset + 10);
-      doc.text(total.totalQtyOnHand?.toString(), columnOffsets[7], yOffset + 10);
-      doc.text(total.totalAssetValue?.toFixed(2), columnOffsets[8], yOffset + 10);
-      yOffset += 30;
+      doc.text(
+        formatNumber(
+          productTransactions[productTransactions.length - 1]?.totalQty ?? 0
+        ),
+        columnTitles[4][1],
+        yOffset
+      );
+      doc.text(
+        `Br. ${formatNumber(total.totalFifoCost ?? 0)}`,
+        columnTitles[6][1],
+        yOffset
+      );
+      doc.text(
+        productTransactions[productTransactions.length - 1]?.qtyOnHand ?? 0,
+        columnTitles[7][1],
+        yOffset
+      );
+      doc.text(
+        `Br. ${formatNumber(
+          productTransactions[productTransactions.length - 1]?.assetValue ?? 0
+        )}`,
+        columnTitles[8][1],
+        yOffset
+      );
+      yOffset += 20;
       doc.moveTo(10, yOffset).lineTo(600, yOffset).stroke(); // Line below the last row
       yOffset += 10;
     }
@@ -319,6 +331,15 @@ function formatDateUTCtoMMDDYYYY(utcDate) {
   return `${mm.toString().padStart(2, "0")}/${dd
     .toString()
     .padStart(2, "0")}/${yyyy}`;
+}
+
+function formatDateForTitle(utcDate) {
+  const date = new Date(utcDate);
+  return date.toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
 }
 
 module.exports = {

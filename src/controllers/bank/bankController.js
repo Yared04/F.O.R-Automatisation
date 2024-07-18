@@ -17,12 +17,12 @@ async function getBanks(req, res) {
           startingValue: true,
           startingValueDate: true,
           bankTransactions: {
-            orderBy: { createdAt: "desc" },
+            orderBy: { date: "desc" },
           },
         },
         skip: (page - 1) * parseInt(pageSize, 10),
         take: parseInt(pageSize, 10),
-        orderBy: { createdAt: "desc" },
+        orderBy: { startingValueDate: "desc" },
       });
     } else {
       banks = await prisma.bank.findMany({
@@ -33,10 +33,10 @@ async function getBanks(req, res) {
           startingValue: true,
           startingValueDate: true,
           bankTransactions: {
-            orderBy: { createdAt: "desc" },
+            orderBy: { date: "desc" },
           },
         },
-        orderBy: { createdAt: "desc" },
+        orderBy: { startingValueDate: "desc" },
       });
 
       totalCount = banks.length;
@@ -95,7 +95,7 @@ async function getBankTransactions(req, res) {
         },
         skip: (page - 1) * parseInt(pageSize, 10),
         take: parseInt(pageSize, 10),
-        orderBy: { createdAt: "desc" },
+        orderBy: { date: "desc" },
       });
     } else {
       bankTransactions = await prisma.bankTransaction.findMany({
@@ -105,7 +105,7 @@ async function getBankTransactions(req, res) {
         include: {
           chartofAccount: true,
         },
-        orderBy: { createdAt: "desc" },
+        orderBy: { date: "desc" },
       });
     }
 

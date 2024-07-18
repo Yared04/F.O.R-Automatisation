@@ -17,6 +17,9 @@ async function getDeclarations(req, res) {
           date: true,
           paidAmount: true,
         },
+        orderBy: {
+          date: "desc",
+        },
         skip: (page - 1) * parseInt(pageSize, 10),
         take: parseInt(pageSize, 10),
       });
@@ -750,7 +753,7 @@ async function createCustomTaxPayment(req, res) {
   try {
     const bankTransactions = await prisma.bankTransaction.findMany({
       where: { bankId: bankId },
-      orderBy: { createdAt: "desc" },
+      orderBy: { date: "desc" },
     });
 
     const supplier = payee

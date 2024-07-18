@@ -1,54 +1,62 @@
 const PDFDocument = require("pdfkit");
 const { Readable } = require("stream");
 const prisma = require("../../database");
+const { formatFilterDate,formatNumber } = require("./ReportFormatServices");
 
 async function generateApAgingSummary(req, res) {
   try {
     const { endDate } = req.query; // Assuming the end date is passed in the request body
 
     // Use the provided end date or default to the current date
-    const currentDate = endDate ? new Date(endDate) : new Date();
-    
+    const currentDate = endDate ? formatFilterDate(endDate) : formatFilterDate(new Date());
+
     let accountPayableType = await prisma.accountType.findMany({
-      where:{
-        name:"Accounts Payable(A/P)"
-      }
-    });
-
-    if (accountPayableType.length === 0) {
-      return res
-        .status(404)
-        .json({
-          error: "No Accounts Payable (A/P) account type found.",
-        });
-    }
-
-    accountPayableType = accountPayableType.map(item=>item.id);
-
-    // Find the Chart of Account for Accounts Receivable (A/P)
-    let arChartOfAccount = await prisma.chartOfAccount.findMany({
       where: {
-       accountTypeId: {
-        in:accountPayableType
-       }
+        name:{
+          in:["Accounts Payable(A/P)","Expenses"]
+        } 
       },
     });
 
-    if (arChartOfAccount.length === 0) {
-      return res
-        .status(404)
-        .json({
-          error: "Accounts Payable (A/P) chart of account not found.",
-        });
+
+    if (accountPayableType.length === 0) {
+      return res.status(404).json({
+        error: "No Accounts Payable (A/P) account type found.",
+      });
     }
 
-    arChartOfAccount = arChartOfAccount.map(item=> item.id);
+    accountPayableType = accountPayableType.map((item) => item.id);
+
+    // Find the Chart of Account for Accounts Payable (A/P)
+    let arChartOfAccount = await prisma.chartOfAccount.findMany({
+      where: {
+        accountTypeId: {
+          in: accountPayableType,
+        }, }
+  });
+
+    if (arChartOfAccount.length === 0) {
+      return res.status(404).json({
+        error: "Accounts Payable (A/P) chart of account not found.",
+      });
+    }
+
+    arChartOfAccount = arChartOfAccount.map((item) => item.id);
 
     // Find all transactions related to the Accounts Receivable (A/P) chart of account
+
+    let suppliers = await prisma.supplier.findMany({});
+    suppliers = suppliers.map(item=>item.id);
+    if(suppliers.length === 0) {
+      return res.status(404).json({
+        error: "No supplier found.",
+      });
+    }
+
     const arTransactions = await prisma.CATransaction.findMany({
       where: {
-        chartofAccountId:{
-          in: arChartOfAccount
+        supplierId: {
+          in: suppliers,
         },
         date: {
           lte: currentDate, // Filter transactions up to the end date
@@ -97,13 +105,14 @@ function categorizeApAgingTransactions(transactions, currentDate) {
   const agingBuckets = {};
 
   transactions.forEach((transaction) => {
-    const { supplier, date, credit, usdAmount, ExchangeRate  } = transaction;
+    const { supplier, type, date, credit, usdAmount, ExchangeRate } = transaction;
     const daysDifference = Math.ceil(
       (currentDate - new Date(date)) / (1000 * 60 * 60 * 24)
     );
     const bucket = getBucket(daysDifference);
-
-    const supplierKey = `${supplier.name}`;
+    
+    const supplierKey = supplier?.name;
+    if(!supplierKey) return;
 
     if (!agingBuckets[supplierKey]) {
       agingBuckets[supplierKey] = {
@@ -115,11 +124,16 @@ function categorizeApAgingTransactions(transactions, currentDate) {
       };
     }
 
-    if(usdAmount) {
-      agingBuckets[supplierKey][bucket] += usdAmount * exchangeRate || 0;
-    }
-    else{
+    if (usdAmount) {
+      if(type === "Bill")
+      agingBuckets[supplierKey][bucket] += usdAmount * ExchangeRate || 0;
+    else if(type === "Supplier Payment") 
+      agingBuckets[supplierKey][bucket] -= usdAmount * ExchangeRate || 0;
+    } else {
+      if(type === "Bill")
       agingBuckets[supplierKey][bucket] += credit || 0;
+    else if(type === "Supplier Payment")
+      agingBuckets[supplierKey][bucket] -= credit || 0;
     }
   });
 
@@ -187,7 +201,7 @@ async function generateApAgingPDFContent(
       .moveDown();
 
     // Add table headers
-    doc.fontSize(7)
+    doc.fontSize(7);
     let xOffset = 20;
     xOffset += 80;
     doc.text("Current", xOffset, 150);
@@ -226,7 +240,9 @@ async function generateApAgingPDFContent(
       Object.keys(agingBuckets[supplier]).forEach((bucket) => {
         const value = agingBuckets[supplier][bucket];
         doc.text(
-          typeof value === "number" ? value.toFixed(2) : value,
+          typeof value === "number"
+            ? formatNumber(value)
+            : formatNumber(value),
           xOffset,
           yOffset
         );
@@ -236,7 +252,10 @@ async function generateApAgingPDFContent(
           totals[bucket] += value; // Accumulate column totals
         }
       });
-      doc.text(rowTotal.toFixed(2), xOffset, yOffset); // Display row total
+      doc.text(formatNumber(rowTotal), xOffset, yOffset,{
+        width:60,
+        align: "left",
+      }); // Display row total
       totalColumnSum += rowTotal; // Accumulate row total to total column sum
       yOffset += 30; // Move to the next row
     });
@@ -255,15 +274,18 @@ async function generateApAgingPDFContent(
     doc.font("Helvetica-Bold").text("Total", xOffset, yOffset);
     xOffset += 80;
     Object.keys(totals).forEach((bucket) => {
-      doc.text(totals[bucket].toFixed(2), xOffset, yOffset);
+      doc.text(formatNumber(totals[bucket]), xOffset, yOffset);
       xOffset += 80;
     });
-    doc.text(totalColumnSum.toFixed(2), xOffset, yOffset); // Display total column sum
+    doc.text(formatNumber(totalColumnSum), xOffset, yOffset ,{
+      width:60,
+      align: "left",
+    }); 
 
     doc.end();
   });
 }
 
-module.exports ={
-  generateApAgingSummary
-}
+module.exports = {
+  generateApAgingSummary,
+};

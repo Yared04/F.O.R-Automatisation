@@ -40,7 +40,7 @@ async function createESLPayment(req, res) {
   try {
     const bankTransactions = await prisma.bankTransaction.findMany({
       where: { bankId: bankId },
-      orderBy: { createdAt: "desc" },
+      orderBy: { date: "desc" },
     });
 
     const supplier = payee
@@ -85,7 +85,7 @@ async function createESLPayment(req, res) {
         date: new Date(date),
         remark: remark,
         type: type,
-        debit: parseFloat(credit),
+        debit: parseFloat(debit),
         supplierId: supplierId,
       }
     });

@@ -1,13 +1,14 @@
 const PDFDocument = require("pdfkit");
 const { Readable } = require("stream");
 const prisma = require("../../database");
+const { formatNumber, formatFilterDate } = require("./ReportFormatServices");
 
 async function generateCustomerAgingSummary(req, res) {
   try {
     const { endDate } = req.query; // Assuming the end date is passed in the request body
 
     // Use the provided end date or default to the current date
-    const currentDate = endDate ? new Date(endDate) : new Date();
+    const currentDate = endDate ? formatFilterDate(endDate) : formatFilterDate(new Date());
 
     // Find the Chart of Account for Accounts Receivable (A/R)
     const arChartOfAccount = await prisma.chartOfAccount.findFirst({
@@ -17,11 +18,9 @@ async function generateCustomerAgingSummary(req, res) {
     });
 
     if (!arChartOfAccount) {
-      return res
-        .status(404)
-        .json({
-          error: "Accounts Receivable (A/R) chart of account not found.",
-        });
+      return res.status(404).json({
+        error: "Accounts Receivable (A/R) chart of account not found.",
+      });
     }
 
     // Find all transactions related to the Accounts Receivable (A/R) chart of account
@@ -37,8 +36,9 @@ async function generateCustomerAgingSummary(req, res) {
       },
     });
 
-    const customerIds = arTransactions.map((transaction) => transaction.customer.id);
-    console.log(customerIds);
+    const customerIds = arTransactions.map(
+      (transaction) => transaction.customer.id
+    );
 
     const paidAmounts = await prisma.sale.findMany({
       where: {
@@ -46,11 +46,10 @@ async function generateCustomerAgingSummary(req, res) {
           in: customerIds,
         },
       },
-      include:{
+      include: {
         customer: true,
-      }
+      },
     });
-
 
     // Categorize transactions into aging buckets
     const agingBuckets = categorizeARAgingTransactions(
@@ -87,7 +86,7 @@ async function generateCustomerAgingSummary(req, res) {
   }
 }
 
-function categorizeARAgingTransactions(transactions,paidAmount, currentDate) {
+function categorizeARAgingTransactions(transactions, paidAmount, currentDate) {
   const agingBuckets = {};
 
   transactions.forEach((transaction) => {
@@ -111,30 +110,27 @@ function categorizeARAgingTransactions(transactions,paidAmount, currentDate) {
 
     agingBuckets[customerKey][bucket] += credit || 0;
   });
-  paidAmount.forEach(
-    (sale) => {
-      const { customer, createdAt, paidAmount } = sale;
-      const daysDifference = Math.ceil(
-        (currentDate - new Date(createdAt)) / (1000 * 60 * 60 * 24)
-      );
-      const bucket = getBucket(daysDifference);
-  
-      const customerKey = `${customer.firstName} ${customer.lastName}`;
-  
-      if (!agingBuckets[customerKey]) {
-        agingBuckets[customerKey] = {
-          current: 0,
-          days1to30: 0,
-          days31to60: 0,
-          days61to90: 0,
-          over90: 0,
-        };
-      }
-  
-      agingBuckets[customerKey][bucket] -= paidAmount || 0;
-    }
-  )
+  paidAmount.forEach((sale) => {
+    const { customer, invoiceDate, paidAmount } = sale;
+    const daysDifference = Math.ceil(
+      (currentDate - new Date(invoiceDate)) / (1000 * 60 * 60 * 24)
+    );
+    const bucket = getBucket(daysDifference);
 
+    const customerKey = `${customer.firstName} ${customer.lastName}`;
+
+    if (!agingBuckets[customerKey]) {
+      agingBuckets[customerKey] = {
+        current: 0,
+        days1to30: 0,
+        days31to60: 0,
+        days61to90: 0,
+        over90: 0,
+      };
+    }
+
+    agingBuckets[customerKey][bucket] -= paidAmount || 0;
+  });
 
   return agingBuckets;
 }
@@ -200,7 +196,7 @@ async function generateARAgingPDFContent(
       .moveDown();
 
     // Add table headers
-    doc.fontSize(7)
+    doc.fontSize(7);
 
     let xOffset = 30;
     xOffset += 80;
@@ -240,9 +236,13 @@ async function generateARAgingPDFContent(
       Object.keys(agingBuckets[customer]).forEach((bucket) => {
         const value = agingBuckets[customer][bucket];
         doc.text(
-          typeof value === "number" ? value.toFixed(2) : value,
+          typeof value === "number" ? formatNumber(value ?? 0) : value,
           xOffset,
-          yOffset
+          yOffset,
+          {
+            width: 80,
+            align: "left",
+          }
         );
         xOffset += 80;
         if (bucket !== "Total") {
@@ -250,7 +250,10 @@ async function generateARAgingPDFContent(
           totals[bucket] += value; // Accumulate column totals
         }
       });
-      doc.text(rowTotal.toFixed(2), xOffset, yOffset); // Display row total
+      doc.text(formatNumber(rowTotal ?? 0), xOffset, yOffset, {
+        width: 80,
+        align: "left",
+      }); // Display row total
       totalColumnSum += rowTotal; // Accumulate row total to total column sum
       yOffset += 20; // Move to the next row
     });
@@ -269,10 +272,16 @@ async function generateARAgingPDFContent(
     doc.font("Helvetica-Bold").text("Total", xOffset, yOffset);
     xOffset += 80;
     Object.keys(totals).forEach((bucket) => {
-      doc.text(totals[bucket].toFixed(2), xOffset, yOffset);
+      doc.text(formatNumber(totals[bucket] ?? 0), xOffset, yOffset, {
+        width: 80,
+        align: "left",
+      });
       xOffset += 80;
     });
-    doc.text(totalColumnSum.toFixed(2), xOffset, yOffset); // Display total column sum
+    doc.text(formatNumber(totalColumnSum ?? 0), xOffset, yOffset, {
+      width: 80,
+      align: "left",
+    }); // Display total column sum
 
     doc.end();
   });
@@ -300,8 +309,8 @@ async function generateBankTransactionSummary(req, res) {
 
     if (startDate && endDate) {
       transactionFilter.date = {
-        gte: new Date(startDate),
-        lte: new Date(endDate),
+        gte: formatFilterDate(startDate),
+        lte: formatFilterDate(endDate),
       };
     }
 
@@ -356,11 +365,11 @@ async function generateBankTransactionPDFContent(
     // Add date interval or date below the bank name
     let dateText = "";
     if (startDate && endDate) {
-      dateText = `Transactions from ${formatDate(startDate)} to ${formatDate(
-        endDate
-      )}`;
+      dateText = `Transactions from ${formatDateUTCtoTitleFormat(
+        startDate
+      )} to ${formatDateUTCtoTitleFormat(endDate)}`;
     } else {
-      dateText = `Transactions as of ${formatDate(new Date())}`;
+      dateText = `Transactions as of ${formatDateUTCtoTitleFormat(new Date())}`;
     }
     doc.fontSize(10).text(dateText, { align: "center" }).moveDown();
 
@@ -373,11 +382,11 @@ async function generateBankTransactionPDFContent(
     xOffset += 80;
     doc.text("Foreign Currency", xOffset, 150);
     xOffset += 80;
-    doc.text("Balance", xOffset, 150);
-    xOffset += 80;
     doc.text("Payment", xOffset, 150);
     xOffset += 80;
     doc.text("Deposit", xOffset, 150);
+    xOffset += 80;
+    doc.text("Balance", xOffset, 150);
     xOffset += 80;
     doc.text("Type", xOffset, 150);
     xOffset += 80;
@@ -396,32 +405,32 @@ async function generateBankTransactionPDFContent(
       xOffset = 40;
       doc
         .font("Helvetica")
-        .text(formatDate(transaction.createdAt), xOffset, yOffset);
+        .text(formatDate(transaction.date), xOffset, yOffset);
       xOffset += 80;
       doc.text(transaction.payee || "", xOffset, yOffset);
       xOffset += 80;
       doc.text(
         transaction.foreignCurrency
-          ? transaction.foreignCurrency.toFixed(2)
+          ? formatNumber(transaction.foreignCurrency ?? 0)
           : "",
         xOffset,
         yOffset
       );
       xOffset += 80;
       doc.text(
-        transaction.balance ? transaction.balance.toFixed(2) : "",
+        transaction.payment ? formatNumber(transaction.payment ?? 0) : "",
         xOffset,
         yOffset
       );
       xOffset += 80;
       doc.text(
-        transaction.payment ? transaction.payment.toFixed(2) : "",
+        transaction.deposit ? formatNumber(transaction.deposit ?? 0) : "",
         xOffset,
         yOffset
       );
       xOffset += 80;
       doc.text(
-        transaction.deposit ? transaction.deposit.toFixed(2) : "",
+        transaction.balance ? formatNumber(transaction.balance ?? 0) : "",
         xOffset,
         yOffset
       );
@@ -431,7 +440,9 @@ async function generateBankTransactionPDFContent(
       doc.text(transaction.chartofAccount?.name || "", xOffset, yOffset);
       xOffset += 100;
       doc.text(
-        transaction.exchangeRate ? transaction.exchangeRate.toFixed(2) : "",
+        transaction.exchangeRate
+          ? formatNumber(transaction.exchangeRate ?? 0)
+          : "",
         xOffset,
         yOffset
       );
@@ -451,6 +462,14 @@ async function generateBankTransactionPDFContent(
 // Utility function to format date
 function formatDate(date) {
   return date ? new Date(date).toLocaleDateString("en-US") : "";
+}
+function formatDateUTCtoTitleFormat(utcDate) {
+  const date = new Date(utcDate);
+  return date.toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
 }
 
 module.exports = {

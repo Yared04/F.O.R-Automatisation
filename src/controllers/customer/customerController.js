@@ -158,7 +158,7 @@ async function getCustomerPayment(req, res) {
         paidAmount: true,
       },
       orderBy: {
-        createdAt: "desc",
+        invoiceDate: "desc",
       },
 
       skip: (page - 1) * parseInt(pageSize, 10),
@@ -212,7 +212,7 @@ async function getCustomerSales(req, res) {
         paidAmount: true,
       },
       orderBy: {
-        createdAt: "desc",
+        invoiceDate: "desc",
       },
       skip: (page - 1) * parseInt(pageSize, 10),
       take: parseInt(pageSize, 10),

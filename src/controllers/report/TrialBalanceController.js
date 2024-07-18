@@ -1,6 +1,8 @@
 const prisma = require("../../database");
 const PDFDocument = require("pdfkit");
 const { Readable } = require("stream");
+const { creditAccounts, debitAccounts } = require("./TrialBalanceAccountTypes.js");
+const { formatFilterDate, formatNumber } = require("./ReportFormatServices.js");
 
 async function generateTrialBalance(req, res) {
   try {
@@ -14,13 +16,12 @@ async function generateTrialBalance(req, res) {
         not:null
       }}
     ]
-
     }  
     
     if (startDate && endDate) {
       CaFilter.date = {
-        gte: new Date(startDate),
-        lte: new Date(endDate),
+        gte: formatFilterDate(startDate),
+        lte: formatFilterDate(endDate),
       };
     }
     // Find the Chart of Account for Accounts Receivable (A/R)
@@ -82,12 +83,10 @@ async function generateTrialBalance(req, res) {
 function aggregateTransactions(transactions) {
   const aggregatedTransactions = {};
   transactions.forEach((transaction) => {
-    const {debit, credit, chartofAccount, bankTransaction, saleDetail} = transaction;
+    const {debit, type, credit, chartofAccount, bankTransaction, saleDetail} = transaction;
     const accountName = chartofAccount?.name;
     const bankName = bankTransaction?.bank?.name??"";
     const accountType = accountName || bankName;
-    
-    const { saleQuantity, totalSales } = saleDetail || {};
 
     if (!aggregatedTransactions[accountType]) {
       aggregatedTransactions[accountType] = {
@@ -96,13 +95,19 @@ function aggregateTransactions(transactions) {
       };
     }
 
-    if(credit){
-    aggregatedTransactions[accountType].credit += credit;
+    if (creditAccounts.includes(accountType)) {
+      aggregatedTransactions[accountType].credit += credit;
     }
-    if(debit){
-    aggregatedTransactions[accountType].debit += debit;
+
+    if (debitAccounts.includes(accountType)){
+      aggregatedTransactions[accountType].debit += debit;
     }
   });
+  // Object.keys(aggregatedTransactions).forEach((key) => {
+  //   if (aggregatedTransactions[key].credit === 0 && aggregatedTransactions[key].debit === 0) {
+  //     delete aggregatedTransactions[key];
+  //   }
+  // });
 
   return aggregatedTransactions;
 }
@@ -163,8 +168,8 @@ async function generateTrialBalancePdf(transactions, totals, startDate, endDate)
     Object.entries(transactions).forEach((transaction) => {
       
       doc.text(transaction[0], columnOffsets[0], yOffset);
-      doc.text(transaction[1].debit?.toFixed(2), columnOffsets[1], yOffset);
-      doc.text(transaction[1].credit?.toFixed(2), columnOffsets[2], yOffset);
+      doc.text(formatNumber(transaction[1].debit??0), columnOffsets[1], yOffset);
+      doc.text(formatNumber(transaction[1].credit??0), columnOffsets[2], yOffset);
       yOffset += 20;
     });
 
@@ -174,20 +179,19 @@ async function generateTrialBalancePdf(transactions, totals, startDate, endDate)
 
     // Print totals
     doc.text("Total", columnOffsets[0], yOffset);
-    doc.text(totals.debit?.toFixed(2), columnOffsets[1], yOffset);
-    doc.text(totals.credit?.toFixed(2), columnOffsets[2], yOffset);
-
+    doc.text(formatNumber(totals.debit??0), columnOffsets[1], yOffset);
+    doc.text(formatNumber(totals.credit??0), columnOffsets[2], yOffset);
     doc.end();
   });
 }
 
 function formatDateUTCtoMMDDYYYY(utcDate) {
   const date = new Date(utcDate);
-  const mm = date.getUTCMonth() + 1; // getMonth() is zero-based
-  const dd = date.getUTCDate();
-  const yyyy = date.getUTCFullYear();
-
-  return `${mm.toString().padStart(2, '0')}/${dd.toString().padStart(2, '0')}/${yyyy}`;
+  return date.toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
 }
 
 module.exports = {
