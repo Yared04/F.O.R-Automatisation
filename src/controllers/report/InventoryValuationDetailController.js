@@ -156,12 +156,9 @@ function calculateTotal(products) {
     for (const transaction of productTransactions) {
       if (transaction.transactionType === "Bill") {
         transaction.assetValue += prevAssetValue;
-        transaction.qty = transaction.qty - prevQty;
-        prevQty += transaction.qty;
       } else if (transaction.transactionType === "Invoice")
         transaction.assetValue = prevAssetValue - transaction.assetValue;
       prevAssetValue = transaction.assetValue;
-      totalQty += transaction.qty || 0;
       totalFifoCost += transaction.fifoCost || 0;
       totalAssetValue += transaction.assetValue || 0;
     }
@@ -286,7 +283,7 @@ async function generateInventoryValuationPdf(transactions, totals, endDate) {
       //view the total of each product
       const total = totals[productName];
       doc.fontSize(8);
-      doc.text(`Total for ${productName}`, 10, yOffset, {
+      doc.font("Helvetica-Bold").text(`Total for ${productName}`, 10, yOffset, {
         bold: true,
       });
       doc.fontSize(8);
@@ -314,6 +311,7 @@ async function generateInventoryValuationPdf(transactions, totals, endDate) {
         columnTitles[8][1],
         yOffset
       );
+      doc.font("Helvetica");
       yOffset += 20;
       doc.moveTo(10, yOffset).lineTo(600, yOffset).stroke(); // Line below the last row
       yOffset += 10;

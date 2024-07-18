@@ -368,12 +368,13 @@ async function generateBalanceSheetPdf(transactions, endDate) {
     doc.lineWidth(0.5);
     addSpacing(10);
     doc.lineWidth(1.5);
-    doc.text("Total account receivable", columnOffsets[0], yOffset);
+    doc.font("Helvetica-Bold").text("Total account receivable", columnOffsets[0], yOffset);
     doc.text(
       formatNumber(aggregateTransactions.incomeTotal),
       columnOffsets[1],
       yOffset
     );
+    doc.font("Helvetica");
 
     doc.lineWidth(1);
     addSpacing(20);
@@ -391,12 +392,13 @@ async function generateBalanceSheetPdf(transactions, endDate) {
     doc.lineWidth(0.5);
     addSpacing(10);
     doc.lineWidth(1.5);
-    doc.text("Total current asset", columnOffsets[0], yOffset);
+    doc.font("Helvetica-Bold").text("Total current asset", columnOffsets[0], yOffset);
     doc.text(
       formatNumber(transactions.totalCurrentAssets),
       columnOffsets[1],
       yOffset
     );
+    doc.font("Helvetica");
     doc.lineWidth(1);
     addSpacing(20);
     doc.lineWidth(0.2);
@@ -404,12 +406,13 @@ async function generateBalanceSheetPdf(transactions, endDate) {
     doc.lineWidth(0.5);
     addSpacing(10);
     doc.lineWidth(1.5);
-    doc.text("Total asset", columnOffsets[0], yOffset);
+    doc.font("Helvetica-Bold").text("Total asset", columnOffsets[0], yOffset);
     doc.text(
       `Br ${formatNumber(transactions.totalAssets)}`,
       columnOffsets[1],
       yOffset
     );
+    doc.font("Helvetica");
     addSpacing(10);
 
     doc.lineWidth(1);
@@ -443,12 +446,13 @@ async function generateBalanceSheetPdf(transactions, endDate) {
     doc.lineWidth(0.5);
     addSpacing(10);
     doc.lineWidth(1.5);
-    doc.text("Total Account payable", columnOffsets[0], yOffset);
+    doc.font("Helvetica-Bold").text("Total Account payable", columnOffsets[0], yOffset);
     doc.text(
       `Br ${formatNumber(transactions.totalAccountsPayable)}`,
       columnOffsets[1],
       yOffset
     );
+    doc.font("Helvetica");
     doc.lineWidth(1);
     addSpacing(20);
 
@@ -462,12 +466,13 @@ async function generateBalanceSheetPdf(transactions, endDate) {
     doc.moveTo(10, yOffset).lineTo(600, yOffset).stroke();
     addSpacing(10);
     doc.lineWidth(1.5);
-    doc.text("Total current liabilities", columnOffsets[0], yOffset);
+    doc.font("Helvetica-Bold").text("Total current liabilities", columnOffsets[0], yOffset);
     doc.text(
       `Br ${formatNumber(transactions.totalCurrentLiabilities)}`,
       columnOffsets[1],
       yOffset
     );
+    doc.font("Helvetica");
     addSpacing(20);
     doc.lineWidth(1);
 
@@ -487,12 +492,13 @@ async function generateBalanceSheetPdf(transactions, endDate) {
     doc.lineWidth(0.5);
     addSpacing(10);
     doc.lineWidth(1.5);
-    doc.text("Total shareholders' equity", columnOffsets[0], yOffset);
+    doc.font("Helvetica-Bold").text("Total shareholders' equity", columnOffsets[0], yOffset);
     doc.text(
       `Br ${formatNumber(transactions.totalShareHoldersEquity)}`,
       columnOffsets[1],
       yOffset
     );
+    doc.font("Helvetica");
     doc.lineWidth(1);
     addSpacing(10);
 
@@ -501,12 +507,13 @@ async function generateBalanceSheetPdf(transactions, endDate) {
     doc.lineWidth(0.5);
     addSpacing(10);
     doc.lineWidth(1.5);
-    doc.text("Total liabilities and equity", columnOffsets[0], yOffset);
+    doc.font("Helvetica-Bold").text("Total liabilities and equity", columnOffsets[0], yOffset);
     doc.text(
       `Br ${formatNumber(transactions.totalLiabilitiesAndEquity)}`,
       columnOffsets[1],
       yOffset
     );
+    doc.font("Helvetica");
     addSpacing(10);
     doc.lineWidth(0.6);
     doc.moveTo(10, yOffset).lineTo(600, yOffset).stroke();
