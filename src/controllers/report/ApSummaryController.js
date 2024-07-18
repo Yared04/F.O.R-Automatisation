@@ -1,23 +1,24 @@
 const PDFDocument = require("pdfkit");
 const { Readable } = require("stream");
 const prisma = require("../../database");
-const { formatFilterDate,formatNumber } = require("./ReportFormatServices");
+const { formatFilterDate, formatNumber } = require("./ReportFormatServices");
 
 async function generateApAgingSummary(req, res) {
   try {
     const { endDate } = req.query; // Assuming the end date is passed in the request body
 
     // Use the provided end date or default to the current date
-    const currentDate = endDate ? formatFilterDate(endDate) : formatFilterDate(new Date());
+    const currentDate = endDate
+      ? formatFilterDate(endDate)
+      : formatFilterDate(new Date());
 
     let accountPayableType = await prisma.accountType.findMany({
       where: {
-        name:{
-          in:["Accounts Payable(A/P)","Expenses"]
-        } 
+        name: {
+          in: ["Accounts Payable(A/P)", "Expenses"],
+        },
       },
     });
-
 
     if (accountPayableType.length === 0) {
       return res.status(404).json({
@@ -32,8 +33,9 @@ async function generateApAgingSummary(req, res) {
       where: {
         accountTypeId: {
           in: accountPayableType,
-        }, }
-  });
+        },
+      },
+    });
 
     if (arChartOfAccount.length === 0) {
       return res.status(404).json({
@@ -46,8 +48,8 @@ async function generateApAgingSummary(req, res) {
     // Find all transactions related to the Accounts Receivable (A/P) chart of account
 
     let suppliers = await prisma.supplier.findMany({});
-    suppliers = suppliers.map(item=>item.id);
-    if(suppliers.length === 0) {
+    suppliers = suppliers.map((item) => item.id);
+    if (suppliers.length === 0) {
       return res.status(404).json({
         error: "No supplier found.",
       });
@@ -105,14 +107,15 @@ function categorizeApAgingTransactions(transactions, currentDate) {
   const agingBuckets = {};
 
   transactions.forEach((transaction) => {
-    const { supplier, type, date, credit, usdAmount, ExchangeRate } = transaction;
+    const { supplier, type, date, credit, usdAmount, ExchangeRate } =
+      transaction;
     const daysDifference = Math.ceil(
       (currentDate - new Date(date)) / (1000 * 60 * 60 * 24)
     );
     const bucket = getBucket(daysDifference);
-    
+
     const supplierKey = supplier?.name;
-    if(!supplierKey) return;
+    if (!supplierKey) return;
 
     if (!agingBuckets[supplierKey]) {
       agingBuckets[supplierKey] = {
@@ -125,15 +128,14 @@ function categorizeApAgingTransactions(transactions, currentDate) {
     }
 
     if (usdAmount) {
-      if(type === "Bill")
-      agingBuckets[supplierKey][bucket] += usdAmount * ExchangeRate || 0;
-    else if(type === "Supplier Payment") 
-      agingBuckets[supplierKey][bucket] -= usdAmount * ExchangeRate || 0;
+      if (type === "Bill")
+        agingBuckets[supplierKey][bucket] += usdAmount * ExchangeRate || 0;
+      else if (type === "Supplier Payment")
+        agingBuckets[supplierKey][bucket] -= usdAmount * ExchangeRate || 0;
     } else {
-      if(type === "Bill")
-      agingBuckets[supplierKey][bucket] += credit || 0;
-    else if(type === "Supplier Payment")
-      agingBuckets[supplierKey][bucket] -= credit || 0;
+      if (type === "Bill") agingBuckets[supplierKey][bucket] += credit || 0;
+      else if (type === "Supplier Payment")
+        agingBuckets[supplierKey][bucket] -= credit || 0;
     }
   });
 
@@ -240,9 +242,7 @@ async function generateApAgingPDFContent(
       Object.keys(agingBuckets[supplier]).forEach((bucket) => {
         const value = agingBuckets[supplier][bucket];
         doc.text(
-          typeof value === "number"
-            ? formatNumber(value)
-            : formatNumber(value),
+          typeof value === "number" ? formatNumber(value) : formatNumber(value),
           xOffset,
           yOffset
         );
@@ -252,8 +252,8 @@ async function generateApAgingPDFContent(
           totals[bucket] += value; // Accumulate column totals
         }
       });
-      doc.text(formatNumber(rowTotal), xOffset, yOffset,{
-        width:60,
+      doc.text(formatNumber(rowTotal), xOffset, yOffset, {
+        width: 60,
         align: "left",
       }); // Display row total
       totalColumnSum += rowTotal; // Accumulate row total to total column sum
@@ -274,13 +274,13 @@ async function generateApAgingPDFContent(
     doc.font("Helvetica-Bold").text("Total", xOffset, yOffset);
     xOffset += 80;
     Object.keys(totals).forEach((bucket) => {
-      doc.text(formatNumber(totals[bucket]), xOffset, yOffset);
+      doc.text(`Br ${formatNumber(totals[bucket])}`, xOffset, yOffset);
       xOffset += 80;
     });
-    doc.text(formatNumber(totalColumnSum), xOffset, yOffset ,{
-      width:60,
+    doc.text(`Br ${formatNumber(totalColumnSum)}`, xOffset, yOffset, {
+      width: 60,
       align: "left",
-    }); 
+    });
 
     doc.end();
   });
