@@ -314,7 +314,7 @@ async function generateBalanceSheetPdf(transactions, endDate) {
       doc.fontSize(8).text(handleTimeSpan(), { align: "center" }).moveDown();
       doc.fontSize(5);
       columnTitles.forEach((title) => {
-        doc.text(title[0], xOffset, 150);
+        doc.text(title, xOffset, 150,{ align: "right" }).fontSize(10);
         xOffset += 390;
       });
       doc.lineWidth(0.5); // Set line weight to 2 (adjust as needed)
@@ -342,7 +342,7 @@ async function generateBalanceSheetPdf(transactions, endDate) {
     doc.moveTo(10, 120).lineTo(600, 120).stroke(); // Line above the first row
 
     columnTitles.forEach((title, i) => {
-      doc.text(title, columnOffsets[i], 110);
+      doc.text(title, columnOffsets[i], 110,{ align: "right" }).fontSize(10);
     });
 
     doc.lineWidth(0.5); // Set line weight to 0.5 (adjust as needed)
@@ -359,7 +359,7 @@ async function generateBalanceSheetPdf(transactions, endDate) {
     if (Object.keys(transactions.accountReceivable).length !== 0) {
       Object.entries(transactions.accountReceivable).forEach((transaction) => {
         doc.text(transaction[0], columnOffsets[0], yOffset);
-        doc.text(formatNumber(transaction[1].value), columnOffsets[1], yOffset);
+        doc.text(formatNumber(transaction[1].value), columnOffsets[1], yOffset,{ align: "right" });
         addSpacing(15);
       });
     }
@@ -373,6 +373,7 @@ async function generateBalanceSheetPdf(transactions, endDate) {
       formatNumber(aggregateTransactions.incomeTotal),
       columnOffsets[1],
       yOffset
+      ,{ align: "right" }
     );
     doc.font("Helvetica");
 
@@ -383,7 +384,7 @@ async function generateBalanceSheetPdf(transactions, endDate) {
     if (Object.keys(transactions.currentAsset).length !== 0) {
       Object.entries(transactions.currentAsset).forEach((transaction) => {
         doc.text(transaction[0], columnOffsets[0], yOffset);
-        doc.text(formatNumber(transaction[1].value), columnOffsets[1], yOffset);
+        doc.text(formatNumber(transaction[1].value), columnOffsets[1], yOffset,{ align: "right" });
         addSpacing(15);
       });
     }
@@ -397,6 +398,7 @@ async function generateBalanceSheetPdf(transactions, endDate) {
       formatNumber(transactions.totalCurrentAssets),
       columnOffsets[1],
       yOffset
+      ,{ align: "right" }
     );
     doc.font("Helvetica");
     doc.lineWidth(1);
@@ -411,6 +413,7 @@ async function generateBalanceSheetPdf(transactions, endDate) {
       `Br ${formatNumber(transactions.totalAssets)}`,
       columnOffsets[1],
       yOffset
+      ,{ align: "right" }
     );
     doc.font("Helvetica");
     addSpacing(10);
@@ -437,7 +440,7 @@ async function generateBalanceSheetPdf(transactions, endDate) {
     if (Object.keys(transactions.accountPayable).length !== 0) {
       Object.entries(transactions.accountPayable).forEach((transaction) => {
         doc.text(transaction[0], columnOffsets[0], yOffset);
-        doc.text(formatNumber(transaction[1].value), columnOffsets[1], yOffset);
+        doc.text(formatNumber(transaction[1].value), columnOffsets[1], yOffset,{ align: "right" });
         addSpacing(15);
       });
     }
@@ -451,6 +454,7 @@ async function generateBalanceSheetPdf(transactions, endDate) {
       `Br ${formatNumber(transactions.totalAccountsPayable)}`,
       columnOffsets[1],
       yOffset
+      ,{ align: "right" }
     );
     doc.font("Helvetica");
     doc.lineWidth(1);
@@ -459,7 +463,7 @@ async function generateBalanceSheetPdf(transactions, endDate) {
     // provisions
     Object.entries(transactions.provisions).forEach((transaction) => {
       doc.text(transaction[0], columnOffsets[0], yOffset);
-      doc.text(formatNumber(transaction[1].value), columnOffsets[1], yOffset);
+      doc.text(formatNumber(transaction[1].value), columnOffsets[1], yOffset,{ align: "right" });
       addSpacing(15);
     });
     doc.fontSize(10);
@@ -471,6 +475,7 @@ async function generateBalanceSheetPdf(transactions, endDate) {
       `Br ${formatNumber(transactions.totalCurrentLiabilities)}`,
       columnOffsets[1],
       yOffset
+      ,{ align: "right" }
     );
     doc.font("Helvetica");
     addSpacing(20);
@@ -480,11 +485,11 @@ async function generateBalanceSheetPdf(transactions, endDate) {
     doc.text("Shareholders' equity", columnOffsets[0], yOffset);
     addSpacing(20);
     doc.text("net income", columnOffsets[0], yOffset);
-    doc.text(formatNumber(transactions.netEarning), columnOffsets[1], yOffset);
+    doc.text(formatNumber(transactions.netEarning), columnOffsets[1], yOffset,{ align: "right" });
     addSpacing(15);
     Object.entries(transactions.shareHoldersEquity).forEach((transaction) => {
       doc.text(transaction[0], columnOffsets[0], yOffset);
-      doc.text(formatNumber(transaction[1].value), columnOffsets[1], yOffset);
+      doc.text(formatNumber(transaction[1].value), columnOffsets[1], yOffset,{ align: "right" });
       addSpacing(15);
     });
     doc.lineWidth(0.2);
@@ -497,6 +502,7 @@ async function generateBalanceSheetPdf(transactions, endDate) {
       `Br ${formatNumber(transactions.totalShareHoldersEquity)}`,
       columnOffsets[1],
       yOffset
+      ,{ align: "right" }
     );
     doc.font("Helvetica");
     doc.lineWidth(1);
@@ -512,6 +518,7 @@ async function generateBalanceSheetPdf(transactions, endDate) {
       `Br ${formatNumber(transactions.totalLiabilitiesAndEquity)}`,
       columnOffsets[1],
       yOffset
+      ,{ align: "right" }
     );
     doc.font("Helvetica");
     addSpacing(10);

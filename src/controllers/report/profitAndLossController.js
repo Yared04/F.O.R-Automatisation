@@ -193,11 +193,11 @@ async function generateProfitLossPdf(transactions, startDate, endDate) {
     doc.fontSize(10).text("Profit and Loss", { align: "center" }).moveDown();
     doc.fontSize(8).text(handleTimeSpan(), { align: "center" }).moveDown();
 
-    const columnTitles = [" ", "Total"];
+    const columnTitles = [" ", "TOTAL"];
     const columnOffsets = [10, 390];
 
     columnTitles.forEach((title, i) => {
-      doc.text(title, columnOffsets[i], 110);
+      doc.text(title, columnOffsets[i], 110,{ align: "right", }).fontSize(10);
     });
 
     doc.lineWidth(0.5); // Set line weight to 0.5 (adjust as needed)
@@ -215,6 +215,7 @@ async function generateProfitLossPdf(transactions, startDate, endDate) {
           formatNumber(transaction[1].value ?? 0),
           columnOffsets[1] + 15,
           yOffset
+          ,{ align: "right" }
         );
         yOffset += 20;
       });
@@ -226,6 +227,7 @@ async function generateProfitLossPdf(transactions, startDate, endDate) {
       `Br ${formatNumber(transactions.incomeTotal ?? 0)}`,
       columnOffsets[1],
       yOffset
+      ,{ align: "right" }
     );
     doc.font("Helvetica");
     yOffset += 20;
@@ -240,6 +242,7 @@ async function generateProfitLossPdf(transactions, startDate, endDate) {
           formatNumber(transaction[1].value ?? 0),
           columnOffsets[1],
           yOffset
+          ,{ align: "right" }
         );
         yOffset += 20;
       });
@@ -251,6 +254,7 @@ async function generateProfitLossPdf(transactions, startDate, endDate) {
       `Br ${formatNumber(transactions.costOfSalesTotal ?? 0)}`,
       columnOffsets[1],
       yOffset
+      ,{ align: "right" }
     );
     doc.font("Helvetica");
     yOffset += 20;
@@ -261,6 +265,7 @@ async function generateProfitLossPdf(transactions, startDate, endDate) {
       `Br ${formatNumber(transactions.grossProfit ?? 0)}`,
       columnOffsets[1],
       yOffset
+      ,{ align: "right" }
     );
     doc.font("Helvetica");
     yOffset += 20;
@@ -274,6 +279,7 @@ async function generateProfitLossPdf(transactions, startDate, endDate) {
           formatNumber(transaction[1].value ?? 0),
           columnOffsets[1],
           yOffset
+          ,{ align: "right" }
         );
         yOffset += 20;
       });
@@ -285,6 +291,7 @@ async function generateProfitLossPdf(transactions, startDate, endDate) {
       `Br ${formatNumber(transactions.expensesTotal ?? 0)}`,
       columnOffsets[1],
       yOffset
+      ,{ align: "right" }
     );
     yOffset += 20;
     doc.font("Helvetica");
@@ -298,6 +305,7 @@ async function generateProfitLossPdf(transactions, startDate, endDate) {
         formatNumber(transaction[1].value ?? 0),
         columnOffsets[1],
         yOffset
+        ,{ align: "right" }
       );
       yOffset += 20;
     });
@@ -308,6 +316,7 @@ async function generateProfitLossPdf(transactions, startDate, endDate) {
       `Br ${formatNumber(transactions.otherExpensesTotal ?? 0)}`,
       columnOffsets[1],
       yOffset
+      ,{ align: "right" }
     );
     doc.font("Helvetica");
     yOffset += 20;
@@ -319,6 +328,7 @@ async function generateProfitLossPdf(transactions, startDate, endDate) {
       `Br ${formatNumber(transactions.netEarning)}`,
       columnOffsets[1],
       yOffset
+      ,{ align: "right" }
     );
     doc.font("Helvetica");
     doc.end();
