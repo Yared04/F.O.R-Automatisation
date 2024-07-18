@@ -221,13 +221,13 @@ async function generateProfitLossPdf(transactions, startDate, endDate) {
     }
     doc.moveTo(10, yOffset).lineTo(600, yOffset).stroke();
     yOffset += 10;
-    doc.text("Total Income", columnOffsets[0], yOffset);
+    doc.font("Helvetica-Bold").text("Total Income", columnOffsets[0], yOffset);
     doc.text(
       `Br ${formatNumber(transactions.incomeTotal ?? 0)}`,
       columnOffsets[1],
       yOffset
     );
-
+    doc.font("Helvetica");
     yOffset += 20;
 
     doc.text("Cost of Sales", columnOffsets[0], yOffset);
@@ -246,21 +246,23 @@ async function generateProfitLossPdf(transactions, startDate, endDate) {
     }
     doc.moveTo(10, yOffset).lineTo(600, yOffset).stroke();
     yOffset += 10;
-    doc.text("Total cost of sales", columnOffsets[0], yOffset);
+    doc.font("Helvetica-Bold").text("Total cost of sales", columnOffsets[0], yOffset);
     doc.text(
       `Br ${formatNumber(transactions.costOfSalesTotal ?? 0)}`,
       columnOffsets[1],
       yOffset
     );
+    doc.font("Helvetica");
     yOffset += 20;
     doc.moveTo(10, yOffset).lineTo(600, yOffset).stroke();
     yOffset += 10;
     doc.text("GROSS PROFIT", columnOffsets[0], yOffset);
-    doc.text(
+    doc.font("Helvetica-Bold").text(
       `Br ${formatNumber(transactions.grossProfit ?? 0)}`,
       columnOffsets[1],
       yOffset
     );
+    doc.font("Helvetica");
     yOffset += 20;
     // expenses
     doc.fontSize(10).text("Expenses", 10, yOffset).moveDown();
@@ -278,13 +280,14 @@ async function generateProfitLossPdf(transactions, startDate, endDate) {
     }
     doc.moveTo(10, yOffset).lineTo(600, yOffset).stroke();
     yOffset += 10;
-    doc.text("Total Expenses", columnOffsets[0], yOffset);
+    doc.font("Helvetica-Bold").text("Total Expenses", columnOffsets[0], yOffset);
     doc.text(
       `Br ${formatNumber(transactions.expensesTotal ?? 0)}`,
       columnOffsets[1],
       yOffset
     );
     yOffset += 20;
+    doc.font("Helvetica");
 
     // other expenses
     doc.fontSize(10).text("Other Expenses", 10, yOffset).moveDown();
@@ -300,22 +303,24 @@ async function generateProfitLossPdf(transactions, startDate, endDate) {
     });
     doc.moveTo(10, yOffset).lineTo(600, yOffset).stroke();
     yOffset += 10;
-    doc.text("Total Other Expenses", columnOffsets[0], yOffset);
+    doc.font("Helvetica-Bold").text("Total Other Expenses", columnOffsets[0], yOffset);
     doc.text(
       `Br ${formatNumber(transactions.otherExpensesTotal ?? 0)}`,
       columnOffsets[1],
       yOffset
     );
+    doc.font("Helvetica");
     yOffset += 20;
 
     doc.moveTo(10, yOffset).lineTo(600, yOffset).stroke();
     yOffset += 10;
     doc.text("NET EARINING", columnOffsets[0], yOffset);
-    doc.text(
+    doc.font("Helvetica-Bold").text(
       `Br ${formatNumber(transactions.netEarning)}`,
       columnOffsets[1],
       yOffset
     );
+    doc.font("Helvetica");
     doc.end();
   });
 }
