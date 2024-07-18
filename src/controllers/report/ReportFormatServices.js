@@ -1,7 +1,7 @@
 const formatNumber = (number) => {
   // Ensure the input is a number
-  if (isNaN(number)) {
-    return;
+  if (!number || isNaN(number)) {
+    return "";
   }
 
   // Round the number to two decimal places

@@ -395,7 +395,8 @@ async function generateBankTransactionPDFContent(
     xOffset += 80;
     doc.text("Chart of Account", xOffset, 150);
     xOffset += 100;
-    doc.text("Exchange Rate", xOffset, 150);
+    doc.text("Exchange Rate", xOffset, 150,
+      {align:"right"});
 
     doc.lineWidth(0.5); // Set line weight to 0.5
 
