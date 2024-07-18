@@ -319,6 +319,9 @@ async function generateBankTransactionSummary(req, res) {
       include: {
         chartofAccount: true,
       },
+      orderBy:{
+        date:"asc",
+      }
     });
 
     // Generate PDF content for the bank transactions
