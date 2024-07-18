@@ -21,32 +21,76 @@ async function createCustomerPayment(req, res) {
     return res.status(400).json({ message: "There are no sales to pay for." });
   }
   try {
-    const bankTransactions = await prisma.bankTransaction.findMany({
-      where: { bankId: bankId },
+    // const bankTransactions = await prisma.bankTransaction.findMany({
+    //   where: { bankId: bankId },
+    //   orderBy: { date: "desc" },
+    // });
+
+    // const customer = await prisma.customer.findUnique({
+    //   where: { id: payee },
+    // });
+
+
+    // const bankTransaction = await prisma.bankTransaction.create({
+    //   data: {
+    //     bankId: bankId,
+    //     payee: customer.firstName + " " + customer.lastName,
+    //     payment: parseFloat(payment),
+    //     deposit: parseFloat(deposit),
+    //     type: type,
+    //     chartofAccountId: chartofAccountId,
+    //     date: new Date(date),
+    //     balance: bankTransactions[0]
+    //       ? parseFloat(Number(bankTransactions[0].balance)) -
+    //         parseFloat(Number(payment)) +
+    //         parseFloat(Number(deposit))
+    //       : parseFloat(Number(deposit)) - parseFloat(Number(payment)),
+    //   },
+    // });
+
+
+    // Find the latest bank transaction before the new transaction's date
+    const previousTransaction = await prisma.bankTransaction.findFirst({
+      where: { bankId: bankId, date: { lt: new Date(date) } },
       orderBy: { date: "desc" },
     });
 
-    const customer = await prisma.customer.findUnique({
-      where: { id: payee },
-    });
+    // Calculate the new balance
+    const previousBalance = previousTransaction ? parseFloat(previousTransaction.balance) : 0;
+    const newBalance = previousBalance - parseFloat(payment) + parseFloat(deposit);
 
-
+    // Create the new bank transaction
     const bankTransaction = await prisma.bankTransaction.create({
       data: {
-        bankId: bankId,
-        payee: customer.firstName + " " + customer.lastName,
+        bank: { connect: { id: bankId } },
+        payee: payee ? (await prisma.supplier.findUnique({ where: { id: payee } })).name : null,
+        foreignCurrency: parseFloat(foreignCurrency),
+        balance: newBalance,
         payment: parseFloat(payment),
         deposit: parseFloat(deposit),
         type: type,
-        chartofAccountId: chartofAccountId,
+        chartofAccount: chartofAccountId ? { connect: { id: chartofAccountId } } : undefined,
+        exchangeRate: parseFloat(exchangeRate),
         date: new Date(date),
-        balance: bankTransactions[0]
-          ? parseFloat(Number(bankTransactions[0].balance)) -
-            parseFloat(Number(payment)) +
-            parseFloat(Number(deposit))
-          : parseFloat(Number(deposit)) - parseFloat(Number(payment)),
       },
     });
+
+    // Update the balances of transactions created after the new transaction's date
+    const subsequentTransactions = await prisma.bankTransaction.findMany({
+      where: { bankId: bankId, date: { gt: new Date(date) } },
+      orderBy: { date: "asc" },
+    });
+
+    let currentBalance = newBalance;
+
+    for (const transaction of subsequentTransactions) {
+      currentBalance = currentBalance - parseFloat(transaction.payment) + parseFloat(transaction.deposit);
+
+      await prisma.bankTransaction.update({
+        where: { id: transaction.id },
+        data: { balance: currentBalance },
+      });
+    }
 
     // Create first transaction
     const firstTransaction = await prisma.cATransaction.create({
@@ -199,7 +243,7 @@ async function deleteCustomerPayment(paymentId) {
     const subsequentBankTransactions = await prisma.bankTransaction.findMany({
       where: {
         bankId: bankTransaction.bankId,
-        createdAt: { gt: bankTransaction.createdAt },
+        date: { gt: bankTransaction.date },
       },
     });
 
