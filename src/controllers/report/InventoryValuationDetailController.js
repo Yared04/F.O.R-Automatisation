@@ -156,12 +156,9 @@ function calculateTotal(products) {
     for (const transaction of productTransactions) {
       if (transaction.transactionType === "Bill") {
         transaction.assetValue += prevAssetValue;
-        transaction.qty = transaction.qty - prevQty;
-        prevQty += transaction.qty;
       } else if (transaction.transactionType === "Invoice")
         transaction.assetValue = prevAssetValue - transaction.assetValue;
       prevAssetValue = transaction.assetValue;
-      totalQty += transaction.qty || 0;
       totalFifoCost += transaction.fifoCost || 0;
       totalAssetValue += transaction.assetValue || 0;
     }
