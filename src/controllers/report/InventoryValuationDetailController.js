@@ -179,7 +179,7 @@ function calculateTotal(products) {
 
 async function generateInventoryValuationPdf(transactions, totals, endDate) {
   const handleTimeSpan = (endDate) => {
-    if (endDate) return formatDateForTitle(endDate);
+    if (endDate) return `As of ${formatDateForTitle(endDate)}`;
     return "All Dates";
   };
   return new Promise((resolve, reject) => {
