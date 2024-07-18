@@ -319,6 +319,9 @@ async function generateBankTransactionSummary(req, res) {
       include: {
         chartofAccount: true,
       },
+      orderBy:{
+        date:"asc",
+      }
     });
 
     // Generate PDF content for the bank transactions
@@ -444,7 +447,8 @@ async function generateBankTransactionPDFContent(
           ? formatNumber(transaction.exchangeRate ?? 0)
           : "",
         xOffset,
-        yOffset
+        yOffset,
+        {align:"right"}
       );
       yOffset += 20; // Move to the next row
     });
