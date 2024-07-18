@@ -3,6 +3,7 @@ const PDFDocument = require("pdfkit");
 const { Readable } = require("stream");
 const prisma = require("../../database");
 const { formatFilterDate } = require("../report/ReportFormatServices");
+const { combineDateWithCurrentTime } = require("../../services/dateUtils");
 
 async function getCaTransactions(req, res) {
   try {
@@ -197,7 +198,7 @@ async function createBankTransaction(req, res) {
   try {
     // Find the latest bank transaction before the new transaction's date
     const previousTransaction = await prisma.bankTransaction.findFirst({
-      where: { bankId: bankId, date: { lt: new Date(date) } },
+      where: { bankId: bankId, date: { lt: combineDateWithCurrentTime(date) } },
       orderBy: { date: "desc" },
     });
 
@@ -206,13 +207,17 @@ async function createBankTransaction(req, res) {
       ? parseFloat(previousTransaction.balance)
       : 0;
     const newBalance =
-      previousBalance - parseFloat(payment) + parseFloat(deposit);
+      previousBalance - parseFloat(payment || 0) + parseFloat(deposit || 0);
 
     // Create the new bank transaction
     const createdBankTransaction = await prisma.bankTransaction.create({
       data: {
         bank: { connect: { id: bankId } },
-        payee: payee ? (await prisma.supplier.findUnique({ where: { id: payee } })).name : null,
+        payee: payee
+          ? (
+              await prisma.supplier.findUnique({ where: { id: payee } })
+            ).name
+          : null,
         foreignCurrency: parseFloat(foreignCurrency),
         balance: newBalance,
         payment: parseFloat(payment),
@@ -222,13 +227,13 @@ async function createBankTransaction(req, res) {
           ? { connect: { id: chartofAccountId } }
           : undefined,
         exchangeRate: parseFloat(exchangeRate),
-        date: new Date(date),
+        date: combineDateWithCurrentTime(date),
       },
     });
 
     // Update the balances of transactions created after the new transaction's date
     const subsequentTransactions = await prisma.bankTransaction.findMany({
-      where: { bankId: bankId, date: { gt: new Date(date) } },
+      where: { bankId: bankId, date: { gt: combineDateWithCurrentTime(date) } },
       orderBy: { date: "asc" },
     });
 
@@ -236,7 +241,9 @@ async function createBankTransaction(req, res) {
 
     for (const transaction of subsequentTransactions) {
       currentBalance =
-        currentBalance - parseFloat(transaction.payment) + parseFloat(transaction.deposit);
+        currentBalance -
+        parseFloat(transaction.payment || 0) +
+        parseFloat(transaction.deposit || 0);
 
       await prisma.bankTransaction.update({
         where: { id: transaction.id },
@@ -639,8 +646,8 @@ async function generateCaTransactionPDFContent(
       doc.fontSize(8).text(handleTimeSpan(), { align: "center" }).moveDown();
       doc.fontSize(5);
       columnTitlesWithOffset.forEach((title) => {
-        doc.text(title[0], xOffset, 150,{
-          width:title[1]
+        doc.text(title[0], xOffset, 150, {
+          width: title[1],
         });
         xOffset += title[1];
       });
@@ -664,7 +671,7 @@ async function generateCaTransactionPDFContent(
       ["ACCOUNT", 90],
     ];
     addHeaders();
-    let lastName = ""; 
+    let lastName = "";
     caTransactions.forEach((transaction) => {
       if (yOffset > 680) {
         addHeaders();
@@ -676,32 +683,41 @@ async function generateCaTransactionPDFContent(
           xOffset,
           yOffset
         );
-        let showName = false;
-        let customerName = "";
-        if(transaction.customer){
-          customerName = transaction.customer.firstName + " " + transaction.customer.lastName;
-        }
-        let currentName = transaction?.supplier?.name? transaction.supplier.name : customerName;
-        if(!currentName) currentName = "";
-        if(lastName !== currentName){
-          showName = true;
-          lastName = currentName;
-        }
+      let showName = false;
+      let customerName = "";
+      if (transaction.customer) {
+        customerName =
+          transaction.customer.firstName + " " + transaction.customer.lastName;
+      }
+      let currentName = transaction?.supplier?.name
+        ? transaction.supplier.name
+        : customerName;
+      if (!currentName) currentName = "";
+      if (lastName !== currentName) {
+        showName = true;
+        lastName = currentName;
+      }
 
       xOffset += columnTitlesWithOffset[0][1];
       doc.text(transaction.type, xOffset, yOffset);
       xOffset += columnTitlesWithOffset[1][1];
-      doc.text(transaction.sale?.invoiceNumber? transaction.sale?.invoiceNumber : transaction.purchase?.number, xOffset, yOffset);
+      doc.text(
+        transaction.sale?.invoiceNumber
+          ? transaction.sale?.invoiceNumber
+          : transaction.purchase?.number,
+        xOffset,
+        yOffset
+      );
       xOffset += columnTitlesWithOffset[2][1];
       doc.text("Yes", xOffset, yOffset);
       xOffset += columnTitlesWithOffset[3][1];
-      doc.text(showName? currentName: "", xOffset, yOffset);
+      doc.text(showName ? currentName : "", xOffset, yOffset);
       xOffset += columnTitlesWithOffset[4][1];
       doc.text(transaction.remark, xOffset, yOffset);
       xOffset += columnTitlesWithOffset[5][1];
-      doc.text(`Br.${transaction.debit}`, xOffset, yOffset);
+      transaction.debit && doc.text(`Br.${transaction.debit}`, xOffset, yOffset);
       xOffset += columnTitlesWithOffset[6][1];
-      doc.text(`Br.${transaction.credit}`, xOffset, yOffset);
+      transaction.credit && doc.text(`Br.${transaction.credit}`, xOffset, yOffset);
       xOffset += columnTitlesWithOffset[7][1];
       doc.text(transaction.productPurchase?.product.name, xOffset, yOffset);
       xOffset += columnTitlesWithOffset[8][1];
@@ -718,12 +734,12 @@ async function generateCaTransactionPDFContent(
         xOffset,
         yOffset,
         {
-          width:40,
+          width: 40,
           align: "left",
         }
       );
       xOffset += columnTitlesWithOffset[10][1];
-      doc.text(transaction?.chartofAccount?.name, xOffset, yOffset,{
+      doc.text(transaction?.chartofAccount?.name, xOffset, yOffset, {
         width: columnTitlesWithOffset[11][1],
         align: "left",
       });
@@ -751,13 +767,13 @@ function formatDateUTCtoMMDDYYYY(utcDate) {
     .padStart(2, "0")}/${yyyy}`;
 }
 
-function formatDateUTCtoTitleFormat(utcDate){
+function formatDateUTCtoTitleFormat(utcDate) {
   const date = new Date(utcDate);
   return date.toLocaleDateString("en-US", {
     month: "long",
     day: "numeric",
     year: "numeric",
-  })
+  });
 }
 
 async function createJournalEntry(req, res) {

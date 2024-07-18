@@ -372,7 +372,7 @@ async function generateBankTransactionPDFContent(
         startDate
       )} to ${formatDateUTCtoTitleFormat(endDate)}`;
     } else {
-      dateText = `Transactions as of ${formatDateUTCtoTitleFormat(new Date())}`;
+      dateText = `Transactions until ${formatDateUTCtoTitleFormat(new Date())}`;
     }
     doc.fontSize(10).text(dateText, { align: "center" }).moveDown();
 
