@@ -2,7 +2,10 @@ const { parse } = require("path");
 const PDFDocument = require("pdfkit");
 const { Readable } = require("stream");
 const prisma = require("../../database");
-const { formatFilterDate } = require("../report/ReportFormatServices");
+const {
+  formatFilterDate,
+  formatNumber,
+} = require("../report/ReportFormatServices");
 const { combineDateWithCurrentTime } = require("../../services/dateUtils");
 
 async function getCaTransactions(req, res) {
@@ -526,6 +529,10 @@ async function generateCaTransactionSummary(req, res) {
             name: "asc",
           },
         },
+
+        {
+          createdAt: "desc",
+        },
       ],
       include: {
         supplier: {
@@ -702,9 +709,13 @@ async function generateCaTransactionPDFContent(
       doc.text(transaction.type, xOffset, yOffset);
       xOffset += columnTitlesWithOffset[1][1];
       doc.text(
-        transaction.sale?.invoiceNumber
-          ? transaction.sale?.invoiceNumber
-          : transaction.purchase?.number,
+        transaction.purchase?.number ||
+          transaction.sale?.invoiceNumber ||
+          (transaction.number >= 1
+            ? transaction.number
+            : transaction.number === 0
+            ? "START"
+            : null),
         xOffset,
         yOffset
       );
@@ -715,11 +726,19 @@ async function generateCaTransactionPDFContent(
       xOffset += columnTitlesWithOffset[4][1];
       doc.text(transaction.remark, xOffset, yOffset);
       xOffset += columnTitlesWithOffset[5][1];
-      transaction.debit && doc.text(`Br.${transaction.debit}`, xOffset, yOffset);
+      transaction.debit &&
+        doc.text(`Br ${formatNumber(transaction.debit)}`, xOffset, yOffset);
       xOffset += columnTitlesWithOffset[6][1];
-      transaction.credit && doc.text(`Br.${transaction.credit}`, xOffset, yOffset);
+      transaction.credit &&
+        doc.text(`Br ${formatNumber(transaction.credit)}`, xOffset, yOffset);
       xOffset += columnTitlesWithOffset[7][1];
-      doc.text(transaction.productPurchase?.product.name, xOffset, yOffset);
+      doc.text(
+        transaction.productPurchase?.product.name ??
+          transaction.saleDetail?.product?.name ??
+          transaction.productDeclaration?.product?.name,
+        xOffset,
+        yOffset
+      );
       xOffset += columnTitlesWithOffset[8][1];
       doc.text(
         transaction.customer
@@ -739,10 +758,16 @@ async function generateCaTransactionPDFContent(
         }
       );
       xOffset += columnTitlesWithOffset[10][1];
-      doc.text(transaction?.chartofAccount?.name, xOffset, yOffset, {
-        width: columnTitlesWithOffset[11][1],
-        align: "left",
-      });
+      doc.text(
+        transaction?.chartofAccount?.name ??
+          transaction?.bankTransaction?.bank?.name,
+        xOffset,
+        yOffset,
+        {
+          width: columnTitlesWithOffset[11][1],
+          align: "left",
+        }
+      );
       xOffset = 10;
       yOffset += 20;
     });
