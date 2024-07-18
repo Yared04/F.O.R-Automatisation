@@ -395,7 +395,7 @@ async function generateBalanceSheetPdf(transactions, endDate) {
     doc.lineWidth(1.5);
     doc.font("Helvetica-Bold").text("Total current asset", columnOffsets[0], yOffset);
     doc.text(
-      formatNumber(transactions.totalCurrentAssets),
+      `Br.${formatNumber(transactions.totalCurrentAssets)}`,
       columnOffsets[1],
       yOffset
       ,{ align: "right" }
