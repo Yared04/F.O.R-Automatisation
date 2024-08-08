@@ -221,6 +221,7 @@ async function createDeclaration(req, res) {
       id: createdDeclaration.id.toString(),
       number,
       date,
+      paidAmount: createdDeclaration.paidAmount,
       declarationProducts: createdDeclarationProducts,
     };
 
