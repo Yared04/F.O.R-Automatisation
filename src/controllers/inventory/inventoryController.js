@@ -4,24 +4,39 @@ const saleController = require("../sales/salesController");
 
 async function getInventory(req, res) {
   try {
-    const { page = 1, pageSize = 10 } = req.query;
+    const { page, pageSize } = req.query;
     const totalCount = await prisma.inventory.count();
 
-    const inventory = await prisma.inventory.findMany({
-      select: {
-        balanceQuantity: true,
-        purchaseId: true,
-        saleId: true,
-        productPurchaseId: true,
-        saleDetailId: true,
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-      skip: (page - 1) * parseInt(pageSize, 10),
-      take: parseInt(pageSize, 10),
-    });
-
+    let inventory; 
+    if (page && pageSize) {
+      inventory = await prisma.inventory.findMany({
+        select: {
+          balanceQuantity: true,
+          purchaseId: true,
+          saleId: true,
+          productPurchaseId: true,
+          saleDetailId: true,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+        skip: (page - 1) * parseInt(pageSize, 10),
+        take: parseInt(pageSize, 10),
+      });
+    } else {
+      inventory = await prisma.inventory.findMany({
+        select: {
+          balanceQuantity: true,
+          purchaseId: true,
+          saleId: true,
+          productPurchaseId: true,
+          saleDetailId: true,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
+    }
     const totalPages = Math.ceil(totalCount / parseInt(pageSize, 10));
 
     const inventoryDetails = await Promise.all(
