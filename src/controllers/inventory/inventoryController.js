@@ -5,17 +5,17 @@ const saleController = require("../sales/salesController");
 async function getInventory(req, res) {
   try {
     const { page, pageSize } = req.query;
-    const totalCount = await prisma.inventory.count();
+    const totalCount = page && pageSize ? await prisma.inventory.count() : null;
 
-    let inventory; 
+    let inventory;
     if (page && pageSize) {
       inventory = await prisma.inventory.findMany({
-        select: {
-          balanceQuantity: true,
-          purchaseId: true,
-          saleId: true,
-          productPurchaseId: true,
-          saleDetailId: true,
+        include: {
+          purchase: true,
+          productPurchase: true,
+          sale: true,
+          saleDetail: true,
+          product: true,
         },
         orderBy: {
           createdAt: "desc",
@@ -25,12 +25,12 @@ async function getInventory(req, res) {
       });
     } else {
       inventory = await prisma.inventory.findMany({
-        select: {
-          balanceQuantity: true,
-          purchaseId: true,
-          saleId: true,
-          productPurchaseId: true,
-          saleDetailId: true,
+        include: {
+          purchase: true,
+          productPurchase: true,
+          sale: true,
+          saleDetail: true,
+          product: true,
         },
         orderBy: {
           createdAt: "desc",
@@ -39,43 +39,8 @@ async function getInventory(req, res) {
     }
     const totalPages = Math.ceil(totalCount / parseInt(pageSize, 10));
 
-    const inventoryDetails = await Promise.all(
-      inventory.map(async (item) => {
-        const purchase =
-          (item.purchaseId &&
-            (await purchaseController.getPurchase(item.purchaseId))) ||
-          null;
-        const productPurchase =
-          (item.productPurchaseId &&
-            (await purchaseController.getProductPurchaseById(
-              item.productPurchaseId
-            ))) ||
-          null;
-        const sale =
-          (item.saleId && (await saleController.getSale(item.saleId))) || null;
-        const saleDetail =
-          (item.saleDetailId &&
-            (await saleController.getSaleDetailById(item.saleDetailId))) ||
-          null;
-
-        let productId = null;
-        if (productPurchase) {
-          productId = productPurchase.productId || null;
-        }
-
-        return {
-          ...item,
-          purchase: purchase,
-          productPurchase: productPurchase,
-          productId: productId, // Adding productId
-          saleDetail: saleDetail,
-          sale: sale,
-        };
-      })
-    );
-
     res.json({
-      items: inventoryDetails,
+      items: inventory,
       totalCount: totalCount,
       pageSize: parseInt(pageSize, 10),
       currentPage: parseInt(page, 10),

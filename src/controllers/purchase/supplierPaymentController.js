@@ -160,7 +160,7 @@ async function createSupplierPayment(req, res) {
           },
         });
 
-        // Create entry in transitPaymentDetail table
+        // Create entry in supplierPaymentDetail table
         await prisma.supplierPaymentDetail.create({
           data: {
             purchaseId: purchase.id,
@@ -170,7 +170,7 @@ async function createSupplierPayment(req, res) {
           },
         });
 
-        // Create entries in transitPaymentLog
+        // Create entries in supplierPaymentLog
         const newSupplierPaymentLog = await prisma.supplierPaymentLog.create({
           data: {
             paymentId: newPayment.id,
@@ -249,7 +249,7 @@ async function deleteSupplierPayment(paymentId) {
           where: { paymentId: paymentDetail.paymentId },
         });
 
-        // Delete the transit payment itself
+        // Delete the payment itself
         await prisma.purchase.delete({ where: { id: paymentDetail.paymentId } });
       })
     );
