@@ -24,7 +24,6 @@ async function getCaTransactions(req, res) {
               name: "asc",
             },
           },
-
           {
             createdAt: "desc",
           },

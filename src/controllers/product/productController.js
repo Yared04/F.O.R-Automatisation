@@ -81,15 +81,13 @@ async function createProduct(req, res) {
     } = req.body;
 
     const existingProduct = await prisma.product.findFirst({
-      where:{
-        name: name
-      }
-    })
+      where: {
+        name: name,
+      },
+    });
 
-    if(existingProduct){
-      return res
-      .status(400)
-      .json({error: 'This product is already exists.'});
+    if (existingProduct) {
+      return res.status(400).json({ error: "This product is already exists." });
     }
     const createdProduct = await prisma.product.create({
       data: {
@@ -213,15 +211,15 @@ async function updateProduct(req, res) {
     } = req.body;
 
     const existingProduct = await prisma.product.findFirst({
-      where:{
-        name: name
-      }
-    })
+      where: {
+        name: name,
+      },
+    });
 
-    if(existingProduct && existingProduct.id !== id){
+    if (existingProduct && existingProduct.id !== id) {
       return res
-      .status(400)
-      .json({error: 'There is already a product by this name.'});
+        .status(400)
+        .json({ error: "There is already a product by this name." });
     }
     const updatedProduct = await prisma.product.update({
       where: {
@@ -237,13 +235,13 @@ async function updateProduct(req, res) {
       },
       include: {
         category: true,
-        unitOfMeasurement: true
+        unitOfMeasurement: true,
       },
     });
 
     const productPurchases = await prisma.productPurchase.updateMany({
       where: {
-        productId: id, 
+        productId: id,
         purchaseId: null,
       },
       data: {
@@ -252,7 +250,32 @@ async function updateProduct(req, res) {
         purchaseUnitPriceETB: parseFloat(startingQuantityUnitPrice),
       },
     });
-    
+
+    //update the inaventory entry
+    const inventory = await prisma.inventory.findFirst({
+      where: {
+        AND: [
+          {
+            productId: id,
+            purchaseId: null,
+            saleId: null,
+          },
+        ],
+      },
+    });
+
+    if (inventory) {
+      const updatedInventory = await prisma.inventory.update({
+        where: {
+          id: inventory.id,
+        },
+        data: {
+          balanceQuantity: parseInt(startingQuantity),
+          createdAt: new Date(startingQuantityDate),
+        },
+      });
+    }
+
     res.json(updatedProduct);
   } catch (error) {
     console.error("Error updating product:", error);
@@ -264,7 +287,7 @@ async function deleteProduct(req, res) {
   try {
     const { id } = req.params;
 
-    const product = await prisma.product.findUnique({ 
+    const product = await prisma.product.findUnique({
       where: {
         id: id,
       },
@@ -286,36 +309,35 @@ async function deleteProduct(req, res) {
       where: {
         purchaseId: null,
         productId: id,
-      }
+      },
     });
 
     const caTransactions = await prisma.cATransaction.deleteMany({
       where: {
-        OR:[
+        OR: [
           {
             productPurchase: {
-              product:{
-                id:id
-              }
+              product: {
+                id: id,
+              },
             },
           },
           {
             saleDetail: {
-             product:{
-              id: id
-              }
-             }
+              product: {
+                id: id,
+              },
             },
-            {
-            remark:{
-              equals:`${product.name} - opening inv.`
-            }
-          }
-        ]
-      }
+          },
+          {
+            remark: {
+              equals: `${product.name} - opening inv.`,
+            },
+          },
+        ],
+      },
     });
 
-    
     const deletedProduct = await prisma.product.delete({
       where: {
         id: id,
