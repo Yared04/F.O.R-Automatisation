@@ -80,21 +80,133 @@ async function generateBalanceSheetReport(req, res) {
   }
 }
 
-function aggregateTransactions(transactions) {
-  /*
-  "Other Current Assets"
-"Other Current Liabilities"
-"Expenses"
-"Cost of Goods Sold"
-"Income"
-"Equity"
-"Other Expenses"
-"Other Income"
-"Other Assets"
-"Accounts Receivable(A/R)"
-"Accounts Payable(A/P)"
-  */
+// function aggregateTransactions(transactions) {
+//   /*
+//   "Other Current Assets"
+// "Other Current Liabilities"
+// "Expenses"
+// "Cost of Goods Sold"
+// "Income"
+// "Equity"
+// "Other Expenses"
+// "Other Income"
+// "Other Assets"
+// "Accounts Receivable(A/R)"
+// "Accounts Payable(A/P)"
+//   */
 
+//   const aggregateTransactions = {
+//     accountReceivable: {},
+//     currentAsset: {},
+//     accountPayable: {},
+//     provisions: {},
+//     shareHoldersEquity: {},
+//     netEarning: 0,
+//     totalAccountsReceivable: 0,
+//     totalCurrentAssets: 0,
+//     totalAccountsPayable: 0,
+//     totalCurrentLiabilities: 0,
+//     totalAssets: 0,
+//     totalShareHoldersEquity: 0,
+//     totalLiabilitiesAndEquity: 0,
+//   };
+//   transactions.forEach((transaction) => {
+//     const { debit, credit, chartofAccount } = transaction;
+//     const accountType = chartofAccount?.accountType?.name;
+
+//     if (!accountType) return;
+
+//     if (accountType === "Accounts Receivable(A/R)") {
+//       if (aggregateTransactions.accountReceivable[chartofAccount.name]) {
+//         aggregateTransactions.accountReceivable[chartofAccount.name].value +=
+//           credit ?? 0;
+//       } else {
+//         aggregateTransactions.accountReceivable[chartofAccount.name] = {
+//           value: credit ?? 0,
+//         };
+//       }
+//       aggregateTransactions.totalAccountsReceivable += credit;
+//     } else if (accountType === "Other Current Assets") {
+//       if (aggregateTransactions.currentAsset[chartofAccount.name]) {
+//         aggregateTransactions.currentAsset[chartofAccount.name].value +=
+//           credit ?? 0;
+//       } else {
+//         aggregateTransactions.currentAsset[chartofAccount.name] = {
+//           value: credit ?? 0,
+//         };
+//       }
+//       aggregateTransactions.totalCurrentAssets += credit;
+//     } else if (accountType === "Accounts Payable(A/P)") {
+//       if (aggregateTransactions.accountPayable[chartofAccount.name]) {
+//         aggregateTransactions.accountPayable[chartofAccount.name].value +=
+//           debit ?? 0;
+//       } else {
+//         aggregateTransactions.accountPayable[chartofAccount.name] = {
+//           value: debit ?? 0,
+//         };
+//       }
+//       aggregateTransactions.totalAccountsPayable += debit;
+//     } else if (accountType === "Other Assets") {
+//       if (aggregateTransactions.provisions[chartofAccount.name]) {
+//         aggregateTransactions.provisions[chartofAccount.name].value +=
+//           credit ?? 0;
+//       } else {
+//         aggregateTransactions.provisions[chartofAccount.name] = {
+//           value: credit ?? 0,
+//         };
+//       }
+//       aggregateTransactions.totalCurrentLiabilities += credit;
+//     } else if (accountType === "Equity") {
+//       if (aggregateTransactions.shareHoldersEquity[chartofAccount?.name]) {
+//         aggregateTransactions.shareHoldersEquity[chartofAccount?.name].value +=
+//           debit ?? credit;
+//       } else {
+//         aggregateTransactions.shareHoldersEquity[chartofAccount.name] = {
+//           value: debit ?? credit,
+//         };
+//       }
+//       aggregateTransactions.totalShareHoldersEquity += debit ?? credit;
+//     } else {
+//       // incase of new transactions debits are included with other assets and credits are included other liabilities with provisions
+//       if (debit) {
+//         if (aggregateTransactions.currentAsset[chartofAccount?.name]) {
+//           aggregateTransactions.currentAsset[chartofAccount?.name].value +=
+//             debit ?? 0;
+//         } else {
+//           aggregateTransactions.currentAsset[chartofAccount?.name] = {
+//             value: debit ?? credit,
+//           };
+//         }
+//         aggregateTransactions.totalCurrentAssets += debit;
+//       } else if (credit) {
+//         if (aggregateTransactions.provisions[chartofAccount?.name]) {
+//           aggregateTransactions.provisions[chartofAccount?.name].value +=
+//             credit ?? 0;
+//         } else {
+//           aggregateTransactions.provisions[chartofAccount?.name] = {
+//             value: credit ?? 0,
+//           };
+//         }
+//         aggregateTransactions.totalCurrentLiabilities += credit;
+//       }
+//     }
+//   });
+//   aggregateTransactions.netEarning = calculateNetIncome(transactions);
+//   aggregateTransactions.totalAssets =
+//     aggregateTransactions.totalAccountsReceivable +
+//     aggregateTransactions.totalCurrentAssets;
+//   aggregateTransactions.totalLiabilitiesAndEquity =
+//     aggregateTransactions.totalAccountsPayable +
+//     aggregateTransactions.totalCurrentLiabilities +
+//     aggregateTransactions.totalShareHoldersEquity;
+//   aggregateTransactions.totalCurrentLiabilities =
+//     aggregateTransactions.totalAccountsPayable -
+//     aggregateTransactions.totalCurrentLiabilities;
+
+//   return aggregateTransactions;
+// }
+
+function aggregateTransactions(transactions) {
   const aggregateTransactions = {
     accountReceivable: {},
     currentAsset: {},
@@ -110,98 +222,42 @@ function aggregateTransactions(transactions) {
     totalShareHoldersEquity: 0,
     totalLiabilitiesAndEquity: 0,
   };
+
   transactions.forEach((transaction) => {
     const { debit, credit, chartofAccount } = transaction;
     const accountType = chartofAccount?.accountType?.name;
 
     if (!accountType) return;
 
-    if (accountType === "Accounts Receivable(A/R)") {
-      if (aggregateTransactions.accountReceivable[chartofAccount.name]) {
-        aggregateTransactions.accountReceivable[chartofAccount.name].value +=
-          credit ?? 0;
-      } else {
-        aggregateTransactions.accountReceivable[chartofAccount.name] = {
-          value: credit ?? 0,
-        };
-      }
-      aggregateTransactions.totalAccountsReceivable += credit;
-    } else if (accountType === "Other Current Assets") {
-      if (aggregateTransactions.currentAsset[chartofAccount.name]) {
-        aggregateTransactions.currentAsset[chartofAccount.name].value +=
-          credit ?? 0;
-      } else {
-        aggregateTransactions.currentAsset[chartofAccount.name] = {
-          value: credit ?? 0,
-        };
-      }
-      aggregateTransactions.totalCurrentAssets += credit;
-    } else if (accountType === "Accounts Payable(A/P)") {
-      if (aggregateTransactions.accountPayable[chartofAccount.name]) {
-        aggregateTransactions.accountPayable[chartofAccount.name].value +=
-          debit ?? 0;
-      } else {
-        aggregateTransactions.accountPayable[chartofAccount.name] = {
-          value: debit ?? 0,
-        };
-      }
-      aggregateTransactions.totalAccountsPayable += debit;
-    } else if (accountType === "Other Assets") {
-      if (aggregateTransactions.provisions[chartofAccount.name]) {
-        aggregateTransactions.provisions[chartofAccount.name].value +=
-          credit ?? 0;
-      } else {
-        aggregateTransactions.provisions[chartofAccount.name] = {
-          value: credit ?? 0,
-        };
-      }
-      aggregateTransactions.totalCurrentLiabilities += credit;
-    } else if (accountType === "Equity") {
-      if (aggregateTransactions.shareHoldersEquity[chartofAccount?.name]) {
-        aggregateTransactions.shareHoldersEquity[chartofAccount?.name].value +=
-          debit ?? credit;
-      } else {
-        aggregateTransactions.shareHoldersEquity[chartofAccount.name] = {
-          value: debit ?? credit,
-        };
-      }
+    if (accountType.includes("Accounts Receivable")) {
+      aggregateTransactions.totalAccountsReceivable += credit ?? 0;
+      aggregateTransactions.accountReceivable[chartofAccount.name] = {
+        value: credit ?? 0,
+      };
+    } else if (accountType.includes("Current Assets")) {
+      aggregateTransactions.totalCurrentAssets += credit ?? 0;
+      aggregateTransactions.currentAsset[chartofAccount.name] = {
+        value: credit ?? 0,
+      };
+    } else if (accountType.includes("Accounts Payable")) {
+      aggregateTransactions.totalAccountsPayable += debit ?? 0;
+      aggregateTransactions.accountPayable[chartofAccount.name] = {
+        value: debit ?? 0,
+      };
+    } else if (accountType.includes("Equity")) {
       aggregateTransactions.totalShareHoldersEquity += debit ?? credit;
-    } else {
-      // incase of new transactions debits are included with other assets and credits are included other liabilities with provisions
-      if (debit) {
-        if (aggregateTransactions.currentAsset[chartofAccount?.name]) {
-          aggregateTransactions.currentAsset[chartofAccount?.name].value +=
-            debit ?? 0;
-        } else {
-          aggregateTransactions.currentAsset[chartofAccount?.name] = {
-            value: debit ?? credit,
-          };
-        }
-        aggregateTransactions.totalCurrentAssets += debit;
-      } else if (credit) {
-        if (aggregateTransactions.provisions[chartofAccount?.name]) {
-          aggregateTransactions.provisions[chartofAccount?.name].value +=
-            credit ?? 0;
-        } else {
-          aggregateTransactions.provisions[chartofAccount?.name] = {
-            value: credit ?? 0,
-          };
-        }
-        aggregateTransactions.totalCurrentLiabilities += credit;
-      }
+      aggregateTransactions.shareHoldersEquity[chartofAccount.name] = {
+        value: debit ?? credit,
+      };
     }
   });
+
   aggregateTransactions.netEarning = calculateNetIncome(transactions);
-  aggregateTransactions.totalAssets =
-    aggregateTransactions.totalAccountsReceivable +
-    aggregateTransactions.totalCurrentAssets;
+  aggregateTransactions.totalAssets = aggregateTransactions.totalCurrentAssets;
   aggregateTransactions.totalLiabilitiesAndEquity =
     aggregateTransactions.totalAccountsPayable +
     aggregateTransactions.totalCurrentLiabilities +
     aggregateTransactions.totalShareHoldersEquity;
-  aggregateTransactions.totalCurrentLiabilities =
-    aggregateTransactions.totalAccountsPayable -
-    aggregateTransactions.totalCurrentLiabilities;
 
   return aggregateTransactions;
 }

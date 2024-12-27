@@ -1,7 +1,7 @@
 const { PrismaClient } = require("@prisma/client");
 const bcrypt = require("bcrypt");
-const fs = require('fs/promises');
-const path = require('path');
+const fs = require("fs/promises");
+const path = require("path");
 
 const prisma = new PrismaClient();
 
@@ -13,16 +13,10 @@ const roles = [
   { name: "Purchase Manager" },
 ];
 
-
-
-
-
-
-
 async function seedAccountTypes() {
   const createdAccountTypes = [];
-  const accountTypesFilePath = path.resolve(__dirname, 'accountTypes.json');
-  const accountTypesData = await fs.readFile(accountTypesFilePath, 'utf-8');
+  const accountTypesFilePath = path.resolve(__dirname, "accountTypes.json");
+  const accountTypesData = await fs.readFile(accountTypesFilePath, "utf-8");
   const accountTypes = JSON.parse(accountTypesData);
   for (const accountType of accountTypes) {
     const createdAccountType = await prisma.accountType.create({
@@ -35,8 +29,14 @@ async function seedAccountTypes() {
 
 async function seedAccountSubTypes() {
   const createdAccountSubTypes = [];
-  const accountSubTypesFilePath = path.resolve(__dirname, 'accountSubTypes.json');
-  const accountSubTypesData = await fs.readFile(accountSubTypesFilePath, 'utf-8');
+  const accountSubTypesFilePath = path.resolve(
+    __dirname,
+    "accountSubTypes.json"
+  );
+  const accountSubTypesData = await fs.readFile(
+    accountSubTypesFilePath,
+    "utf-8"
+  );
   const accountSubTypes = JSON.parse(accountSubTypesData);
   for (const accountSubType of accountSubTypes) {
     const createdAccountSubType = await prisma.accountSubType.create({
@@ -49,8 +49,8 @@ async function seedAccountSubTypes() {
 
 async function seedChartOfAccounts() {
   const createdChartOfAccounts = [];
-  const CAFullNameFilePath = path.resolve(__dirname, 'CAFullName.json');
-  const CAFullNameData = await fs.readFile(CAFullNameFilePath, 'utf-8');
+  const CAFullNameFilePath = path.resolve(__dirname, "CAFullName.json");
+  const CAFullNameData = await fs.readFile(CAFullNameFilePath, "utf-8");
   const CAFullName = JSON.parse(CAFullNameData);
   for (const chartOfAccount of CAFullName) {
     const createdChartOfAccount = await prisma.chartOfAccount.create({
@@ -88,8 +88,8 @@ const seedUser = async (roleId) => {
 
 async function seedPermissions() {
   const createdPermissions = [];
-  const permissionsFilePath = path.resolve(__dirname, 'permissions.json');
-  const permissionsData = await fs.readFile(permissionsFilePath, 'utf-8');
+  const permissionsFilePath = path.resolve(__dirname, "permissions.json");
+  const permissionsData = await fs.readFile(permissionsFilePath, "utf-8");
   const permissions = JSON.parse(permissionsData);
 
   for (const permission of permissions) {
@@ -103,8 +103,8 @@ async function seedPermissions() {
 
 async function seedSuppliers() {
   const createdSuppliers = [];
-  const suppliersFilePath = path.resolve(__dirname, 'suppliers.json');
-  const suppliersData = await fs.readFile(suppliersFilePath, 'utf-8');
+  const suppliersFilePath = path.resolve(__dirname, "suppliers.json");
+  const suppliersData = await fs.readFile(suppliersFilePath, "utf-8");
   const suppliers = JSON.parse(suppliersData);
 
   for (const supplier of suppliers) {
@@ -117,6 +117,20 @@ async function seedSuppliers() {
   return createdSuppliers;
 }
 
+async function seedDrivers() {
+  const createdDrivers = [];
+  const driversFilePath = path.resolve(__dirname, "drivers.json");
+  const driversData = await fs.readFile(driversFilePath, "utf-8");
+  const drivers = JSON.parse(driversData);
+  for (const driver of drivers) {
+    const createdDriver = await prisma.driver.create({
+      data: driver,
+    });
+    createdDrivers.push(createdDriver);
+  }
+  return createdDrivers;
+}
+
 async function seedRolePermissions(roleId, permissions) {
   const createdPermissions = [];
   // const permissionsFilePath = path.resolve(__dirname, 'permissions.json');
@@ -127,7 +141,7 @@ async function seedRolePermissions(roleId, permissions) {
     const createdPermission = await prisma.rolePermission.create({
       data: {
         roleId: roleId,
-        permissionId: permission.id
+        permissionId: permission.id,
       },
     });
     createdPermissions.push(createdPermission);
@@ -142,9 +156,10 @@ async function main() {
     await seedChartOfAccounts();
     const createdRoles = await seedRoles();
     await seedUser(createdRoles[0].id);
-    const createdPermissions = await seedPermissions()
-    await seedRolePermissions(createdRoles[0].id, createdPermissions)
+    const createdPermissions = await seedPermissions();
+    await seedRolePermissions(createdRoles[0].id, createdPermissions);
     await seedSuppliers();
+    // await seedDrivers();
     console.log("Seeded successfully.");
   } catch (error) {
     console.error("Error while seeding:", error);
