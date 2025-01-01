@@ -1,0 +1,50 @@
+[
+  {
+    "id": "cf26c2e6-13c2-4e29-8d1f-cb0d184343c7",
+    "name": "G/Medmin Nigues",
+    "truckNumber": "A13658/10530",
+    "djboutiPhone": "77263892",
+    "ethiopiaPhone": "0939047588",
+    "associationName": "Continental",
+    "associationPhone": "0114717042",
+    "ownerName": "Brok Mesfine",
+    "ownerPhone": "0911233127",
+    "driverId": "3346572"
+  },
+  {
+    "id": "b53943fa-09d4-4a89-947f-e2a4533d4e8d",
+    "name": "Daweit Weldye",
+    "truckNumber": "A13635/33359",
+    "djboutiPhone": "77288547",
+    "ethiopiaPhone": "0911129935",
+    "associationName": "Medin",
+    "associationPhone": "0114709852",
+    "ownerName": "Yeroke Import",
+    "ownerPhone": "0911229785",
+    "driverId": "3330606"
+  },
+  {
+    "id": "8b637c4d-8809-4f2c-9277-bd7f2445db2e",
+    "name": "Tewodros Hailu",
+    "truckNumber": "A12780/11025",
+    "djboutiPhone": "77195738",
+    "ethiopiaPhone": "0943804268",
+    "associationName": "Base",
+    "associationPhone": "0118889955",
+    "ownerName": "Alem Hgos",
+    "ownerPhone": "0911658620",
+    "driverId": "3331462"
+  },
+  {
+    "id": "537b1d3e-1b9f-4e21-b156-9afc9c604e6e",
+    "name": "Hagos W/Gebrel",
+    "truckNumber": "A11915/33301",
+    "djboutiPhone": "77153924",
+    "ethiopiaPhone": "0919017508",
+    "associationName": "Horu",
+    "associationPhone": "0911492755",
+    "ownerName": "Wahab International",
+    "ownerPhone": "0944775614",
+    "driverId": "3338646"
+  }
+]
