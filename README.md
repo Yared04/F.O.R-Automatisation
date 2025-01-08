@@ -10,13 +10,11 @@ Web app - https://github.com/kalish93/inventory-react-client
 
 4. **Run migrations and seed the database:**
 
-Run migrations for the first time: npx prisma migrate dev --name initial
+- Run migrations for the first time: npx prisma migrate dev --name initial
 
-Seed the database: node prisma/seed.js
+- Seed the database: node prisma/seed.js
 
-- Ensure you are in the root folder when running these commands.
-
-5. **Start the backend server:**npm start
+5. **Start the backend server:** npm start
 
 #### **Environment Configuration**
 
